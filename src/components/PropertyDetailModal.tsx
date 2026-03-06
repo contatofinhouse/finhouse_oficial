@@ -78,7 +78,7 @@ export default function PropertyDetailModal({
             ? `R$ ${p.toLocaleString("pt-BR")}/mês`
             : `R$ ${p.toLocaleString("pt-BR")}`;
 
-    const whatsappMsg = `Olá! Tenho interesse no imóvel: ${listing.title} - ${fmt(listing.Price || 0, listing.Type || "")}. Gostaria de mais informações.`;
+    const whatsappMsg = `Olá! Tenho interesse no imóvel: ${listing.title} - ${fmt(listing.price || 0, listing.type || "")}. Gostaria de mais informações.`;
 
     const toggleFavorite = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -354,7 +354,7 @@ export default function PropertyDetailModal({
                             src={listing.images[activeImg]}
                             alt={listing.title}
                             className="max-w-full max-h-[80vh] object-contain select-none pointer-events-none transition-all duration-300 transform scale-100"
-                            style={{ WebkitUserDrag: 'none' }}
+                            style={{ webkitUserDrag: 'none' } as any}
                         />
                     </div>
 
