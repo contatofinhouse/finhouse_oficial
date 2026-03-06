@@ -23,6 +23,10 @@ export const metadata: Metadata = {
     "aluguel",
     "FinHouse",
   ],
+  icons: {
+    icon: "/icon.png",
+    apple: "/apple-icon.png",
+  },
   openGraph: {
     title: "FinHouse | Imobiliária Digital",
     description: "Sua imobiliária digital. Imóveis, financiamento, consórcio e muito mais.",
