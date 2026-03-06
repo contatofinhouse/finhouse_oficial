@@ -26,6 +26,7 @@ export interface Listing {
     createdAt?: string;
     created_at?: string;
     author: string;
+    user_id?: string;
 }
 
 interface ListingsContextType {
