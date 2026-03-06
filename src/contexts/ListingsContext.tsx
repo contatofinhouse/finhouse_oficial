@@ -25,7 +25,7 @@ export interface Listing {
     images: string[];
     createdAt?: string;
     created_at?: string;
-    author: string;
+    author?: string;
     user_id?: string;
 }
 
@@ -199,7 +199,8 @@ export function ListingsProvider({ children }: { children: ReactNode }) {
 
         const payload = {
             ...listing,
-            user_id: session?.user?.id, // Securely link to user
+            user_id: session?.user?.id,
+            author: session?.user?.email?.split('@')[0] || 'Corretor',
             created_at: new Date().toISOString(),
         };
 

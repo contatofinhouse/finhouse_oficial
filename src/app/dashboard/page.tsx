@@ -236,8 +236,6 @@ function DashboardContent() {
                 description,
                 acceptsExchange,
                 images: uploadedUrls.length > 0 ? uploadedUrls : photos.map(p => p.url), // fallback
-                author: user.username,
-                user_id: user.id, // Linked to Supabase Auth ID
             });
 
             setTitle(""); setType("venda"); setPropertyType("Apartamento");
