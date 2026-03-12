@@ -69,7 +69,7 @@ function HeroSection({ onSimulate }: { onSimulate: () => void }) {
               próximo lar
             </h1>
             <p className="mt-5 text-[17px] md:text-[19px] text-[#444] leading-relaxed max-w-lg font-medium">
-              Curadoria de imóveis exclusivos e assessoria completa em financiamento. <span className="underline decoration-amber-400 decoration-2 underline-offset-4">finHouse. vende melhor.</span>
+              Curadoria de imóveis exclusivos e assessoria completa em financiamento. <span className="underline decoration-amber-400 decoration-2 underline-offset-4">finHouse.</span>
             </p>
 
             {/* Search bar */}

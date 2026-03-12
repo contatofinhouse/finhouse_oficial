@@ -46,10 +46,10 @@ export default function SimulationModal({ open, onOpenChange }: SimulationModalP
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-md rounded-[32px] border-[#ebebeb] p-0 overflow-hidden bg-white">
-                <div className="p-6 md:p-8 space-y-8">
+            <DialogContent className="w-[95vw] sm:max-w-md rounded-[32px] border-[#ebebeb] p-0 overflow-hidden bg-white max-h-[90vh] flex flex-col">
+                <div className="p-5 md:p-8 space-y-6 md:space-y-8 overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle className="text-[24px] font-extrabold text-[#222] tracking-tight">
+                        <DialogTitle className="text-[20px] md:text-[24px] font-extrabold text-[#222] tracking-tight">
                             Simulação Instantânea
                         </DialogTitle>
                         <DialogDescription className="text-[14px] text-[#717171]">
@@ -137,7 +137,7 @@ export default function SimulationModal({ open, onOpenChange }: SimulationModalP
                     {/* Partner Banks */}
                     <div className="pt-2">
                         <p className="text-[11px] font-bold text-[#b0b0b0] uppercase tracking-[0.1em] text-center mb-4">Principais Bancos Parceiros</p>
-                        <div className="flex justify-between items-center opacity-70 grayscale hover:grayscale-0 transition-all px-2">
+                        <div className="flex justify-around items-center opacity-70 grayscale hover:grayscale-0 transition-all px-1">
                             {banks.map((bank) => (
                                 <div key={bank.name} className="flex flex-col items-center gap-1 group">
                                     <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center border border-gray-100 group-hover:border-[#222]/20 transition-all">
