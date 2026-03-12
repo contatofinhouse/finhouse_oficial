@@ -32,6 +32,7 @@ export interface Listing {
 interface ListingsContextType {
     listings: Listing[];
     addListing: (listing: Omit<Listing, "id" | "createdAt" | "created_at">) => Promise<void>;
+    updateListing: (id: string, listing: Partial<Listing>) => Promise<void>;
     removeListing: (id: string) => void;
 }
 
@@ -220,6 +221,16 @@ export function ListingsProvider({ children }: { children: ReactNode }) {
         setListings((prev) => [newListing, ...prev]);
     };
 
+    const updateListing = async (id: string, listing: Partial<Listing>) => {
+        const { data, error } = await supabase.from('listings').update(listing).eq('id', id).select();
+        if (data && !error) {
+            setListings((prev) => prev.map((l) => (l.id === id ? (data[0] as Listing) : l)));
+        } else {
+            console.error("Erro ao atualizar anúncio", error);
+            throw error;
+        }
+    };
+
     const removeListing = async (id: string) => {
         const { error } = await supabase.from('listings').delete().eq('id', id);
         if (!error) {
@@ -230,7 +241,7 @@ export function ListingsProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <ListingsContext.Provider value={{ listings, addListing, removeListing }}>
+        <ListingsContext.Provider value={{ listings, addListing, updateListing, removeListing }}>
             {children}
         </ListingsContext.Provider>
     );

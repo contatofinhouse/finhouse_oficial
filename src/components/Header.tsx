@@ -127,40 +127,36 @@ export default function Header() {
                                 key={item.href}
                                 href={item.href}
                                 onClick={() => setMobileOpen(false)}
-                                className="px-4 py-3.5 text-[15px] font-medium text-[#222] hover:bg-[#f7f7f7] rounded-xl transition-colors"
+                                className="px-4 py-3 text-[15px] font-medium text-[#222] hover:bg-[#f7f7f7] rounded-xl transition-colors"
                             >
                                 {item.label}
                             </a>
                         ))}
+                        {user ? (
+                            <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="px-4 py-3 text-[15px] font-medium text-[#222] hover:bg-[#f7f7f7] rounded-xl transition-colors">
+                                Meu Painel
+                            </Link>
+                        ) : (
+                            <Link href="/login" onClick={() => setMobileOpen(false)} className="px-4 py-3 text-[15px] font-medium text-[#222] hover:bg-[#f7f7f7] rounded-xl transition-colors">
+                                Entrar / Login
+                            </Link>
+                        )}
                         <hr className="my-3 border-[#ebebeb]" />
                         <a
                             href={WHATSAPP_LINK}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="mx-4 my-1 py-3 rounded-xl bg-[#222] text-white text-center text-[15px] font-semibold hover:bg-[#333] transition-colors"
+                            className="mx-4 my-1 py-3 rounded-xl bg-[#25D366] text-white text-center text-[15px] font-semibold hover:bg-[#22c35e] transition-colors flex items-center justify-center gap-2"
                         >
-                            Fale pelo WhatsApp
+                            <MessageCircle className="w-5 h-5 text-white" /> Fale pelo WhatsApp
                         </a>
-                        {user ? (
-                            <div className="flex gap-2 px-4 mt-2">
-                                <Link href="/dashboard" className="flex-1" onClick={() => setMobileOpen(false)}>
-                                    <div className="py-3 rounded-xl border border-[#222] text-center text-[15px] font-semibold text-[#222] hover:bg-[#f7f7f7] transition-colors">
-                                        Meu Painel
-                                    </div>
-                                </Link>
-                                <button
-                                    onClick={() => { logout(); setMobileOpen(false); }}
-                                    className="py-3 px-5 rounded-xl text-[15px] text-[#717171] hover:text-red-500 transition-colors"
-                                >
-                                    Sair
-                                </button>
-                            </div>
-                        ) : (
-                            <Link href="/login" className="px-4 mt-2" onClick={() => setMobileOpen(false)}>
-                                <div className="py-3 rounded-xl border border-[#222] text-center text-[15px] font-semibold text-[#222] hover:bg-[#f7f7f7] transition-colors">
-                                    Entrar
-                                </div>
-                            </Link>
+                        {user && (
+                            <button
+                                onClick={() => { logout(); setMobileOpen(false); }}
+                                className="mx-4 mt-2 py-3 rounded-xl border border-red-50 text-[#717171] hover:text-red-500 hover:bg-red-50 transition-colors text-[14px]"
+                            >
+                                Sair da conta
+                            </button>
                         )}
                     </nav>
                 </div>

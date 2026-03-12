@@ -29,13 +29,15 @@ import {
     UploadCloud,
     GripVertical,
     Loader2,
+    Pencil,
 } from "lucide-react";
 
 function DashboardContent() {
     const { user, isLoading, logout } = useAuth();
-    const { listings, addListing, removeListing } = useListings();
+    const { listings, addListing, updateListing, removeListing } = useListings();
     const router = useRouter();
     const [createOpen, setCreateOpen] = useState(false);
+    const [editingListing, setEditingListing] = useState<any>(null);
     const [isSaving, setIsSaving] = useState(false);
 
     // Form state
@@ -183,6 +185,36 @@ function DashboardContent() {
         if (!isLoading && !user) router.push("/login");
     }, [user, isLoading, router]);
 
+    const handleEditInitiate = (listing: any) => {
+        setEditingListing(listing);
+        setTitle(listing.title);
+        setType(listing.type);
+        setPropertyType(listing.propertyType || "Apartamento");
+        setPrice(listing.price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }));
+        setCondominium(listing.condominium?.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) || "");
+        setIptu(listing.iptu?.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) || "");
+        setArea(listing.area.toString());
+        setBedrooms(listing.bedrooms.toString());
+        setBathrooms(listing.bathrooms.toString());
+        setParking(listing.parking.toString());
+        setCep(listing.cep || "");
+        setAddress(listing.address || "");
+        setNeighborhood(listing.neighborhood || "");
+        setCity(listing.city || "São Paulo");
+        setDescription(listing.description || "");
+        setAcceptsExchange(listing.acceptsExchange || false);
+        setPhotos(listing.images?.map((url: string) => ({ id: Math.random().toString(36), url, file: null })) || []);
+        setCreateOpen(true);
+    };
+
+    const resetForm = () => {
+        setEditingListing(null);
+        setTitle(""); setType("venda"); setPropertyType("Apartamento");
+        setPrice(""); setCondominium(""); setIptu(""); setArea(""); setBedrooms("2"); setBathrooms("1"); setParking("1");
+        setCep(""); setAddress(""); setNeighborhood(""); setCity("São Paulo"); setDescription("");
+        setPhotos([]); setAcceptsExchange(false);
+    };
+
     if (isLoading || !user) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-white">
@@ -196,29 +228,24 @@ function DashboardContent() {
         setIsSaving(true);
         try {
             const uploadedUrls = [];
-            // Processing and Uploading images to Supabase Storage
             for (const photo of photos) {
-                const processedBlob = await processImage(photo.file);
-                const ext = photo.file.name.split('.').pop() || 'jpg';
-                const fileName = `${Math.random().toString(36).substring(2, 10)}_${Date.now()}.${ext}`;
-
-                const { data, error } = await supabase.storage
-                    .from('listings_images')
-                    .upload(fileName, processedBlob, {
-                        contentType: photo.file.type
-                    });
-
-                if (data && !error) {
-                    const { data: urlData } = supabase.storage
+                if (photo.file) {
+                    const processedBlob = await processImage(photo.file);
+                    const ext = photo.file.name.split('.').pop() || 'jpg';
+                    const fileName = `${Math.random().toString(36).substring(2, 10)}_${Date.now()}.${ext}`;
+                    const { data, error } = await supabase.storage
                         .from('listings_images')
-                        .getPublicUrl(fileName);
-                    uploadedUrls.push(urlData.publicUrl);
-                } else if (error) {
-                    console.error("Erro ao subir imagem", error);
+                        .upload(fileName, processedBlob, { contentType: photo.file.type });
+                    if (data && !error) {
+                        const { data: urlData } = supabase.storage.from('listings_images').getPublicUrl(fileName);
+                        uploadedUrls.push(urlData.publicUrl);
+                    }
+                } else if (photo.url) {
+                    uploadedUrls.push(photo.url);
                 }
             }
 
-            await addListing({
+            const payload = {
                 title,
                 type,
                 propertyType,
@@ -235,21 +262,24 @@ function DashboardContent() {
                 city,
                 description,
                 acceptsExchange,
-                images: uploadedUrls.length > 0 ? uploadedUrls : photos.map(p => p.url), // fallback
-            });
+                images: uploadedUrls,
+            };
 
-            setTitle(""); setType("venda"); setPropertyType("Apartamento");
-            setPrice(""); setCondominium(""); setIptu(""); setArea(""); setBedrooms("2"); setBathrooms("1"); setParking("1");
-            setCep(""); setAddress(""); setNeighborhood(""); setCity("São Paulo"); setDescription("");
-            setPhotos([]); setAcceptsExchange(false);
+            if (editingListing) {
+                await updateListing(editingListing.id, payload);
+            } else {
+                await addListing(payload);
+            }
+
+            resetForm();
             setShowSuccess(true);
             setTimeout(() => {
                 setShowSuccess(false);
                 setCreateOpen(false);
             }, 3000);
         } catch (error) {
-            console.error("Erro no formulário form", error);
-            alert("Não foi possível criar esse anúncio!");
+            console.error("Erro no formulário", error);
+            alert("Não foi possível salvar o anúncio!");
         } finally {
             setIsSaving(false);
         }
@@ -295,7 +325,7 @@ function DashboardContent() {
                         </p>
                     </div>
                     <button
-                        onClick={() => setCreateOpen(true)}
+                        onClick={() => { resetForm(); setCreateOpen(true); }}
                         className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#222] text-white text-[14px] font-semibold hover:bg-[#333] transition-colors shrink-0"
                     >
                         <Plus className="w-4 h-4" /> Novo Anúncio
@@ -306,9 +336,13 @@ function DashboardContent() {
                 {listings.length > 0 ? (
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {listings.map((listing) => (
-                            <div key={listing.id} className="group">
+                            <div
+                                key={listing.id}
+                                className={`group relative cursor-pointer transition-all duration-300 hover:translate-y-[-4px]`}
+                                onClick={() => handleEditInitiate(listing)}
+                            >
                                 {/* Image */}
-                                <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-[#f7f7f7] mb-3">
+                                <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-[#f7f7f7] mb-3 shadow-sm group-hover:shadow-md transition-shadow">
                                     {listing.images && listing.images.length > 0 ? (
                                         <img src={listing.images[0]} alt={listing.title} className="absolute inset-0 w-full h-full object-cover" />
                                     ) : (
@@ -323,18 +357,29 @@ function DashboardContent() {
                                         {listing.type}
                                     </span>
                                     {listing.user_id === user.id && (
-                                        <button
-                                            onClick={() => removeListing(listing.id)}
-                                            className="absolute top-3 right-3 p-2 rounded-full bg-white/80 backdrop-blur-sm text-[#717171] hover:text-red-500 hover:bg-white opacity-0 group-hover:opacity-100 transition-all font-bold"
-                                            title="Remover"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
+                                        <div className="absolute top-3 right-3 flex items-center gap-2">
+                                            <div
+                                                className="p-2 rounded-full bg-white/80 backdrop-blur-sm text-[#717171] group-hover:text-[#222] group-hover:bg-white transition-all shadow-sm"
+                                                title="Clique para editar"
+                                            >
+                                                <Pencil className="w-4 h-4" />
+                                            </div>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    removeListing(listing.id);
+                                                }}
+                                                className="p-2 rounded-full bg-white/80 backdrop-blur-sm text-[#717171] hover:text-red-500 hover:bg-white transition-all shadow-sm"
+                                                title="Remover"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
                                 {/* Info */}
                                 <div className="space-y-1 px-0.5">
-                                    <h3 className="text-[15px] font-semibold text-[#222] line-clamp-1">{listing.title}</h3>
+                                    <h3 className="text-[15px] font-semibold text-[#222] line-clamp-1 group-hover:text-[#000] transition-colors">{listing.title}</h3>
                                     <p className="text-[14px] text-[#717171] flex items-center gap-1">
                                         <MapPin className="w-3 h-3" /> {listing.neighborhood}, {listing.city}
                                     </p>
@@ -368,7 +413,9 @@ function DashboardContent() {
             <Dialog open={createOpen} onOpenChange={setCreateOpen}>
                 <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl border-[#ebebeb]">
                     <DialogHeader>
-                        <DialogTitle className="text-[20px] font-bold text-[#222]">Novo Anúncio</DialogTitle>
+                        <DialogTitle className="text-[20px] font-bold text-[#222]">
+                            {editingListing ? "Editar Anúncio" : "Novo Anúncio"}
+                        </DialogTitle>
                         <DialogDescription className="text-[14px] text-[#717171]">
                             Preencha as informações para publicar na plataforma.
                         </DialogDescription>
@@ -522,11 +569,11 @@ function DashboardContent() {
                                 } disabled:opacity-50 disabled:cursor-not-allowed`}
                         >
                             {isSaving ? (
-                                <><Loader2 className="w-5 h-5 animate-spin" /> Publicando...</>
+                                <><Loader2 className="w-5 h-5 animate-spin" /> {editingListing ? "Salvando..." : "Publicando..."}</>
                             ) : showSuccess ? (
-                                "Anúncio publicado. Boas vendas!"
+                                editingListing ? "Alterações salvas!" : "Anúncio publicado. Boas vendas!"
                             ) : (
-                                "Publicar Anúncio"
+                                editingListing ? "Salvar Alterações" : "Publicar Anúncio"
                             )}
                         </button>
                     </form>
