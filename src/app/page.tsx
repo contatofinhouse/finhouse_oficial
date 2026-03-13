@@ -56,7 +56,7 @@ function HeroSection({ onSimulate }: { onSimulate: () => void }) {
             <div className="flex items-center gap-3 mb-8">
               <Image
                 src="/logo.png"
-                alt="FinHouse Logo"
+                alt="finHouse Logo"
                 width={48}
                 height={48}
                 className="rounded-xl"
@@ -69,7 +69,7 @@ function HeroSection({ onSimulate }: { onSimulate: () => void }) {
               próximo lar
             </h1>
             <p className="mt-5 text-[17px] md:text-[19px] text-[#444] leading-relaxed max-w-lg font-medium">
-              Curadoria de imóveis exclusivos e assessoria completa em financiamento. <span className="underline decoration-amber-400 decoration-2 underline-offset-4">finHouse.</span>
+              Curadoria de imóveis exclusivos e assessoria completa em financiamento. <span className="underline decoration-amber-400 decoration-2 underline-offset-4">finHouse.    </span>
             </p>
 
             {/* Search bar */}
@@ -275,7 +275,7 @@ function IndicacaoSection() {
 
         <div className="text-center mt-12">
           <a
-            href={`${WA}?text=${encodeURIComponent("Olá! Quero participar do Programa de Indicação da FinHouse!")}`}
+            href={`${WA}?text=${encodeURIComponent("Olá! Quero participar do Programa de Indicação da finHouse!")}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-[#222] text-white text-[14px] font-semibold hover:bg-[#333] transition-colors"
@@ -311,7 +311,7 @@ function ParceirosSection() {
 
             <div className="flex flex-col sm:flex-row gap-4">
               <a
-                href={`${WA}?text=${encodeURIComponent("Olá! Sou corretor e tenho interesse em ser parceiro da FinHouse!")}`}
+                href={`${WA}?text=${encodeURIComponent("Olá! Sou corretor e tenho interesse em ser parceiro da finHouse!")}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-3 px-8 py-5 rounded-2xl bg-white text-[#222] text-[15px] font-extrabold hover:bg-white/90 transition-all hover:scale-105 active:scale-95 shadow-xl shadow-black/20"

@@ -10,9 +10,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "FinHouse | Imobiliária Digital — Compra, Venda, Financiamento e Consórcio",
+  title: "finHouse | Imobiliária Digital — Compra, Venda, Financiamento e Consórcio",
   description:
-    "A FinHouse é a sua imobiliária digital. Encontre imóveis, simule financiamento, conheça nosso programa de indicação e torne-se um parceiro corretor.",
+    "A finHouse é a sua imobiliária digital. Encontre imóveis, simule financiamento, conheça nosso programa de indicação e torne-se um parceiro corretor.",
   keywords: [
     "imobiliária",
     "imóveis",
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     apple: "/apple-icon.png",
   },
   openGraph: {
-    title: "FinHouse | Imobiliária Digital",
+    title: "finHouse | Imobiliária Digital",
     description: "Sua imobiliária digital. Imóveis, financiamento, consórcio e muito mais.",
     type: "website",
   },
@@ -40,7 +40,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
       <body className={`${inter.variable} antialiased font-sans`}>
         <Providers>{children}</Providers>
       </body>

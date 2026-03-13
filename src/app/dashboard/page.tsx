@@ -295,8 +295,8 @@ function DashboardContent() {
                 <div className="max-w-[1280px] mx-auto flex items-center justify-between px-6 h-[72px]">
                     <div className="flex items-center gap-4">
                         <Link href="/" className="flex items-center gap-2.5">
-                            <Image src="/logo.png" alt="FinHouse" width={32} height={32} className="rounded-lg" />
-                            <span className="text-[17px] font-semibold text-[#222]">FinHouse</span>
+                            <Image src="/logo.png" alt="finHouse" width={32} height={32} className="rounded-lg" />
+                            <span className="text-[17px] font-semibold text-[#222]">finHouse</span>
                         </Link>
                         <span className="text-[13px] text-[#b0b0b0] hidden sm:inline">/ Painel</span>
                     </div>

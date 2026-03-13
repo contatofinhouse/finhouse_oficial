@@ -15,6 +15,7 @@ const NAV_ITEMS = [
     { label: "Indicação", href: "/#indicacao" },
     { label: "Parceiros", href: "/#parceiros" },
     { label: "Financiamento", href: "/#financiamento" },
+    { label: "Contas a Receber", href: "/receivables" },
 ];
 
 export default function Header() {
@@ -38,9 +39,9 @@ export default function Header() {
             <div className="max-w-[1280px] mx-auto flex items-center justify-between px-6 h-[72px]">
                 {/* Logo */}
                 <Link href="/" className="flex items-center gap-2.5 shrink-0">
-                    <Image src="/logo.png" alt="FinHouse" width={32} height={32} className="rounded-lg" />
+                    <Image src="/logo.png" alt="finHouse" width={32} height={32} className="rounded-lg" />
                     <span className="text-[19px] font-semibold tracking-[-0.02em] text-[#222]">
-                        FinHouse
+                        finHouse
                     </span>
                 </Link>
 

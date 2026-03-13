@@ -49,10 +49,10 @@ function LoginForm() {
                     {/* Logo */}
                     <div className="text-center mb-8">
                         <Link href="/">
-                            <Image src="/logo.png" alt="FinHouse" width={56} height={56} className="rounded-xl mx-auto mb-4" />
+                            <Image src="/logo.png" alt="finHouse" width={56} height={56} className="rounded-xl mx-auto mb-4" />
                         </Link>
                         <h1 className="text-[24px] font-bold text-[#222] tracking-[-0.02em]">Bem-vindo de volta</h1>
-                        <p className="text-[14px] text-[#717171] mt-1">Acesse seu painel FinHouse</p>
+                        <p className="text-[14px] text-[#717171] mt-1">Acesse seu painel finHouse</p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-5">

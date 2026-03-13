@@ -59,7 +59,7 @@ const DEFAULT_LISTINGS: Listing[] = [
         acceptsExchange: false,
         images: ["/placeholder-apt1.jpg"],
         createdAt: "2026-02-20",
-        author: "FinHouse",
+        author: "finHouse",
     },
     {
         id: "2",
@@ -81,7 +81,7 @@ const DEFAULT_LISTINGS: Listing[] = [
         acceptsExchange: true,
         images: ["/placeholder-apt2.jpg"],
         createdAt: "2026-02-18",
-        author: "FinHouse",
+        author: "finHouse",
     },
     {
         id: "3",
@@ -103,7 +103,7 @@ const DEFAULT_LISTINGS: Listing[] = [
         acceptsExchange: false,
         images: ["/placeholder-apt3.jpg"],
         createdAt: "2026-02-15",
-        author: "FinHouse",
+        author: "finHouse",
     },
     {
         id: "4",
@@ -125,7 +125,7 @@ const DEFAULT_LISTINGS: Listing[] = [
         acceptsExchange: true,
         images: ["/placeholder-apt4.jpg"],
         createdAt: "2026-02-10",
-        author: "FinHouse",
+        author: "finHouse",
     },
     {
         id: "5",
@@ -147,7 +147,7 @@ const DEFAULT_LISTINGS: Listing[] = [
         acceptsExchange: false,
         images: ["/placeholder-apt5.jpg"],
         createdAt: "2026-02-08",
-        author: "FinHouse",
+        author: "finHouse",
     },
     {
         id: "6",
@@ -169,7 +169,7 @@ const DEFAULT_LISTINGS: Listing[] = [
         acceptsExchange: false,
         images: ["/placeholder-apt6.jpg"],
         createdAt: "2026-02-05",
-        author: "FinHouse",
+        author: "finHouse",
     },
 ];
 
