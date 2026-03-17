@@ -255,11 +255,18 @@ function DashboardContent() {
         );
     }
 
+    const isSavingRef = React.useRef(false);
+
     const handleSave = async (silent = false) => {
+        if (isSavingRef.current) return;
         if (!title && !silent) return;
+        
+        isSavingRef.current = true;
         if (!silent) setIsSaving(true);
+
         try {
             const uploadedUrls = [];
+            // ... (rest of image upload logic)
             for (const photo of photos) {
                 if (photo.file) {
                     const processedBlob = await processImage(photo.file);
@@ -315,6 +322,7 @@ function DashboardContent() {
         } catch (error) {
             console.error("Erro ao salvar", error);
         } finally {
+            isSavingRef.current = false;
             if (!silent) setIsSaving(false);
         }
     };
