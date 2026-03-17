@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useListings, Listing } from "@/contexts/ListingsContext";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -9,12 +10,22 @@ import PropertyDetailModal from "@/components/PropertyDetailModal";
 import { Search, Building2 } from "lucide-react";
 import SimulationModal from "@/components/SimulationModal";
 
-export default function ImoveisPage() {
+function ImoveisContent() {
     const { listings } = useListings();
+    const searchParams = useSearchParams();
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState<"todos" | "venda" | "aluguel">("todos");
     const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
     const [simOpen, setSimOpen] = useState(false);
+
+    // Deep linking: open modal if id is in URL
+    useEffect(() => {
+        const id = searchParams.get("id");
+        if (id && listings.length > 0) {
+            const l = listings.find(item => item.id === id);
+            if (l) setSelectedListing(l);
+        }
+    }, [searchParams, listings]);
 
     const filtered = listings.filter((l) => {
         const matchesSearch = l.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -113,5 +124,13 @@ export default function ImoveisPage() {
                 />
             )}
         </div>
+    );
+}
+
+export default function ImoveisPage() {
+    return (
+        <Suspense fallback={null}>
+            <ImoveisContent />
+        </Suspense>
     );
 }

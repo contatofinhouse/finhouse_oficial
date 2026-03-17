@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useListings, Listing } from "@/contexts/ListingsContext";
 import Header from "@/components/Header";
@@ -424,9 +425,20 @@ function FinanciamentoSection({ onSimulate }: { onSimulate: () => void }) {
 
 
 /* ─── APP ─── */
-function HomePage() {
+function HomeContent() {
+  const { listings } = useListings();
+  const searchParams = useSearchParams();
   const [simOpen, setSimOpen] = useState(false);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
+
+  // Deep linking: open modal if id is in URL
+  useEffect(() => {
+    const id = searchParams.get("id");
+    if (id && listings.length > 0) {
+      const l = listings.find(item => item.id === id);
+      if (l) setSelectedListing(l);
+    }
+  }, [searchParams, listings]);
 
   return (
     <>
@@ -455,6 +467,8 @@ function HomePage() {
 
 export default function Page() {
   return (
-    <HomePage />
+    <Suspense fallback={null}>
+      <HomeContent />
+    </Suspense>
   );
 }
