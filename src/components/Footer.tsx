@@ -16,7 +16,7 @@ export default function Footer() {
                             <span className="text-[17px] font-bold text-[#222]">finHouse. <span className="text-[14px] font-medium text-[#717171] uppercase tracking-[0.2em] ml-2 underline decoration-amber-400 decoration-2 underline-offset-4">vende melhor.</span></span>
                         </div>
                         <p className="text-[14px] text-[#717171] leading-relaxed max-w-sm">
-                            Sua casa de assessoria imobiliária. Curadoria de imóveis e soluções de crédito com inteligência e transparência.
+                            Seu portal de imóveis e assessoria em financiamentos. Curadoria de imóveis e soluções de crédito com inteligência e transparência.
                         </p>
                     </div>
                     <div>

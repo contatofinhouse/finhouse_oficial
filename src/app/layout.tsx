@@ -10,9 +10,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "finHouse | Imobiliária Digital — Compra, Venda, Financiamento e Consórcio",
+  title: "finHouse | Portal de Imóveis, Financiamentos e Consórcio",
   description:
-    "A finHouse é a sua imobiliária digital. Encontre imóveis, simule financiamento, conheça nosso programa de indicação e torne-se um parceiro corretor.",
+    "A finHouse é o seu portal de imóveis, financiamentos e consórcios. Encontre imóveis, simule financiamento, conheça nosso programa de indicação e torne-se um parceiro corretor.",
   keywords: [
     "imobiliária",
     "imóveis",
@@ -28,8 +28,8 @@ export const metadata: Metadata = {
     apple: "/apple-icon.png",
   },
   openGraph: {
-    title: "finHouse | Imobiliária Digital",
-    description: "Sua imobiliária digital. Imóveis, financiamento, consórcio e muito mais.",
+    title: "finHouse | Portal de Imóveis",
+    description: "Seu portal de imóveis, financiamento, consórcio e muito mais.",
     type: "website",
   },
 };
