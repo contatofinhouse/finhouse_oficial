@@ -397,7 +397,7 @@ function DashboardContent() {
                                         }`}>
                                         {listing.type}
                                     </span>
-                                    {listing.user_id === user.id && (
+                                    {(listing.user_id === user.id || !listing.user_id) && (
                                         <div className="absolute top-3 right-3 flex items-center gap-2">
                                             <div
                                                 className="p-2 rounded-full bg-white/80 backdrop-blur-sm text-[#717171] group-hover:text-[#222] group-hover:bg-white transition-all shadow-sm"
