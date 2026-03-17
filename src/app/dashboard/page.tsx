@@ -30,7 +30,9 @@ import {
     GripVertical,
     Loader2,
     Pencil,
+    Save,
 } from "lucide-react";
+import { SP_CITIES } from "@/lib/constants";
 
 function DashboardContent() {
     const { user, isLoading, logout } = useAuth();
@@ -61,6 +63,36 @@ function DashboardContent() {
 
     // Photos state
     const [photos, setPhotos] = useState<{ id: string; file: File; url: string }[]>([]);
+    const [lastSavedData, setLastSavedData] = useState<string>("");
+
+    // Auto-save logic
+    useEffect(() => {
+        if (!createOpen) return;
+
+        const currentData = JSON.stringify({
+            title, type, propertyType, price, condominium, iptu, area, bedrooms, bathrooms, parking,
+            cep, address, neighborhood, city, description, acceptsExchange,
+            photoCount: photos.length
+        });
+
+        if (currentData === lastSavedData) return;
+
+        const timer = setTimeout(() => {
+            handleSave(true); // Silent save
+            setLastSavedData(currentData);
+        }, 2000);
+
+        return () => clearTimeout(timer);
+    }, [title, type, propertyType, price, condominium, iptu, area, bedrooms, bathrooms, parking, cep, address, neighborhood, city, description, acceptsExchange, photos.length, createOpen]);
+
+    // Terreno logic: zero components
+    useEffect(() => {
+        if (propertyType === "Terreno") {
+            setBedrooms("0");
+            setBathrooms("0");
+            setParking("0");
+        }
+    }, [propertyType]);
 
     const processImage = async (file: File): Promise<Blob> => {
         return new Promise((resolve) => {
@@ -223,9 +255,9 @@ function DashboardContent() {
         );
     }
 
-    const handleCreate = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsSaving(true);
+    const handleSave = async (silent = false) => {
+        if (!title && !silent) return;
+        if (!silent) setIsSaving(true);
         try {
             const uploadedUrls = [];
             for (const photo of photos) {
@@ -246,7 +278,7 @@ function DashboardContent() {
             }
 
             const payload = {
-                title,
+                title: title || "Sem título",
                 type,
                 propertyType,
                 price: parseCurrency(price),
@@ -268,21 +300,30 @@ function DashboardContent() {
             if (editingListing) {
                 await updateListing(editingListing.id, payload);
             } else {
-                await addListing(payload);
+                const newListing = await addListing(payload);
+                if (newListing) {
+                    setEditingListing(newListing);
+                }
             }
 
-            resetForm();
-            setShowSuccess(true);
-            setTimeout(() => {
-                setShowSuccess(false);
-                setCreateOpen(false);
-            }, 3000);
+            if (!silent) {
+                setShowSuccess(true);
+                setTimeout(() => {
+                    setShowSuccess(false);
+                }, 3000);
+            }
         } catch (error) {
-            console.error("Erro no formulário", error);
-            alert("Não foi possível salvar o anúncio!");
+            console.error("Erro ao salvar", error);
         } finally {
-            setIsSaving(false);
+            if (!silent) setIsSaving(false);
         }
+    };
+
+    const handlePublish = async (e: React.FormEvent) => {
+        e.preventDefault();
+        await handleSave(false);
+        setCreateOpen(false);
+        resetForm();
     };
 
     const fmt = (p: number, t: string) =>
@@ -413,14 +454,29 @@ function DashboardContent() {
             <Dialog open={createOpen} onOpenChange={setCreateOpen}>
                 <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl border-[#ebebeb]">
                     <DialogHeader>
-                        <DialogTitle className="text-[20px] font-bold text-[#222]">
+                        <DialogTitle className="text-[20px] font-bold text-[#222] flex items-center justify-between">
                             {editingListing ? "Editar Anúncio" : "Novo Anúncio"}
+                            {editingListing && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (confirm("Deseja realmente excluir este anúncio?")) {
+                                            removeListing(editingListing.id);
+                                            setCreateOpen(false);
+                                            resetForm();
+                                        }
+                                    }}
+                                    className="p-2 text-[#717171] hover:text-red-500 transition-colors"
+                                >
+                                    <Trash2 className="w-5 h-5" />
+                                </button>
+                            )}
                         </DialogTitle>
                         <DialogDescription className="text-[14px] text-[#717171]">
                             Preencha as informações para publicar na plataforma.
                         </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleCreate} className="space-y-5">
+                    <form onSubmit={handlePublish} className="space-y-5">
                         <div className="space-y-2">
                             <Label className="text-[13px] font-semibold text-[#222]">Título *</Label>
                             <Input required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: Apartamento 2 quartos em Pinheiros" className="rounded-xl h-11 border-[#ddd]" />
@@ -512,7 +568,15 @@ function DashboardContent() {
                             </div>
                             <div className="space-y-2">
                                 <Label className="text-[13px] font-semibold text-[#222]">Cidade</Label>
-                                <Input value={city} onChange={(e) => setCity(e.target.value)} className="rounded-xl h-11 border-[#ddd]" />
+                                <select
+                                    value={city}
+                                    onChange={(e) => setCity(e.target.value)}
+                                    className="w-full h-11 rounded-xl border border-[#ddd] px-3 text-[14px] bg-white cursor-pointer"
+                                >
+                                    {SP_CITIES.map((c) => (
+                                        <option key={c} value={c}>{c}</option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
 
@@ -562,20 +626,31 @@ function DashboardContent() {
                             )}
                         </div>
 
-                        <button
-                            type="submit"
-                            disabled={isSaving || showSuccess}
-                            className={`w-full h-12 rounded-full flex items-center justify-center gap-2 text-white text-[15px] font-semibold transition-all ${showSuccess ? "bg-emerald-500 scale-[0.98]" : "bg-[#222] hover:bg-[#333]"
-                                } disabled:opacity-50 disabled:cursor-not-allowed`}
-                        >
-                            {isSaving ? (
-                                <><Loader2 className="w-5 h-5 animate-spin" /> {editingListing ? "Salvando..." : "Publicando..."}</>
-                            ) : showSuccess ? (
-                                editingListing ? "Alterações salvas!" : "Anúncio publicado. Boas vendas!"
-                            ) : (
-                                editingListing ? "Salvar Alterações" : "Publicar Anúncio"
-                            )}
-                        </button>
+                        <div className="grid grid-cols-2 gap-4">
+                            <button
+                                type="button"
+                                onClick={() => handleSave(false)}
+                                disabled={isSaving || showSuccess}
+                                className={`h-12 rounded-full flex items-center justify-center gap-2 border border-[#222] text-[#222] text-[15px] font-semibold transition-all hover:bg-[#f7f7f7] disabled:opacity-50`}
+                            >
+                                <Save className="w-5 h-5" />
+                                {isSaving ? "Salvando..." : showSuccess ? "Salvo!" : "Salvar Anúncio"}
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={isSaving || showSuccess}
+                                className={`h-12 rounded-full flex items-center justify-center gap-2 text-white text-[15px] font-semibold transition-all ${showSuccess ? "bg-emerald-500 scale-[0.98]" : "bg-[#222] hover:bg-[#333]"
+                                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                            >
+                                {isSaving ? (
+                                    <><Loader2 className="w-5 h-5 animate-spin" /> Publicando...</>
+                                ) : showSuccess ? (
+                                    "Pronto!"
+                                ) : (
+                                    "Publicar Anúncio"
+                                )}
+                            </button>
+                        </div>
                     </form>
                 </DialogContent>
             </Dialog>

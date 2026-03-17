@@ -31,171 +31,38 @@ export interface Listing {
 
 interface ListingsContextType {
     listings: Listing[];
-    addListing: (listing: Omit<Listing, "id" | "createdAt" | "created_at">) => Promise<void>;
+    addListing: (listing: Omit<Listing, "id" | "createdAt" | "created_at">) => Promise<Listing | null>;
     updateListing: (id: string, listing: Partial<Listing>) => Promise<void>;
     removeListing: (id: string) => void;
 }
 
 const ListingsContext = createContext<ListingsContextType | undefined>(undefined);
 
-const DEFAULT_LISTINGS: Listing[] = [
-    {
-        id: "1",
-        title: "Apartamento Moderno em Pinheiros",
-        type: "venda",
-        propertyType: "Apartamento",
-        price: 850000,
-        condominium: 800,
-        iptu: 1500,
-        area: 72,
-        bedrooms: 2,
-        bathrooms: 2,
-        parking: 1,
-        cep: "05400-000",
-        address: "Rua dos Pinheiros, 500",
-        neighborhood: "Pinheiros",
-        city: "São Paulo",
-        description: "Apartamento moderno com acabamento de primeira qualidade. Varanda gourmet, cozinha planejada e piso em porcelanato. Localização privilegiada próximo ao metrô.",
-        acceptsExchange: false,
-        images: ["/placeholder-apt1.jpg"],
-        createdAt: "2026-02-20",
-        author: "finHouse",
-    },
-    {
-        id: "2",
-        title: "Cobertura Duplex na Vila Madalena",
-        type: "venda",
-        propertyType: "Casa",
-        price: 2200000,
-        condominium: 1500,
-        iptu: 3000,
-        area: 180,
-        bedrooms: 4,
-        bathrooms: 3,
-        parking: 2,
-        cep: "05433-000",
-        address: "Rua Harmonia, 120",
-        neighborhood: "Vila Madalena",
-        city: "São Paulo",
-        description: "Cobertura duplex com terraço, piscina privativa e vista panorâmica. Ambientes integrados, acabamento premium e localização nobre.",
-        acceptsExchange: true,
-        images: ["/placeholder-apt2.jpg"],
-        createdAt: "2026-02-18",
-        author: "finHouse",
-    },
-    {
-        id: "3",
-        title: "Studio Compacto no Itaim Bibi",
-        type: "aluguel",
-        propertyType: "Apartamento",
-        price: 3500,
-        condominium: 500,
-        iptu: 100,
-        area: 35,
-        bedrooms: 1,
-        bathrooms: 1,
-        parking: 0,
-        cep: "04534-002",
-        address: "Rua Joaquim Floriano, 700",
-        neighborhood: "Itaim Bibi",
-        city: "São Paulo",
-        description: "Studio moderno, mobiliado e decorado. Perfeito para profissionais liberais. Prédio com lazer completo, academia e coworking.",
-        acceptsExchange: false,
-        images: ["/placeholder-apt3.jpg"],
-        createdAt: "2026-02-15",
-        author: "finHouse",
-    },
-    {
-        id: "4",
-        title: "Casa de Condomínio em Alphaville",
-        type: "venda",
-        propertyType: "Casa",
-        price: 3500000,
-        condominium: 2000,
-        iptu: 4500,
-        area: 350,
-        bedrooms: 5,
-        bathrooms: 4,
-        parking: 4,
-        cep: "06450-000",
-        address: "Alameda das Rosas, 50",
-        neighborhood: "Alphaville",
-        city: "Barueri",
-        description: "Casa sofisticada em condomínio fechado. Piscina aquecida, espaço gourmet, suíte master com closet e banheira. Segurança 24h.",
-        acceptsExchange: true,
-        images: ["/placeholder-apt4.jpg"],
-        createdAt: "2026-02-10",
-        author: "finHouse",
-    },
-    {
-        id: "5",
-        title: "Apartamento Garden na Mooca",
-        type: "venda",
-        propertyType: "Apartamento",
-        price: 620000,
-        condominium: 400,
-        iptu: 800,
-        area: 95,
-        bedrooms: 3,
-        bathrooms: 2,
-        parking: 1,
-        cep: "03102-000",
-        address: "Rua da Mooca, 1200",
-        neighborhood: "Mooca",
-        city: "São Paulo",
-        description: "Apartamento garden com quintal exclusivo de 40m². Ideal para famílias com pets. Lazer completo e próximo ao metrô Bresser.",
-        acceptsExchange: false,
-        images: ["/placeholder-apt5.jpg"],
-        createdAt: "2026-02-08",
-        author: "finHouse",
-    },
-    {
-        id: "6",
-        title: "Loft Industrial na Barra Funda",
-        type: "aluguel",
-        propertyType: "Apartamento",
-        price: 4200,
-        condominium: 600,
-        iptu: 150,
-        area: 60,
-        bedrooms: 1,
-        bathrooms: 1,
-        parking: 1,
-        cep: "01156-000",
-        address: "Rua Tagipuru, 300",
-        neighborhood: "Barra Funda",
-        city: "São Paulo",
-        description: "Loft com pé-direito duplo, estilo industrial. Cozinha gourmet integrada, ar-condicionado e piso em concreto polido.",
-        acceptsExchange: false,
-        images: ["/placeholder-apt6.jpg"],
-        createdAt: "2026-02-05",
-        author: "finHouse",
-    },
-];
+// Dados mockups removidos. O sistema agora opera 100% com banco de dados.
 
 export function ListingsProvider({ children }: { children: ReactNode }) {
-    const [listings, setListings] = useState<Listing[]>(DEFAULT_LISTINGS);
+    const [listings, setListings] = useState<Listing[]>([]);
 
     useEffect(() => {
         const fetchListings = async () => {
-            await supabase.auth.getSession();
-
-            const { data, error } = await supabase.from('listings').select('*').order('created_at', { ascending: false });
-            if (data && !error && data.length > 0) {
+            const { data, error } = await supabase
+                .from('listings')
+                .select('*')
+                .order('created_at', { ascending: false });
+            
+            if (error) {
+                console.error("Erro ao buscar anúncios:", error.message);
+                return;
+            }
+            
+            if (data) {
                 setListings(data as Listing[]);
-            } else if (!error) {
-                // If it's a new DB but we have local backup
-                const stored = localStorage.getItem("finhouse_listings");
-                if (stored) {
-                    const parsed = JSON.parse(stored) as Listing[];
-                    setListings([...DEFAULT_LISTINGS, ...parsed.filter(l => !DEFAULT_LISTINGS.some(d => d.id === l.id))]);
-                }
             }
         };
         fetchListings();
     }, []);
 
-    const addListing = async (listing: Omit<Listing, "id" | "createdAt" | "created_at">) => {
+    const addListing = async (listing: Omit<Listing, "id" | "createdAt" | "created_at">): Promise<Listing | null> => {
         const { data: { session } } = await supabase.auth.getSession();
 
         const payload = {
@@ -206,28 +73,33 @@ export function ListingsProvider({ children }: { children: ReactNode }) {
         };
 
         const { data, error } = await supabase.from('listings').insert([payload]).select();
-        let newListing: Listing;
-
-        if (data && !error) {
-            newListing = data[0] as Listing;
-        } else {
-            newListing = {
-                ...listing,
-                id: Date.now().toString(),
-                createdAt: new Date().toISOString().split("T")[0],
-            } as Listing;
+        
+        if (error) {
+            console.error("ERRO CRÍTICO SUPABASE (Insert):", error.message, error.details, error.hint);
+            alert("Erro ao salvar no banco: " + error.message);
+            return null;
         }
 
-        setListings((prev) => [newListing, ...prev]);
+        if (data && data.length > 0) {
+            const newListing = data[0] as Listing;
+            setListings((prev) => [newListing, ...prev]);
+            return newListing;
+        }
+
+        return null;
     };
 
     const updateListing = async (id: string, listing: Partial<Listing>) => {
         const { data, error } = await supabase.from('listings').update(listing).eq('id', id).select();
-        if (data && !error) {
-            setListings((prev) => prev.map((l) => (l.id === id ? (data[0] as Listing) : l)));
-        } else {
-            console.error("Erro ao atualizar anúncio", error);
+        
+        if (error) {
+            console.error("ERRO CRÍTICO SUPABASE (Update):", error.message);
+            alert("Erro ao atualizar no banco: " + error.message);
             throw error;
+        }
+
+        if (data) {
+            setListings((prev) => prev.map((l) => (l.id === id ? (data[0] as Listing) : l)));
         }
     };
 
@@ -236,7 +108,8 @@ export function ListingsProvider({ children }: { children: ReactNode }) {
         if (!error) {
             setListings((prev) => prev.filter((l) => l.id !== id));
         } else {
-            alert("Erro ao remover anúncio. Verifique se você é o autor.");
+            console.error("Erro ao remover:", error.message);
+            alert("Erro ao remover anúncio: Verifique se você é o autor.");
         }
     };
 
