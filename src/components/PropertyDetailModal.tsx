@@ -189,16 +189,8 @@ export default function PropertyDetailModal({
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         const shareUrl = `${window.location.origin}${window.location.pathname}?id=${listing.id}`;
-                                        if (navigator.share) {
-                                            navigator.share({
-                                                title: listing.title,
-                                                text: listing.description,
-                                                url: shareUrl,
-                                            });
-                                        } else {
-                                            navigator.clipboard.writeText(shareUrl);
-                                            alert("Link do imóvel copiado!");
-                                        }
+                                        const message = `Olha este imóvel na finHouse: ${listing.title} - ${shareUrl}`;
+                                        window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
                                     }}
                                     className="p-2.5 rounded-full bg-white/90 backdrop-blur-md hover:bg-white text-[#222] transition-all shadow-sm active:scale-90"
                                 >
