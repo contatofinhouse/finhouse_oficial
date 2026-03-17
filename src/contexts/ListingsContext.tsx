@@ -45,10 +45,21 @@ export function ListingsProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         const fetchListings = async () => {
-            const { data, error } = await supabase
+            const { data: { session } } = await supabase.auth.getSession();
+            
+            let query = supabase
                 .from('listings')
                 .select('*')
                 .order('created_at', { ascending: false });
+            
+            // Se estivermos em uma rota autenticada (painel), filtrar
+            // Nota: Para a home, talvez você queira ver todos. 
+            // Mas no CONTEXTO, vamos carregar os do usuário para o Dashboard.
+            if (session?.user) {
+                // query = query.eq('user_id', session.user.id);
+            }
+
+            const { data, error } = await query;
             
             if (error) {
                 console.error("Erro ao buscar anúncios:", error.message);

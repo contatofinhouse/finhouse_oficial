@@ -374,9 +374,9 @@ function DashboardContent() {
                 </div>
 
                 {/* Grid */}
-                {listings.length > 0 ? (
+                {listings.filter(l => l.user_id === user.id).length > 0 ? (
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {listings.map((listing) => (
+                        {listings.filter(l => l.user_id === user.id).map((listing) => (
                             <div
                                 key={listing.id}
                                 className={`group relative cursor-pointer transition-all duration-300 hover:translate-y-[-4px]`}
@@ -397,26 +397,24 @@ function DashboardContent() {
                                         }`}>
                                         {listing.type}
                                     </span>
-                                    {(listing.user_id === user.id || !listing.user_id) && (
-                                        <div className="absolute top-3 right-3 flex items-center gap-2">
-                                            <div
-                                                className="p-2 rounded-full bg-white/80 backdrop-blur-sm text-[#717171] group-hover:text-[#222] group-hover:bg-white transition-all shadow-sm"
-                                                title="Clique para editar"
-                                            >
-                                                <Pencil className="w-4 h-4" />
-                                            </div>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    removeListing(listing.id);
-                                                }}
-                                                className="p-2 rounded-full bg-white/80 backdrop-blur-sm text-[#717171] hover:text-red-500 hover:bg-white transition-all shadow-sm"
-                                                title="Remover"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
+                                    <div className="absolute top-3 right-3 flex items-center gap-2">
+                                        <div
+                                            className="p-2 rounded-full bg-white/80 backdrop-blur-sm text-[#717171] group-hover:text-[#222] group-hover:bg-white transition-all shadow-sm"
+                                            title="Clique para editar"
+                                        >
+                                            <Pencil className="w-4 h-4" />
                                         </div>
-                                    )}
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                removeListing(listing.id);
+                                            }}
+                                            className="p-2 rounded-full bg-white/80 backdrop-blur-sm text-[#717171] hover:text-red-500 hover:bg-white transition-all shadow-sm"
+                                            title="Remover"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
                                 </div>
                                 {/* Info */}
                                 <div className="space-y-1 px-0.5">
