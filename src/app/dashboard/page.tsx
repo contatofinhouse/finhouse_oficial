@@ -55,6 +55,28 @@ function DashboardContent() {
     const [activeTab, setActiveTab] = useState<"listings" | "leads">("listings");
     const [leadSearch, setLeadSearch] = useState("");
 
+    // DEBUG: Logs para rastrear por que leads reais/virtuais não aparecem
+    useEffect(() => {
+        if (activeTab === "leads") {
+            console.log("=== CRM DEBUG ===");
+            console.log("Total Leads Reais:", leads.length);
+            console.log("Total Anúncios:", listings.length);
+            const userListings = listings.filter(l => l.user_id === user?.id);
+            console.log("Anúncios do Corretor:", userListings.length);
+            
+            const virtualCandidates = listings.filter(l => 
+                (l.user_id === user?.id) && 
+                l.owner_name && 
+                !leads.some(ld => ld.property_id === l.id)
+            );
+            console.log("Candidatos a Lead Virtual:", virtualCandidates);
+            
+            if (listings.length > 0 && userListings.length === 0) {
+                console.warn("ALERTA: Seus anúncios existem mas o 'user_id' não bate com " + user?.id);
+            }
+        }
+    }, [activeTab, leads, listings, user?.id]);
+
     // Form state
     const [title, setTitle] = useState("");
     const [type, setType] = useState<"venda" | "aluguel">("venda");
@@ -203,6 +225,21 @@ function DashboardContent() {
     };
     const parseCurrency = (v: string) => Number(v.replace(/\D/g, "")) / 100;
 
+    const formatPhone = (v: string) => {
+        const num = v.replace(/\D/g, "");
+        if (!num) return "";
+        if (num.length <= 10) {
+            return num.replace(/(\d{2})(\d{4})(\d{4})/, "($1) $2-$3");
+        }
+        return num.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
+    };
+
+    const formatCEP = (v: string) => {
+        const num = v.replace(/\D/g, "");
+        if (!num) return "";
+        return num.replace(/(\d{5})(\d{3})/, "$1-$2");
+    };
+
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files) return;
         const newArr = Array.from(e.target.files).map(f => ({
@@ -329,18 +366,20 @@ function DashboardContent() {
                 const newListing = await addListing(payload);
                 if (newListing) {
                     setEditingListing(newListing);
-                    // CRM: Auto-generate lead for property owner to manage acquisition
-                    await addLead({
-                        name: ownerName || `Proprietário: ${title}`,
-                        email: "pendente@finhouse.com.br",
-                        phone: ownerPhone || "(00) 00000-0000",
-                        status: "Novo",
-                        source: "Novo Anúncio",
-                        property_id: newListing.id,
-                        notes: `Oportunidade gerada para o imóvel: ${title}`,
-                        financing_interest: false,
-                        financing_status: "Não Iniciado"
-                    });
+                    // CRM: Auto-generate lead ONLY if owner info is provided
+                    if (ownerName || ownerPhone) {
+                        await addLead({
+                            name: ownerName || `Proprietário: ${title}`,
+                            email: "pendente@finhouse.com.br",
+                            phone: ownerPhone || "(00) 00000-0000",
+                            status: "Novo",
+                            source: "Novo Anúncio",
+                            property_id: newListing.id,
+                            notes: `Oportunidade gerada para o imóvel: ${title}`,
+                            financing_interest: false,
+                            financing_status: "Não Iniciado"
+                        });
+                    }
                 }
             }
 
@@ -561,20 +600,25 @@ function DashboardContent() {
                                             ...leads,
                                             // Marge listing owners as leads if they don't have a lead entry yet
                                             ...listings
-                                                .filter(l => l.user_id === user.id && l.owner_name && !leads.some(ld => ld.property_id === l.id))
+                                                .filter(l => 
+                                                    (l.user_id === user.id || !l.user_id) && 
+                                                    (l.owner_name && l.owner_name.trim() !== "") && 
+                                                    !leads.some(ld => ld.property_id === l.id)
+                                                )
                                                 .map(l => ({
                                                     id: `v-${l.id}`,
                                                     name: l.owner_name || "Proprietário",
                                                     phone: l.owner_phone || "Não informado",
                                                     status: "Novo" as LeadStatus,
-                                                    source: "Novo Anúncio",
+                                                    source: "Virtual (Do Anúncio)",
                                                     property_id: l.id,
                                                     financing_interest: false,
                                                 }))
                                         ].filter(l =>
                                             (l.name || "").toLowerCase().includes(leadSearch.toLowerCase()) ||
                                             l.phone?.includes(leadSearch) ||
-                                            (l as any).source?.toLowerCase().includes(leadSearch.toLowerCase())
+                                            (l as any).source?.toLowerCase().includes(leadSearch.toLowerCase()) ||
+                                            (listings.find(lis => lis.id === (l as any).property_id)?.title || "").toLowerCase().includes(leadSearch.toLowerCase())
                                         ).map((lead: any) => {
                                             const listing = listings.find(l => l.id === lead.property_id);
                                             return (
@@ -586,7 +630,7 @@ function DashboardContent() {
                                                             </div>
                                                             <div>
                                                                 <p className="text-[15px] font-bold text-[#222]">{lead.name}</p>
-                                                                <p className="text-[12px] text-[#717171]">{lead.phone}</p>
+                                                                <p className="text-[12px] text-[#717171]">{formatPhone(lead.phone)}</p>
                                                             </div>
                                                         </div>
                                                     </td>
@@ -686,7 +730,28 @@ function DashboardContent() {
                                                             Financiar
                                                         </button>
                                                         <button
-                                                            onClick={() => { if (confirm("Remover lead?")) removeLead(lead.id) }}
+                                                            onClick={async () => {
+                                                                if (confirm("Remover este lead do CRM?")) {
+                                                                    if (lead.id.startsWith('v-')) {
+                                                                        // For virtual leads, we must clear the owner data in the listing itself
+                                                                        const originalId = lead.id.replace('v-', '');
+                                                                        await updateListing(originalId, {
+                                                                            owner_name: "",
+                                                                            owner_phone: ""
+                                                                        });
+                                                                    } else {
+                                                                        // Real leads: Also clear listing owner info if linked, 
+                                                                        // to prevent it reappearing as a virtual lead
+                                                                        if (lead.property_id) {
+                                                                            await updateListing(lead.property_id, {
+                                                                                owner_name: "",
+                                                                                owner_phone: ""
+                                                                            });
+                                                                        }
+                                                                        await removeLead(lead.id);
+                                                                    }
+                                                                }
+                                                            }}
                                                             className="p-2.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition-colors opacity-0 group-hover:opacity-100"
                                                         >
                                                             <Trash2 className="w-4 h-4" />
@@ -818,7 +883,7 @@ function DashboardContent() {
                         <div className="grid grid-cols-3 gap-4">
                             <div className="space-y-2">
                                 <Label className="text-[13px] font-semibold text-[#222]">CEP</Label>
-                                <Input value={cep} onChange={(e) => setCep(e.target.value)} placeholder="00000-000" className="rounded-xl h-11 border-[#ddd]" />
+                                <Input value={cep} onChange={(e) => setCep(formatCEP(e.target.value))} placeholder="00000-000" className="rounded-xl h-11 border-[#ddd]" />
                             </div>
                             <div className="space-y-2 col-span-2">
                                 <Label className="text-[13px] font-semibold text-[#222]">Endereço</Label>
@@ -866,7 +931,7 @@ function DashboardContent() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="text-[13px] font-semibold text-[#222]">Celular</Label>
-                                    <Input value={ownerPhone} onChange={(e) => setOwnerPhone(e.target.value)} placeholder="(00) 00000-0000" className="rounded-xl h-11 border-[#ddd] bg-white text-[13px]" />
+                                    <Input value={ownerPhone} onChange={(e) => setOwnerPhone(formatPhone(e.target.value))} placeholder="(00) 00000-0000" className="rounded-xl h-11 border-[#ddd] bg-white text-[13px]" />
                                 </div>
                             </div>
                         </div>
