@@ -257,13 +257,13 @@ export default function PropertyDetailModal({
 
                             {/* Details Cards */}
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="p-5 rounded-2xl bg-[#f7f7f7] border border-[#eee]">
-                                    <p className="text-[11px] font-bold text-[#b0b0b0] uppercase tracking-wider mb-1">Tipo</p>
+                                <div className="py-3 px-5 rounded-2xl bg-[#f7f7f7] border border-[#eee]">
+                                    <p className="text-[11px] font-bold text-[#b0b0b0] uppercase tracking-wider mb-0.5">Tipo</p>
                                     <p className="text-[15px] font-bold text-[#222]">{listing.propertyType}</p>
                                 </div>
-                                <div className="p-5 rounded-2xl bg-[#f7f7f7] border border-[#eee]">
-                                    <p className="text-[11px] font-bold text-[#b0b0b0] uppercase tracking-wider mb-1">Código</p>
-                                    <p className="text-[15px] font-bold text-[#222]">FIN-{listing.id.padStart(4, "0")}</p>
+                                <div className="py-3 px-5 rounded-2xl bg-[#f7f7f7] border border-[#eee]">
+                                    <p className="text-[11px] font-bold text-[#b0b0b0] uppercase tracking-wider mb-0.5">Código</p>
+                                    <p className="text-[15px] font-bold text-[#222]">FH{listing.id.slice(0, 4).toUpperCase()}</p>
                                 </div>
                             </div>
                         </div>

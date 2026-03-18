@@ -102,6 +102,9 @@ function HeroSection({ onSimulate }: { onSimulate: () => void }) {
               <a href="#indicacao" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-[#ddd] bg-white/80 backdrop-blur-sm text-[13px] font-medium text-[#222] hover:bg-white transition-colors">
                 <Gift className="w-3.5 h-3.5" /> Indicar
               </a>
+              <a href="#anunciar" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-[#ddd] bg-white/80 backdrop-blur-sm text-[13px] font-medium text-[#222] hover:bg-white transition-colors">
+                <Rocket className="w-3.5 h-3.5" /> Anunciar
+              </a>
             </div>
           </div>
         </div>
@@ -288,6 +291,77 @@ function IndicacaoSection() {
   );
 }
 
+/* ─── ANNOUNCE ─── */
+function AnunciarSection() {
+  return (
+    <section id="anunciar" className="py-20 md:py-32 bg-white">
+      <div className="max-w-[1280px] mx-auto px-6">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <div className="relative aspect-[4/3] md:aspect-video rounded-[48px] overflow-hidden shadow-2xl shadow-black/10 order-2 lg:order-1">
+            <img
+              src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&q=80"
+              alt="Anunciar Imóvel"
+              className="object-cover w-full h-full"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+            <div className="absolute bottom-10 left-10 right-10">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400 font-bold text-[11px] text-[#222] uppercase tracking-widest mb-4">
+                Rede de Elite
+              </div>
+              <h3 className="text-[24px] font-black text-white leading-tight">
+                Anuncie grátis e venda com assessoria especializada.
+              </h3>
+            </div>
+          </div>
+
+          <div className="order-1 lg:order-2">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-12 h-12 rounded-2xl bg-[#f7f7f7] flex items-center justify-center border border-[#ebebeb]">
+                <Rocket className="w-6 h-6 text-[#222]" />
+              </div>
+              <span className="text-[14px] font-black text-[#222] uppercase tracking-widest">
+                Anunciar Imóvel
+              </span>
+            </div>
+            
+            <h2 className="text-[36px] md:text-[52px] font-black text-[#222] leading-[1] tracking-[-0.04em] mb-8">
+              Sua casa nos <span className="underline decoration-amber-400 decoration-4 underline-offset-8">maiores portais</span> sem custo fixo.
+            </h2>
+            
+            <p className="text-[18px] text-[#717171] leading-relaxed mb-10 font-medium">
+              Anunciamos seu imóvel gratuitamente na <span className="text-[#222] font-bold">finHouse</span> e nos principais portais (ZAP, VivaReal, OLX). 
+              Assim que aparecerem interessados, um dos nossos <span className="text-[#222] font-bold">corretores de elite</span> entrará em contato para agendar visitas e fechar o negócio.
+            </p>
+
+            <ul className="space-y-4 mb-12">
+              {[
+                "Anúncio grátis nos maiores portais",
+                "Financiamento bancário integrado para o comprador",
+                "Assessoria jurídica completa no fechamento",
+                "Filtro rigoroso de compradores interessados"
+              ].map(item => (
+                <li key={item} className="flex items-start gap-3 text-[16px] text-[#444] font-bold">
+                  <Check className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+
+            <a
+              href={`${WA}?text=${encodeURIComponent("Olá! Quero anunciar meu imóvel na finHouse!")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-[#222] text-white text-[16px] font-black uppercase hover:bg-[#333] transition-all hover:scale-105 active:scale-[0.98] shadow-xl shadow-black/10"
+            >
+              Quero Anunciar Grátis <ArrowRight className="w-5 h-5" />
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ─── PARTNERS ─── */
 function ParceirosSection() {
   return (
@@ -362,6 +436,7 @@ function ParceirosSection() {
   );
 }
 
+
 /* ─── FINANCING ─── */
 function FinanciamentoSection({ onSimulate }: { onSimulate: () => void }) {
   return (
@@ -383,7 +458,7 @@ function FinanciamentoSection({ onSimulate }: { onSimulate: () => void }) {
               <h3 className="text-[22px] font-bold text-[#222] mb-2">Financiamento Imobiliário</h3>
               <p className="text-[14px] text-[#717171] mb-6">Realize a compra com as melhores taxas.</p>
               <ul className="space-y-3 mb-8">
-                {["Taxas a partir de 8,99% a.a.", "Até 35 anos para pagar", "Financie até 80% do valor", "Análise de crédito em 24h", "Caixa, Itaú, Bradesco, Santander", "Uso de FGTS facilitado"].map((item) => (
+                {["Taxas a partir de 8,99% a.a.", "Até 35 anos para pagar", "Financie até 80% do valor", "Análise de crédito facilitada", "Caixa, Itaú, Bradesco, Santander", "Uso de FGTS"].map((item) => (
                   <li key={item} className="flex items-start gap-2.5 text-[14px] text-[#222]">
                     <Check className="w-4 h-4 text-[#222] shrink-0 mt-0.5" /> {item}
                   </li>
@@ -453,6 +528,7 @@ export default function HomeContent() {
         <SobreSection />
         <ImoveisSection onSelectListing={(l) => setSelectedListing(l)} />
         <IndicacaoSection />
+        <AnunciarSection />
         <ParceirosSection />
         <FinanciamentoSection onSimulate={() => setSimOpen(true)} />
       </main>

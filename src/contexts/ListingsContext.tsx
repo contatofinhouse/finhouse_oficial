@@ -27,6 +27,8 @@ export interface Listing {
     created_at?: string;
     author?: string;
     user_id?: string;
+    owner_name?: string;
+    owner_phone?: string;
 }
 
 interface ListingsContextType {

@@ -2,6 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 const WA = "https://wa.me/5511955842951";
 
@@ -23,13 +24,13 @@ export default function Footer() {
                         <h4 className="text-[14px] font-semibold text-[#222] mb-4">Navegação</h4>
                         <ul className="space-y-2.5">
                             {[
-                                { label: "Imóveis", href: "#imoveis" },
-                                { label: "Indicação", href: "#indicacao" },
-                                { label: "Parceiros", href: "#parceiros" },
-                                { label: "Financiamento", href: "#financiamento" },
+                                { label: "Imóveis", href: "/imoveis" },
+                                { label: "Indicação", href: "/#indicacao" },
+                                { label: "Financiamento", href: "/#financiamento" },
+                                { label: "Painel do Corretor", href: "/login" },
                             ].map((l) => (
                                 <li key={l.label}>
-                                    <a href={l.href} className="text-[14px] text-[#717171] hover:text-[#222] transition-colors">{l.label}</a>
+                                    <Link href={l.href} className="text-[14px] text-[#717171] hover:text-[#222] transition-colors">{l.label}</Link>
                                 </li>
                             ))}
                         </ul>
