@@ -309,16 +309,22 @@ function ParceirosSection() {
               Oferecemos suporte jurídico total, emissão de contratos e as melhores taxas de financiamento. Não somos sua agência, somos seu braço direito de tecnologia e assessoria.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4">
-              <a
-                href={`${WA}?text=${encodeURIComponent("Olá! Sou corretor e tenho interesse em ser parceiro da finHouse!")}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-3 px-8 py-5 rounded-2xl bg-white text-[#222] text-[15px] font-extrabold hover:bg-white/90 transition-all hover:scale-105 active:scale-95 shadow-xl shadow-black/20"
-              >
-                Seja um Parceiro <ArrowRight className="w-5 h-5" />
-              </a>
-              <div className="flex -space-x-3 items-center ml-2">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <a
+                  href={`${WA}?text=${encodeURIComponent("Olá! Sou corretor e tenho interesse em ser parceiro da finHouse!")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-3 px-8 py-5 rounded-2xl bg-white text-[#222] text-[15px] font-extrabold hover:bg-white/90 transition-all hover:scale-105 active:scale-95 shadow-xl shadow-black/20"
+                >
+                  Seja um Parceiro <ArrowRight className="w-5 h-5" />
+                </a>
+                <a
+                  href="/login"
+                  className="inline-flex items-center justify-center gap-3 px-8 py-5 rounded-2xl bg-white/10 border border-white/20 text-white text-[15px] font-extrabold hover:bg-white/20 transition-all active:scale-95"
+                >
+                  Painel do Corretor
+                </a>
+                <div className="flex -space-x-3 items-center sm:ml-2 mt-4 sm:mt-0">
                 {[
                   "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces",
                   "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=faces",

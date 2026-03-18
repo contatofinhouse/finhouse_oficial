@@ -7,7 +7,19 @@ import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { 
+    Eye, 
+    EyeOff, 
+    ArrowLeft,
+    Zap, 
+    ShieldCheck, 
+    Rocket, 
+    LineChart, 
+    CheckCircle2, 
+    Clock, 
+    Users, 
+    ChevronRight 
+} from "lucide-react";
 
 function LoginForm() {
     const { login } = useAuth();
@@ -115,8 +127,122 @@ function LoginForm() {
     );
 }
 
+const WA_PARTNER = "https://wa.me/5511955842951?text=Olá! Quero saber mais sobre a parceria para corretores.";
+
+function BrokerBenefits() {
+    return (
+        <div className="py-20 md:py-28 bg-white border-t border-[#ebebeb]">
+            <div className="max-w-[1280px] mx-auto px-6">
+                <div className="max-w-3xl mx-auto text-center mb-16 px-4">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 border border-amber-100 mb-6 font-bold text-[11px] text-amber-600 uppercase tracking-widest">
+                        Ecossistema para Autônomos
+                    </div>
+                    <h2 className="text-[32px] md:text-[48px] font-black text-[#222] leading-[1.1] tracking-[-0.03em] mb-6">
+                        Sua imobiliária digital de elite, com <span className="text-amber-500">risco zero</span>
+                    </h2>
+                    <p className="text-[17px] md:text-[19px] text-[#717171] leading-relaxed font-medium">
+                        Você foca na venda e no relacionamento. Nós cuidamos da infraestrutura, do crédito e da burocracia.
+                    </p>
+                </div>
+
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-20">
+                    {[
+                        { 
+                            icon: Zap, 
+                            title: "Comissões Prime", 
+                            desc: "Pagamentos ultra-rápidos e as melhores taxas do mercado. Receba direto na conta." 
+                        },
+                        { 
+                            icon: ShieldCheck, 
+                            title: "Suporte 360°", 
+                            desc: "Consultoria jurídica e operacional para blindar seus negócios e emitir contratos." 
+                        },
+                        { 
+                            icon: Rocket, 
+                            title: "Marketing Elite", 
+                            desc: "Seus anúncios nos maiores portais do Brasil com fotos profissionais inclusas." 
+                        },
+                        { 
+                            icon: LineChart, 
+                            title: "Inteligência de Dados", 
+                            desc: "Dashboard de gestão e dados exclusivos para você dominar sua região." 
+                        },
+                    ].map((item, idx) => (
+                        <div key={idx} className="p-8 rounded-[32px] bg-[#f7f7f7] hover:bg-white border border-transparent hover:border-[#ebebeb] hover:shadow-xl hover:shadow-black/5 transition-all group">
+                            <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center mb-6 shadow-sm group-hover:bg-[#222] transition-colors">
+                                <item.icon className="w-6 h-6 text-[#222] group-hover:text-white transition-colors" />
+                            </div>
+                            <h3 className="text-[18px] font-bold text-[#222] mb-3">{item.title}</h3>
+                            <p className="text-[14px] text-[#717171] leading-relaxed font-medium">{item.desc}</p>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Incentivos de Velocidade */}
+                <div className="bg-[#222] rounded-[48px] p-8 md:p-16 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-white/[0.03] rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                    <div className="relative z-10 grid lg:grid-cols-2 gap-16 items-center">
+                        <div>
+                            <h3 className="text-[28px] md:text-[36px] font-bold text-white mb-8 tracking-tight">
+                                Por que ser um Parceiro finHouse?
+                            </h3>
+                            <div className="space-y-6">
+                                {[
+                                    { t: "Acesso Ilimitado ao Hub de Crédito", d: "Aprove o financiamento do seu cliente em até 24h como Correspondente Bancário Oficial." },
+                                    { t: "Incentivos de Velocidade", d: "Seu imóvel cadastrado entra no topo das buscas e recebe tráfego pago imediato." },
+                                    { t: "Segurança Jurídica Total", d: "Não perca vendas por burocracia. Nosso time jurídico valida tudo para você." },
+                                    { t: "Zero Custo Fixo", d: "Toda a estrutura de uma grande imobiliária, sem você pagar mensalidade ou aluguel." }
+                                ].map((step, i) => (
+                                    <div key={i} className="flex gap-4">
+                                        <div className="mt-1">
+                                            <CheckCircle2 className="w-5 h-5 text-amber-400" />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-white text-[16px] font-bold mb-1">{step.t}</h4>
+                                            <p className="text-white/60 text-[14px] leading-relaxed">{step.d}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="bg-white/5 backdrop-blur-sm rounded-[32px] p-8 border border-white/10 uppercase">
+                            <h4 className="text-amber-400 text-[13px] font-black tracking-[0.2em] mb-8">Estatísticas da Rede</h4>
+                            <div className="space-y-8">
+                                {[
+                                    { label: "Média de Venda", value: "45 dias", icon: Clock },
+                                    { label: "Corretores Ativos", value: "80+", icon: Users },
+                                    { label: "Bancos Parceiros", value: "05", icon: ShieldCheck }
+                                ].map((stat, i) => (
+                                    <div key={i} className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <stat.icon className="w-5 h-5 text-white/40" />
+                                            <span className="text-white/60 text-[14px] font-bold">{stat.label}</span>
+                                        </div>
+                                        <span className="text-white text-[20px] font-black">{stat.value}</span>
+                                    </div>
+                                ))}
+                                <a 
+                                    href={WA_PARTNER}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl bg-white text-[#222] text-[14px] font-black hover:bg-amber-400 transition-colors uppercase mt-10"
+                                >
+                                    Quero ser parceiro <ChevronRight className="w-4 h-4" />
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function LoginPage() {
     return (
-        <LoginForm />
+        <div className="min-h-screen bg-[#f7f7f7]">
+            <LoginForm />
+            <BrokerBenefits />
+        </div>
     );
 }
