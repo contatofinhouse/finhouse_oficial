@@ -299,8 +299,8 @@ function AnunciarSection() {
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           <div className="relative aspect-[4/3] md:aspect-video rounded-[48px] overflow-hidden shadow-2xl shadow-black/10 order-2 lg:order-1">
             <img
-              src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&q=80"
-              alt="Anunciar Imóvel"
+              src="/anunciar-hero.png"
+              alt="Apartamento moderno pronto para anunciar"
               className="object-cover w-full h-full"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
