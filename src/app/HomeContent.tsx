@@ -348,9 +348,7 @@ function AnunciarSection() {
             </ul>
 
             <a
-              href={`${WA}?text=${encodeURIComponent("Olá! Quero anunciar meu imóvel na finHouse!")}`}
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/anunciar"
               className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-[#222] text-white text-[16px] font-black uppercase hover:bg-[#333] transition-all hover:scale-105 active:scale-[0.98] shadow-xl shadow-black/10"
             >
               Quero Anunciar Grátis <ArrowRight className="w-5 h-5" />
@@ -385,9 +383,7 @@ function ParceirosSection() {
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <a
-                  href={`${WA}?text=${encodeURIComponent("Olá! Sou corretor e tenho interesse em ser parceiro da finHouse!")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href="/parceiros"
                   className="inline-flex items-center justify-center gap-3 px-8 py-5 rounded-2xl bg-white text-[#222] text-[15px] font-extrabold hover:bg-white/90 transition-all hover:scale-105 active:scale-95 shadow-xl shadow-black/20"
                 >
                   Seja um Parceiro <ArrowRight className="w-5 h-5" />

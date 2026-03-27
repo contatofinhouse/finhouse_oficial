@@ -29,6 +29,9 @@ export interface Listing {
     user_id?: string;
     owner_name?: string;
     owner_phone?: string;
+    status?: string;
+    plan?: string;
+    broker_id?: string;
 }
 
 interface ListingsContextType {

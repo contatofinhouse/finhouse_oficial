@@ -7,6 +7,7 @@ interface User {
     username: string;
     email: string;
     id: string;
+    isAdmin: boolean;
 }
 
 interface AuthContextType {
@@ -27,10 +28,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const setData = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.user) {
+                const email = session.user.email || "";
                 setUser({
                     id: session.user.id,
-                    email: session.user.email || "",
-                    username: session.user.email?.split('@')[0] || "Usuário"
+                    email,
+                    username: email.split('@')[0] || "Usuário",
+                    isAdmin: ["contato@finhouse.com.br", "admin@finhouse.com.br", "contatofinhouse@gmail.com"].includes(email)
                 });
             }
             setIsLoading(false);
@@ -38,10 +41,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             if (session?.user) {
+                const email = session.user.email || "";
                 setUser({
                     id: session.user.id,
-                    email: session.user.email || "",
-                    username: session.user.email?.split('@')[0] || "Usuário"
+                    email,
+                    username: email.split('@')[0] || "Usuário",
+                    isAdmin: ["contato@finhouse.com.br", "admin@finhouse.com.br", "contatofinhouse@gmail.com"].includes(email)
                 });
             } else {
                 setUser(null);
@@ -69,10 +74,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (data.user) {
+            const email = data.user.email || "";
             setUser({
                 id: data.user.id,
-                email: data.user.email || "",
-                username: data.user.email?.split('@')[0] || "Usuário"
+                email,
+                username: email.split('@')[0] || "Usuário",
+                isAdmin: ["contato@finhouse.com.br", "admin@finhouse.com.br", "contatofinhouse@gmail.com"].includes(email)
             });
         }
         setIsLoading(false);

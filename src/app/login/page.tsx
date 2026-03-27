@@ -239,9 +239,7 @@ function BrokerBenefits() {
                                                 <p className="text-white text-[15px] font-bold">Sujeito a aprovação de perfil</p>
                                             </div>
                                             <a 
-                                                href={WA_PARTNER}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
+                                                href="/parceiros"
                                                 className="flex items-center justify-center gap-2 w-full py-5 rounded-2xl bg-white text-[#222] text-[15px] font-black hover:bg-amber-400 transition-colors uppercase mt-4"
                                             >
                                                 Quero ser Parceiro <ChevronRight className="w-4 h-4" />

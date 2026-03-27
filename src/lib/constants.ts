@@ -111,3 +111,15 @@ export const SP_CITIES = Array.from(new Set([
   "Vargem Grande Paulista", "Várzea Paulista", "Vera Cruz", "Vinhedo", "Viradouro",
   "Vista Alegre do Alto", "Vitória Brasil", "Votorantim", "Votuporanga", "Zacarias"
 ])).sort();
+
+export const BAIRROS_SJC = [
+  "Jardim Aquarius", "Vila Adyana", "Urbanova", "Jardim das Colinas", 
+  "Vila Ema", "Jardim Esplanada", "Bosque dos Eucaliptos", "Jardim Satélite", 
+  "Parque Industrial", "Vila Industrial", "Jardim Alvorada", "Jardim América"
+].sort();
+
+export const BAIRROS_SP = [
+  "Pinheiros", "Vila Madalena", "Itaim Bibi", "Moema", "Jardins", 
+  "Vila Mariana", "Brooklin", "Campo Belo", "Perdizes", "Higienópolis", 
+  "Tatuapé", "Santana", "Consolação", "Bela Vista", "Vila Olímpia"
+].sort();

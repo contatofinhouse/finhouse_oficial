@@ -13,7 +13,7 @@ const NAV_ITEMS = [
     { label: "Início", href: "/" },
     { label: "Imóveis", href: "/imoveis" },
     { label: "Indicação", href: "/#indicacao" },
-    { label: "Parceiros", href: "/#parceiros" },
+    { label: "Parceiros", href: "/parceiros" },
     { label: "Financiamento", href: "/#financiamento" },
     { label: "Contas a Receber", href: "/receivables" },
 ];

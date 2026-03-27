@@ -3,6 +3,7 @@
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ListingsProvider } from "@/contexts/ListingsContext";
 import { LeadsProvider } from "@/contexts/LeadsContext";
+import { BrokersProvider } from "@/contexts/BrokersContext";
 import { ReactNode } from "react";
 
 export function Providers({ children }: { children: ReactNode }) {
@@ -10,7 +11,9 @@ export function Providers({ children }: { children: ReactNode }) {
         <AuthProvider>
             <ListingsProvider>
                 <LeadsProvider>
-                    {children}
+                    <BrokersProvider>
+                        {children}
+                    </BrokersProvider>
                 </LeadsProvider>
             </ListingsProvider>
         </AuthProvider>
