@@ -62,7 +62,7 @@ const LandingIntro = ({ onStart }: { onStart: () => void }) => {
             </h1>
             
             <p className="text-[18px] md:text-[21px] text-[#717171] leading-relaxed mb-10 font-medium max-w-xl">
-              Sua casa na plataforma que mais cresce em SJC. Venda mais rápido com crédito integrado e visibilidade nos maiores portais do país.
+              Venda mais rápido com crédito integrado e visibilidade nos maiores portais do país.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 mb-12">
@@ -70,12 +70,8 @@ const LandingIntro = ({ onStart }: { onStart: () => void }) => {
                 onClick={onStart}
                 className="inline-flex items-center justify-center gap-3 px-10 py-5 rounded-2xl bg-[#222] text-white text-[16px] font-black uppercase hover:bg-black transition-all hover:scale-105 active:scale-95 shadow-xl shadow-black/10"
               >
-                Começar agora <ArrowRight className="w-5 h-5" />
+                Anunciar agora <ArrowRight className="w-5 h-5" />
               </button>
-              <div className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-white border border-[#ebebeb] text-[#222]/60 text-[13px] font-bold">
-                 <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                 Zero Custo Fixo
-              </div>
             </div>
 
             <div className="flex items-center gap-6 opacity-30 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
