@@ -44,7 +44,8 @@ function LoginForm() {
         if (!loginError) {
             router.push("/dashboard");
         } else {
-            setError(loginError === "Invalid login credentials" ? "E-mail ou senha inválidos." : loginError);
+            const msg = loginError.message;
+            setError(msg === "Invalid login credentials" ? "E-mail ou senha inválidos." : msg);
             setLoading(false);
         }
     };
