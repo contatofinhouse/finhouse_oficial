@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { AuthResponse } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 
 interface User {
@@ -13,7 +14,7 @@ interface User {
 interface AuthContextType {
     user: User | null;
     isLoading: boolean;
-    login: (email: string, pass: string) => Promise<{ error?: string }>;
+    login: (email: string, pass: string) => Promise<AuthResponse>;
     logout: () => Promise<void>;
 }
 
