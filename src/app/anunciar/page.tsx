@@ -9,7 +9,8 @@ import {
   UploadCloud, Trash2, Star, Loader2, Search, Scale,
   Building2, CalendarCheck, FileText, Users, Wrench, Receipt,
   Rocket,
-  Check
+  Check,
+  ChevronRight
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -34,70 +35,99 @@ const maskCep = (value: string) => {
 
 const LandingIntro = ({ onStart }: { onStart: () => void }) => {
   return (
-    <div className="relative min-h-[calc(100vh-80px)] flex items-center justify-center py-12 md:py-20 overflow-hidden">
-      {/* Imagem de Fundo com Transparência */}
+    <div className="relative min-h-[calc(100vh-80px)] bg-[#222] flex items-center justify-center py-16 md:py-32 overflow-hidden">
+      {/* Background Image with Heavy Gradient Overlay */}
       <div className="absolute inset-0 z-0">
         <img
           src="/anunciar-hero.png"
           alt=""
-          className="w-full h-full object-cover opacity-[0.08] lg:opacity-[0.05]"
+          className="w-full h-full object-cover opacity-30 lg:opacity-40"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-white via-transparent to-white" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#222] via-[#222]/90 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#222] via-transparent to-[#222]/30" />
       </div>
 
+      {/* Abstract Decorations (Style from Parceiros) */}
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-white/[0.02] rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-amber-500/[0.05] rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+
       <div className="max-w-[1280px] mx-auto px-6 w-full relative z-10">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
+        <div className="grid lg:grid-cols-2 gap-20 items-center">
           
-          {/* Lado Esquerdo: Conteúdo */}
+          {/* Main Copy */}
           <div>
-            <h1 className="text-[42px] md:text-[64px] font-black text-[#222] leading-[1] tracking-[-0.04em] mb-8">
-              Anuncie seu imóvel <span className="underline decoration-amber-400 decoration-4 underline-offset-[12px]">gratuitamente</span> na maior rede de elite.
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/10 mb-8 font-bold text-[11px] text-white/60 uppercase tracking-widest">
+              HUB DE ANÚNCIOS ELITE
+            </div>
+            
+            <h1 className="text-[48px] md:text-[68px] font-black text-white leading-[0.9] tracking-[-0.05em] mb-8">
+              Anuncie <span className="text-amber-400">Gratuitamente</span> na maior rede de elite.
             </h1>
             
-            <p className="text-[18px] md:text-[20px] text-[#717171] leading-relaxed mb-10 font-medium max-w-lg">
-              Sua casa na finHouse e nos maiores portais. Cuidamos do crédito para o comprador e de toda a segurança jurídica para você.
+            <p className="text-[18px] md:text-[22px] text-white/60 leading-relaxed mb-10 font-medium max-w-xl">
+              Sua casa na finHouse e nos maiores portais do país. Venda mais rápido com crédito integrado para o comprador e assessoria jurídica completa para você.
             </p>
 
-            <ul className="space-y-4 mb-12">
-              {[
-                "Anúncio grátis na plataforma finHouse",
-                "Exposição nos maiores portais do Brasil (ZAP, VivaReal, OLX)",
-                "Financiamento e Consórcio já integrados",
-                "Assessoria jurídica completa no fechamento"
-              ].map(item => (
-                <li key={item} className="flex items-start gap-3 text-[16px] text-[#444] font-bold">
-                  <Check className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-
-            <button
-              onClick={onStart}
-              className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-[#222] text-white text-[16px] font-black uppercase hover:bg-black transition-all hover:scale-105 active:scale-[0.98] shadow-2xl shadow-black/10 w-full sm:w-auto justify-center"
-            >
-              Quero Anunciar Grátis <ArrowRight className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Lado Direito: Imagem Hero (Estilo Clean) */}
-          <div className="relative order-2 hidden lg:block">
-            <div className="aspect-[4/5] rounded-[48px] overflow-hidden shadow-2xl shadow-black/10">
-              <img
-                src="/anunciar-hero.png"
-                alt="Imóvel pronto para anunciar"
-                className="object-cover w-full h-full"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-              <div className="absolute bottom-10 left-10 right-10">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400 font-bold text-[11px] text-[#222] uppercase tracking-widest mb-4">
-                  Rede de Elite
-                </div>
-                <h3 className="text-[22px] font-black text-white leading-tight">
-                  Venda melhor com quem entende de crédito imobiliário.
-                </h3>
+            <div className="flex flex-col sm:flex-row gap-4 mb-12">
+              <button
+                onClick={onStart}
+                className="inline-flex items-center justify-center gap-3 px-10 py-5 rounded-2xl bg-white text-[#222] text-[16px] font-black uppercase hover:bg-amber-400 transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-black/40"
+              >
+                Quero Anunciar Grátis <ArrowRight className="w-5 h-5" />
+              </button>
+              <div className="flex items-center gap-4 px-6 py-4 rounded-2xl bg-white/5 border border-white/10 text-white/40 text-[13px] font-bold">
+                 <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                 Zero Custo Fixo
               </div>
             </div>
+
+            {/* Trusted Portals */}
+            <div className="flex items-center gap-8 opacity-40">
+               <span className="text-white text-[12px] font-black uppercase tracking-widest">Nos Maiores Portais</span>
+               <div className="h-px bg-white/20 flex-1" />
+               <div className="flex gap-6 font-black text-white text-[14px]">
+                 <span>ZAP</span>
+                 <span>OLX</span>
+                 <span>VIVAREAL</span>
+               </div>
+            </div>
+          </div>
+
+          {/* Benefit Cards (Glassmorphism Style) */}
+          <div className="grid sm:grid-cols-2 gap-4">
+            {[
+              { 
+                icon: Rocket, 
+                title: "Visibilidade Elite", 
+                desc: "Seu imóvel em destaque na finHouse e nos maiores portais do Brasil." 
+              },
+              { 
+                icon: Zap, 
+                title: "Crédito Integrado", 
+                desc: "Financiamento e Consórcio para o seu comprador. Venda na velocidade da luz." 
+              },
+              { 
+                icon: ShieldCheck, 
+                title: "Suporte 360°", 
+                desc: "Assessoria jurídica e operacional para blindar seu negócio do início ao fim." 
+              },
+              { 
+                icon: BadgeDollarSign, 
+                title: "Custo Zero", 
+                desc: "Anuncie grátis. Você só paga a comissão se o negócio for fechado com sucesso." 
+              },
+            ].map((item) => (
+              <div key={item.title} className="p-8 rounded-[32px] bg-white/[0.04] border border-white/5 hover:bg-white/[0.08] hover:border-white/10 transition-all group cursor-pointer" onClick={onStart}>
+                <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center mb-6 group-hover:bg-amber-400 transition-colors">
+                  <item.icon className="w-6 h-6 text-white/80 group-hover:text-[#222] transition-colors" strokeWidth={2.5} />
+                </div>
+                <h3 className="text-[18px] font-black text-white mb-2 tracking-tight">{item.title}</h3>
+                <p className="text-[15px] text-white/40 leading-relaxed font-medium">{item.desc}</p>
+                <div className="mt-4 flex items-center gap-2 text-[12px] font-black text-amber-400 opacity-0 group-hover:opacity-100 transition-all transform translate-x-[-10px] group-hover:translate-x-0">
+                  COMEÇAR <ChevronRight className="w-4 h-4" />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -371,12 +401,12 @@ function AnunciarWizardContent() {
 
   if (showIntro) {
     return (
-      <div className="min-h-screen bg-white">
-        <header className="bg-white border-b border-[#ebebeb] py-4 px-6 sticky top-0 z-50">
+      <div className="min-h-screen bg-[#222]">
+        <header className="bg-white/5 border-b border-white/5 py-4 px-6 sticky top-0 z-50 backdrop-blur-md">
           <div className="max-w-[1200px] mx-auto flex items-center justify-between">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push("/")}>
               <Image src="/logo.png" alt="finHouse" width={32} height={32} className="rounded-lg" />
-              <span className="text-[20px] font-bold text-[#222] tracking-tight">finHouse.</span>
+              <span className="text-[20px] font-bold text-white tracking-tight">finHouse.</span>
             </div>
           </div>
         </header>
@@ -405,28 +435,28 @@ function AnunciarWizardContent() {
         <div className="max-w-2xl mx-auto w-full">
           {step === 1 && (
             <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl shadow-black/5 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="mb-8">
+              <div className="mb-8 text-center md:text-left">
                 <p className="text-amber-500 font-bold text-sm tracking-widest uppercase mb-2">Passo 1 de 3</p>
-                <h1 className="text-3xl md:text-4xl font-extrabold text-[#222] mb-3">Conte sobre o seu imóvel</h1>
-                <p className="text-[#717171] text-lg">Precisamos de alguns detalhes para criar um anúncio incrível.</p>
+                <h1 className="text-3xl md:text-4xl font-extrabold text-[#222] mb-3">Dados do Imóvel</h1>
+                <p className="text-[#717171] text-lg">Conte-nos sobre o que você quer anunciar.</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="col-span-1 md:col-span-2 space-y-2">
-                  <label className="text-sm font-semibold text-[#222]">Que tipo de imóvel você quer anunciar?</label>
+                  <label className="text-sm font-semibold text-[#222]">Tipo de Anúncio</label>
                   <div className="flex gap-4">
                     <label className="flex-1 cursor-pointer">
                       <input type="radio" className="peer sr-only" name="type" checked={propertyData.type === "venda"} onChange={() => setPropertyData({...propertyData, type: "venda"})} />
-                      <div className="p-4 rounded-2xl border-2 border-gray-200 peer-checked:border-black peer-checked:bg-black peer-checked:text-white text-center font-bold transition-all">À Venda</div>
+                      <div className="p-4 rounded-2xl border-2 border-gray-200 peer-checked:border-[#222] peer-checked:bg-[#222] peer-checked:text-white text-center font-bold transition-all">À Venda</div>
                     </label>
                     <label className="flex-1 cursor-pointer">
                       <input type="radio" className="peer sr-only" name="type" checked={propertyData.type === "aluguel"} onChange={() => setPropertyData({...propertyData, type: "aluguel"})} />
-                      <div className="p-4 rounded-2xl border-2 border-gray-200 peer-checked:border-black peer-checked:bg-black peer-checked:text-white text-center font-bold transition-all">Para Alugar</div>
+                      <div className="p-4 rounded-2xl border-2 border-gray-200 peer-checked:border-[#222] peer-checked:bg-[#222] peer-checked:text-white text-center font-bold transition-all">Para Alugar</div>
                     </label>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-[#222]">Tipo</label>
+                  <label className="text-sm font-semibold text-[#222]">Tipo de Imóvel</label>
                   <select value={propertyData.propertyType} onChange={e => setPropertyData({...propertyData, propertyType: e.target.value})} className="w-full h-14 px-4 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:border-black">
                     <option value="Apartamento">Apartamento</option>
                     <option value="Casa">Casa</option>
@@ -438,30 +468,12 @@ function AnunciarWizardContent() {
                 <div className="space-y-4 col-span-1 md:col-span-2 mt-2 pt-4 border-t border-gray-100">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-sm font-semibold text-[#222] flex items-center gap-2"><MapPin className="w-4 h-4 text-amber-500" /> CEP *</label>
+                      <label className="text-sm font-semibold text-[#222]">CEP *</label>
                       <input type="text" placeholder="00000-000" value={propertyData.cep} onChange={e => { const v = maskCep(e.target.value); setPropertyData({...propertyData, cep: v}); if (v.replace(/\D/g,"").length === 8) fetchCep(v); }} className="w-full h-14 px-4 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:border-black" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-semibold text-[#222]">Rua</label>
-                      <input type="text" value={propertyData.street} onChange={e => setPropertyData({...propertyData, street: e.target.value})} className="w-full h-14 px-4 rounded-2xl bg-gray-50 border border-gray-200" />
-                    </div>
-                    <div className="space-y-2">
                       <label className="text-sm font-semibold text-[#222]">Número *</label>
-                      <input type="text" value={propertyData.number} onChange={e => setPropertyData({...propertyData, number: e.target.value})} className="w-full h-14 px-4 rounded-2xl bg-gray-50 border border-gray-200" />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-[#222]">Bairro</label>
-                      <input type="text" value={propertyData.neighborhood} onChange={e => setPropertyData({...propertyData, neighborhood: e.target.value})} className="w-full h-14 px-4 rounded-2xl bg-gray-50 border border-gray-200" />
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="space-y-2 col-span-2">
-                        <label className="text-sm font-semibold text-[#222]">Cidade</label>
-                        <input type="text" value={propertyData.city} onChange={e => setPropertyData({...propertyData, city: e.target.value})} className="w-full h-14 px-4 rounded-2xl bg-gray-50 border border-gray-200" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-semibold text-[#222]">UF</label>
-                        <input type="text" maxLength={2} value={propertyData.uf} onChange={e => setPropertyData({...propertyData, uf: e.target.value.toUpperCase()})} className="w-full h-14 px-4 rounded-2xl bg-gray-50 border border-gray-200 text-center" />
-                      </div>
+                      <input type="text" value={propertyData.number} onChange={e => setPropertyData({...propertyData, number: e.target.value})} className="w-full h-14 px-4 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none" />
                     </div>
                   </div>
                 </div>
@@ -483,19 +495,11 @@ function AnunciarWizardContent() {
                     <input type="number" value={propertyData.area} onChange={e => setPropertyData({...propertyData, area: e.target.value})} className="w-full h-14 px-4 rounded-2xl bg-gray-50 border border-gray-200" />
                   </div>
                 </div>
-                <div className="col-span-1 md:col-span-2 space-y-2">
-                  <label className="text-sm font-semibold text-[#222]">Título</label>
-                  <input type="text" value={propertyData.title} onChange={e => setPropertyData({...propertyData, title: e.target.value})} className="w-full h-14 px-4 rounded-2xl bg-gray-50 border border-gray-200" />
-                </div>
-                <div className="col-span-1 md:col-span-2 space-y-2">
-                  <label className="text-sm font-semibold text-[#222]">Descrição</label>
-                  <textarea value={propertyData.description} onChange={e => setPropertyData({...propertyData, description: e.target.value})} className="w-full min-h-[120px] p-4 rounded-2xl bg-gray-50 border border-gray-200 resize-none" />
-                </div>
                 <div className="col-span-1 md:col-span-2 space-y-4">
                     <label className="text-sm font-semibold text-[#222]">Fotos (até 20) *</label>
                     <label className="flex flex-col items-center justify-center w-full min-h-[100px] border-2 border-dashed border-[#ddd] rounded-2xl cursor-pointer hover:bg-[#f7f7f7] p-4 text-center">
                         <UploadCloud className="w-8 h-8 text-[#b0b0b0] mb-2" />
-                        <span className="text-[14px] font-semibold text-[#222]">Clique para selecionar fotos</span>
+                        <span className="text-[14px] font-semibold text-[#222]">Clique para enviar fotos</span>
                         <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileChange} />
                     </label>
                     {photos.length > 0 && (
@@ -512,25 +516,14 @@ function AnunciarWizardContent() {
                         </div>
                     )}
                 </div>
-                <div className="space-y-4 col-span-1 md:col-span-2 mt-4 pt-6 border-t border-gray-100">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <span className="text-xs font-semibold text-gray-500 uppercase">Preço *</span>
-                      <input type="text" value={propertyData.price} onChange={e => setPropertyData({...propertyData, price: formatCurrency(e.target.value)})} className="w-full h-14 px-4 rounded-2xl bg-gray-50 border border-gray-200 text-lg font-bold" />
-                    </div>
-                    <div>
-                      <span className="text-xs font-semibold text-gray-500 uppercase">Condomínio</span>
-                      <input type="text" value={propertyData.condominium} onChange={e => setPropertyData({...propertyData, condominium: formatCurrency(e.target.value)})} className="w-full h-14 px-4 rounded-2xl bg-gray-50 border border-gray-200" />
-                    </div>
-                    <div>
-                      <span className="text-xs font-semibold text-gray-500 uppercase">IPTU</span>
-                      <input type="text" value={propertyData.iptu} onChange={e => setPropertyData({...propertyData, iptu: formatCurrency(e.target.value)})} className="w-full h-14 px-4 rounded-2xl bg-gray-50 border border-gray-200" />
-                    </div>
-                  </div>
+                <div className="col-span-1 md:col-span-2 space-y-2 pt-4 border-t border-gray-100">
+                    <label className="text-sm font-semibold text-[#222]">Valor de {propertyData.type === 'venda' ? 'Venda' : 'Aluguel'} *</label>
+                    <input type="text" value={propertyData.price} onChange={e => setPropertyData({...propertyData, price: formatCurrency(e.target.value)})} className="w-full h-14 px-4 rounded-2xl bg-gray-50 border border-gray-200 text-lg font-bold" />
                 </div>
               </div>
+
               <div className="mt-10 flex justify-end">
-                <button onClick={handleNextStep} disabled={!propertyData.price || photos.length === 0} className="w-full md:w-auto bg-[#222] text-white px-8 py-4 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-black transition-colors disabled:opacity-50">Continuar <ArrowRight className="w-5 h-5" /></button>
+                <button onClick={handleNextStep} disabled={!propertyData.price || photos.length === 0} className="w-full md:w-auto bg-[#222] text-white px-10 py-5 rounded-2xl font-black uppercase hover:bg-black transition-all hover:scale-105 active:scale-95 disabled:opacity-50">Continuar <ArrowRight className="w-5 h-5" /></button>
               </div>
             </div>
           )}
@@ -541,8 +534,8 @@ function AnunciarWizardContent() {
                 <h1 className="text-3xl font-extrabold text-[#222] mb-3">Quase lá!</h1>
               </div>
               <div className="flex gap-2 mb-8 bg-gray-100 p-1.5 rounded-2xl">
-                <button onClick={() => setAuthData({...authData, isLogin: false})} className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-colors ${!authData.isLogin ? "bg-white text-black shadow-sm" : "text-gray-500"}`}>Criar Conta</button>
-                <button onClick={() => setAuthData({...authData, isLogin: true})} className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-colors ${authData.isLogin ? "bg-white text-black shadow-sm" : "text-gray-500"}`}>Login</button>
+                <button onClick={() => setAuthData({...authData, isLogin: false})} className={`flex-1 py-3 rounded-xl font-bold text-sm transition-colors ${!authData.isLogin ? "bg-[#222] text-white shadow-sm" : "text-gray-500"}`}>Criar Conta</button>
+                <button onClick={() => setAuthData({...authData, isLogin: true})} className={`flex-1 py-3 rounded-xl font-bold text-sm transition-colors ${authData.isLogin ? "bg-[#222] text-white shadow-sm" : "text-gray-500"}`}>Login</button>
               </div>
               <form onSubmit={handleAuthSubmit} className="space-y-4">
                 {!authData.isLogin && (
@@ -555,7 +548,7 @@ function AnunciarWizardContent() {
                 <input type="password" required placeholder="Senha" value={authData.password} onChange={e => setAuthData({...authData, password: e.target.value})} className="w-full h-14 px-4 rounded-2xl bg-gray-50 border border-gray-200" />
                 <div className="pt-6 flex gap-4">
                   <button type="button" onClick={handlePrevStep} className="p-4 rounded-2xl hover:bg-gray-100 transition-colors"><ArrowLeft className="w-5 h-5" /></button>
-                  <button type="submit" disabled={isSubmitting} className="flex-1 bg-[#222] text-white h-14 rounded-2xl font-bold hover:bg-black transition-colors disabled:opacity-50">Continuar</button>
+                  <button type="submit" disabled={isSubmitting} className="flex-1 bg-[#222] text-white h-14 rounded-2xl font-black uppercase hover:bg-black transition-all">Continuar</button>
                 </div>
               </form>
             </div>
@@ -567,7 +560,7 @@ function AnunciarWizardContent() {
                 <h1 className="text-3xl md:text-5xl font-extrabold text-[#222] mb-4">Escolha seu plano</h1>
               </div>
               <div className={`grid gap-6 ${propertyData.type === 'venda' ? 'md:grid-cols-3' : 'md:grid-cols-2 max-w-[700px] mx-auto'}`}>
-                <div onClick={() => setSelectedPlan("free")} className={`bg-white rounded-[28px] p-6 md:p-8 border-2 cursor-pointer transition-all ${selectedPlan === "free" ? "border-black shadow-xl" : "border-[#ebebeb]"}`}>
+                <div onClick={() => setSelectedPlan("free")} className={`bg-white rounded-[28px] p-6 md:p-8 border-2 cursor-pointer transition-all ${selectedPlan === "free" ? "border-[#222] shadow-xl scale-[1.02]" : "border-[#ebebeb]"}`}>
                   <h3 className="text-xl font-extrabold mb-1">Básico</h3>
                   <p className="text-sm font-bold text-emerald-600 mb-4">GRÁTIS</p>
                   <ul className="space-y-3 mb-6 text-sm">
@@ -575,7 +568,7 @@ function AnunciarWizardContent() {
                     <li className="flex items-start gap-2.5"><CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" /> Sem exclusividade</li>
                   </ul>
                 </div>
-                <div onClick={() => setSelectedPlan("premium")} className={`bg-black rounded-[28px] p-6 md:p-8 border-2 cursor-pointer transition-all ${selectedPlan === "premium" ? "border-amber-400 shadow-xl" : "border-transparent"}`}>
+                <div onClick={() => setSelectedPlan("premium")} className={`bg-black rounded-[28px] p-6 md:p-8 border-2 cursor-pointer transition-all relative ${selectedPlan === "premium" ? "border-amber-400 shadow-xl scale-[1.02]" : "border-transparent"}`}>
                   <h3 className="text-xl font-extrabold text-white mb-1">Elite Premium</h3>
                   <p className="text-sm font-bold text-amber-400 mb-4">{propertyData.type === 'aluguel' ? '8% mensal' : '6% comissão'}</p>
                   <ul className="space-y-3 mb-6 text-sm text-white/90">
@@ -585,7 +578,7 @@ function AnunciarWizardContent() {
                   </ul>
                 </div>
                 {propertyData.type === 'venda' && (
-                  <div onClick={() => setSelectedPlan("legal")} className={`bg-white rounded-[28px] p-6 md:p-8 border-2 cursor-pointer transition-all ${selectedPlan === "legal" ? "border-black shadow-xl" : "border-[#ebebeb]"}`}>
+                  <div onClick={() => setSelectedPlan("legal")} className={`bg-white rounded-[28px] p-6 md:p-8 border-2 cursor-pointer transition-all ${selectedPlan === "legal" ? "border-blue-600 shadow-xl scale-[1.02]" : "border-[#ebebeb]"}`}>
                     <h3 className="text-xl font-extrabold mb-1">Jurídico</h3>
                     <p className="text-sm font-bold text-blue-600 mb-4">1,9% comissão</p>
                     <ul className="space-y-3 mb-6 text-sm">
@@ -597,7 +590,7 @@ function AnunciarWizardContent() {
               </div>
               <div className="mt-10 flex items-center justify-between gap-4">
                 <button type="button" onClick={handlePrevStep} className="p-4 rounded-2xl hover:bg-gray-200 transition-colors"><ArrowLeft className="w-5 h-5" /></button>
-                <button onClick={handleFinish} disabled={isSubmitting || !selectedPlan} className="flex-1 max-w-xs bg-[#222] text-white py-5 rounded-2xl font-black hover:bg-black shadow-lg transition-all">Publicar Anúncio</button>
+                <button onClick={handleFinish} disabled={isSubmitting || !selectedPlan} className="flex-1 max-w-xs bg-[#222] text-white py-5 rounded-2xl font-black uppercase hover:bg-black shadow-lg transition-all">Publicar Anúncio</button>
               </div>
             </div>
           )}
@@ -616,7 +609,7 @@ function AnunciarWizardContent() {
 
 export default function AnunciarWizard() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-amber-400" /></div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#222]"><Loader2 className="w-10 h-10 animate-spin text-amber-400" /></div>}>
       <AnunciarWizardContent />
     </Suspense>
   );
