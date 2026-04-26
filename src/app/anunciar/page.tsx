@@ -15,6 +15,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Listing } from "@/contexts/ListingsContext";
+import Footer from "@/components/Footer";
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -54,7 +55,7 @@ const LandingIntro = ({ onStart }: { onStart: () => void }) => {
           
           <div className="animate-in fade-in slide-in-from-left-8 duration-700">
             <h1 className="text-[44px] md:text-[64px] font-black text-[#222] leading-[1] tracking-[-0.04em] mb-8">
-              Anuncie seu imóvel <span className="underline decoration-amber-400 decoration-4 underline-offset-[12px]">gratuitamente</span> na finHouse.
+              Anuncie seu imóvel <span className="underline decoration-amber-400 decoration-4 underline-offset-[12px]">grátis</span> na finHouse.
             </h1>
             
             <p className="text-[18px] md:text-[21px] text-[#717171] leading-relaxed mb-10 font-medium max-w-xl">
@@ -399,6 +400,7 @@ function AnunciarWizardContent() {
           </div>
         </header>
         <LandingIntro onStart={() => setShowIntro(false)} />
+        <Footer />
       </div>
     );
   }
@@ -594,6 +596,7 @@ function AnunciarWizardContent() {
           )}
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

@@ -116,7 +116,7 @@ function HeroSection({ onSimulate }: { onSimulate: () => void }) {
 /* ─── ABOUT ─── */
 function SobreSection() {
   return (
-    <section id="sobre" className="py-20 md:py-28">
+    <section id="sobre" className="py-24 md:py-32 bg-[#f7f7f7] border-t border-[#ebebeb]">
       <div className="max-w-[1280px] mx-auto px-6">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           <div>
@@ -235,7 +235,7 @@ function ImoveisSection({
 /* ─── REFERRAL ─── */
 function IndicacaoSection() {
   return (
-    <section id="indicacao" className="py-20 md:py-28 bg-[#f7f7f7]">
+    <section id="indicacao" className="py-24 md:py-32 bg-white border-t border-[#ebebeb]">
       <div className="max-w-[1280px] mx-auto px-6">
         <div className="max-w-3xl mx-auto text-center mb-16 px-4">
           <div className="flex items-center justify-center gap-4 mb-12">
@@ -297,7 +297,7 @@ function IndicacaoSection() {
 /* ─── ANNOUNCE ─── */
 function AnunciarSection() {
   return (
-    <section id="anunciar" className="py-20 md:py-32 bg-white">
+    <section id="anunciar" className="py-24 md:py-32 bg-[#f7f7f7] border-t border-[#ebebeb]">
       <div className="max-w-[1280px] mx-auto px-6">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           <div className="relative aspect-[4/3] md:aspect-video rounded-[48px] overflow-hidden shadow-2xl shadow-black/10 order-2 lg:order-1">
@@ -439,7 +439,7 @@ function ParceirosSection() {
 /* ─── FINANCING ─── */
 function FinanciamentoSection({ onSimulate }: { onSimulate: () => void }) {
   return (
-    <section id="financiamento" className="py-20 md:py-28 bg-white">
+    <section id="financiamento" className="py-24 md:py-32 bg-white border-t border-[#ebebeb]">
       <div className="max-w-[1280px] mx-auto px-6">
         <div className="max-w-2xl mx-auto text-center mb-16">
           <p className="text-[13px] font-semibold text-[#717171] uppercase tracking-widest mb-4">Financiamento & Consórcio</p>
