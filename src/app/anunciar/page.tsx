@@ -53,10 +53,6 @@ const LandingIntro = ({ onStart }: { onStart: () => void }) => {
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           
           <div className="animate-in fade-in slide-in-from-left-8 duration-700">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#f7f7f7] border border-[#ebebeb] mb-8 font-bold text-[11px] text-[#222]/60 uppercase tracking-widest">
-              Anuncie na Rede de Elite
-            </div>
-            
             <h1 className="text-[44px] md:text-[64px] font-black text-[#222] leading-[1] tracking-[-0.04em] mb-8">
               Anuncie seu imóvel <span className="underline decoration-amber-400 decoration-4 underline-offset-[12px]">gratuitamente</span> na finHouse.
             </h1>
