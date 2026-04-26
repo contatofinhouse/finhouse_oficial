@@ -63,27 +63,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const login = async (email: string, pass: string) => {
         setIsLoading(true);
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const result = await supabase.auth.signInWithPassword({
             email,
             password: pass,
         });
 
-        if (error) {
+        if (result.error) {
             setIsLoading(false);
-            return { error: error.message };
+            return result;
         }
 
-        if (data.user) {
-            const email = data.user.email || "";
+        if (result.data.user) {
+            const email = result.data.user.email || "";
             setUser({
-                id: data.user.id,
+                id: result.data.user.id,
                 email,
                 username: email.split('@')[0] || "Usuário",
                 isAdmin: ["contato@finhouse.com.br", "admin@finhouse.com.br", "contatofinhouse@gmail.com"].includes(email)
             });
         }
         setIsLoading(false);
-        return {};
+        return result;
     };
 
     const logout = async () => {

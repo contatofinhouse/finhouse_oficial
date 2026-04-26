@@ -4,18 +4,21 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
-import { Menu, X, User, Instagram, MessageCircle } from "lucide-react";
+import { Menu, X, User, Instagram, MessageCircle, Megaphone, Building2, ChevronDown, Zap, Gift, BadgeDollarSign } from "lucide-react";
 
 const WHATSAPP_LINK = "https://wa.me/5511955842951";
 const INSTAGRAM_LINK = "https://instagram.com/finhouse_oficial";
 
 const NAV_ITEMS = [
-    { label: "Início", href: "/" },
-    { label: "Imóveis", href: "/imoveis" },
-    { label: "Indicação", href: "/#indicacao" },
-    { label: "Parceiros", href: "/parceiros" },
+    { label: "Anuncie", href: "/anunciar", icon: Megaphone },
+    { label: "Imóveis", href: "/imoveis", icon: Building2 },
     { label: "Financiamento", href: "/#financiamento" },
-    { label: "Contas a Receber", href: "/receivables" },
+];
+
+const PARTNER_ITEMS = [
+    { label: "Indicação (Ganhe 1%)", href: "/#indicacao", icon: Gift },
+    { label: "Seja um Parceiro", href: "/parceiros", icon: Zap },
+    { label: "Contas a Receber", href: "/receivables", icon: BadgeDollarSign },
 ];
 
 export default function Header() {
@@ -51,11 +54,35 @@ export default function Header() {
                         <a
                             key={item.href}
                             href={item.href}
-                            className="px-4 py-2 rounded-full text-[14px] font-medium text-[#717171] hover:text-[#222] hover:bg-[#f7f7f7] transition-all duration-200"
+                            className="flex items-center gap-2 px-4 py-2 rounded-full text-[14px] font-medium text-[#717171] hover:text-[#222] hover:bg-[#f7f7f7] transition-all duration-200"
                         >
+                            {item.icon && <item.icon className="w-4 h-4" />}
                             {item.label}
                         </a>
                     ))}
+                    
+                    {/* Partners Dropdown */}
+                    <div className="relative group">
+                        <button className="flex items-center gap-2 px-4 py-2 rounded-full text-[14px] font-medium text-[#717171] group-hover:text-[#222] group-hover:bg-[#f7f7f7] transition-all duration-200">
+                            Para Parceiros
+                            <ChevronDown className="w-4 h-4 transition-transform group-hover:rotate-180" />
+                        </button>
+                        
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                            <div className="bg-white border border-[#ebebeb] rounded-[24px] shadow-xl p-2 min-w-[240px]">
+                                {PARTNER_ITEMS.map((sub) => (
+                                    <a
+                                        key={sub.href}
+                                        href={sub.href}
+                                        className="flex items-center gap-3 px-4 py-3 rounded-2xl text-[14px] font-medium text-[#717171] hover:text-[#222] hover:bg-[#f7f7f7] transition-all"
+                                    >
+                                        <sub.icon className="w-4 h-4 text-amber-500" />
+                                        {sub.label}
+                                    </a>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
                 </nav>
 
                 {/* Right side */}
@@ -128,11 +155,27 @@ export default function Header() {
                                 key={item.href}
                                 href={item.href}
                                 onClick={() => setMobileOpen(false)}
-                                className="px-4 py-3 text-[15px] font-medium text-[#222] hover:bg-[#f7f7f7] rounded-xl transition-colors"
+                                className="flex items-center gap-3 px-4 py-3 text-[15px] font-medium text-[#222] hover:bg-[#f7f7f7] rounded-xl transition-colors"
                             >
+                                {item.icon && <item.icon className="w-5 h-5 text-[#717171]" />}
                                 {item.label}
                             </a>
                         ))}
+                        
+                        <div className="mt-2 pt-2 border-t border-[#f0f0f0]">
+                            <p className="px-4 py-2 text-[11px] font-black text-gray-400 uppercase tracking-widest">Para Parceiros</p>
+                            {PARTNER_ITEMS.map((item) => (
+                                <a
+                                    key={item.href}
+                                    href={item.href}
+                                    onClick={() => setMobileOpen(false)}
+                                    className="flex items-center gap-3 px-4 py-3 text-[15px] font-medium text-[#222] hover:bg-[#f7f7f7] rounded-xl transition-colors"
+                                >
+                                    <item.icon className="w-5 h-5 text-amber-500" />
+                                    {item.label}
+                                </a>
+                            ))}
+                        </div>
                         {user ? (
                             <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="px-4 py-3 text-[15px] font-medium text-[#222] hover:bg-[#f7f7f7] rounded-xl transition-colors">
                                 Meu Painel

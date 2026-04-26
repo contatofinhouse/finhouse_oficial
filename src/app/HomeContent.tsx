@@ -251,6 +251,9 @@ function IndicacaoSection() {
           <p className="text-[18px] md:text-[20px] text-[#717171] leading-relaxed max-w-2xl mx-auto font-medium">
             Conhece alguém querendo vender ou comprar? Indique o imóvel e receba <span className="text-[#222] font-bold">1% do valor total da venda</span> direto na sua conta assim que o negócio fechar.
           </p>
+          <p className="mt-6 text-[12px] font-black text-amber-600 uppercase tracking-[0.2em] bg-amber-50 inline-block px-4 py-1.5 rounded-full border border-amber-200">
+            * Válido para anúncios de venda Plano Elite Premium
+          </p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
@@ -521,12 +524,12 @@ export default function HomeContent() {
       <Header />
       <main>
         <HeroSection onSimulate={() => setSimOpen(true)} />
-        <SobreSection />
         <ImoveisSection onSelectListing={(l) => setSelectedListing(l)} />
-        <IndicacaoSection />
         <AnunciarSection />
-        <ParceirosSection />
         <FinanciamentoSection onSimulate={() => setSimOpen(true)} />
+        <SobreSection />
+        <IndicacaoSection />
+        <ParceirosSection />
       </main>
       <Footer />
       <WhatsAppFab />

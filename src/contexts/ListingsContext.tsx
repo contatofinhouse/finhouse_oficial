@@ -18,6 +18,10 @@ export interface Listing {
     parking: number;
     cep: string;
     address: string;
+    street?: string;
+    number?: string;
+    complement?: string;
+    uf?: string;
     neighborhood: string;
     city: string;
     description: string;

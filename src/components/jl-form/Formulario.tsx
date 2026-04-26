@@ -176,11 +176,34 @@ export function Formulario({ cpf, initialData }: FormularioProps) {
     setSaveStatus('saving');
   };
 
-  const nextStep = () => setCurrentStep(p => Math.min(p + 1, STEPS.length));
-  const prevStep = () => setCurrentStep(p => Math.max(p - 1, 1));
+  // Step navigation helpers
+  const isSpouseRequired = formData.estado_civil === 'Casado(a)' || formData.estado_civil === 'União estável';
+  const visibleSteps = STEPS.filter(s => s.id !== 4 || isSpouseRequired);
+  const currentVisibleIndex = visibleSteps.findIndex(s => s.id === currentStep);
+
+  const nextStep = () => {
+    const currentIndex = visibleSteps.findIndex(s => s.id === currentStep);
+    if (currentIndex < visibleSteps.length - 1) {
+      setCurrentStep(visibleSteps[currentIndex + 1].id);
+    }
+  };
+
+  const prevStep = () => {
+    const currentIndex = visibleSteps.findIndex(s => s.id === currentStep);
+    if (currentIndex > 0) {
+      setCurrentStep(visibleSteps[currentIndex - 1].id);
+    }
+  };
+
+  // Auto-skip spouse step if marital status changes
+  useEffect(() => {
+    if (currentStep === 4 && !isSpouseRequired) {
+      setCurrentStep(5);
+    }
+  }, [formData.estado_civil, currentStep, isSpouseRequired]);
 
   // Progress Bar Width
-  const progress = ((currentStep - 1) / (STEPS.length - 1)) * 100;
+  const progress = (currentVisibleIndex / (visibleSteps.length - 1)) * 100;
 
   if (isFinished) {
     return (
@@ -281,10 +304,10 @@ export function Formulario({ cpf, initialData }: FormularioProps) {
       <div className="max-w-3xl mx-auto p-4 mt-6">
         {/* Etapas Indicator */}
         <div className="mb-8 hidden sm:flex justify-between text-sm font-medium text-muted-foreground">
-          {STEPS.map((step) => (
+          {visibleSteps.map((step, index) => (
             <div key={step.id} className={`flex flex-col items-center gap-2 ${currentStep === step.id ? 'text-primary' : ''}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-colors ${currentStep >= step.id ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground/30'}`}>
-                {step.id}
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-colors ${currentVisibleIndex >= index ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground/30'}`}>
+                {index + 1}
               </div>
               <span className="text-xs hidden md:block">{step.title}</span>
             </div>

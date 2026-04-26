@@ -4,14 +4,14 @@ import ImoveisContent from "./ImoveisContent";
 import { supabase } from "@/lib/supabase";
 
 type Props = {
-    searchParams: { id?: string };
+    searchParams: Promise<{ id?: string }>;
 };
 
 export async function generateMetadata(
     { searchParams }: Props,
     parent: ResolvingMetadata
 ): Promise<Metadata> {
-    const id = searchParams.id;
+    const { id } = await searchParams;
 
     if (id) {
         const { data: listing } = await supabase
