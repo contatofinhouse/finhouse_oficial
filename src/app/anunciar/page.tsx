@@ -35,57 +35,53 @@ const maskCep = (value: string) => {
 
 const LandingIntro = ({ onStart }: { onStart: () => void }) => {
   return (
-    <div className="relative min-h-[calc(100vh-80px)] bg-[#222] flex items-center justify-center py-16 md:py-32 overflow-hidden">
-      {/* Background Image with Heavy Gradient Overlay */}
-      <div className="absolute inset-0 z-0">
+    <div className="relative min-h-[calc(100vh-80px)] bg-white flex items-center justify-center py-16 md:py-24 overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-amber-500/[0.03] rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#f7f7f7] rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+
+      {/* Subtle background image for mobile/desktop background texture */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
         <img
           src="/anunciar-hero.png"
           alt=""
-          className="w-full h-full object-cover opacity-30 lg:opacity-40"
+          className="w-full h-full object-cover opacity-[0.04] md:opacity-[0.02]"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#222] via-[#222]/90 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#222] via-transparent to-[#222]/30" />
       </div>
 
-      {/* Abstract Decorations (Style from Parceiros) */}
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-white/[0.02] rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-amber-500/[0.05] rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none" />
-
       <div className="max-w-[1280px] mx-auto px-6 w-full relative z-10">
-        <div className="grid lg:grid-cols-2 gap-20 items-center">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           
-          {/* Main Copy */}
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/10 mb-8 font-bold text-[11px] text-white/60 uppercase tracking-widest">
-              HUB DE ANÚNCIOS ELITE
+          <div className="animate-in fade-in slide-in-from-left-8 duration-700">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#f7f7f7] border border-[#ebebeb] mb-8 font-bold text-[11px] text-[#222]/60 uppercase tracking-widest">
+              Anuncie na Rede de Elite
             </div>
             
-            <h1 className="text-[48px] md:text-[68px] font-black text-white leading-[0.9] tracking-[-0.05em] mb-8">
-              Anuncie <span className="text-amber-400">Gratuitamente</span> na maior rede de elite.
+            <h1 className="text-[44px] md:text-[64px] font-black text-[#222] leading-[1] tracking-[-0.04em] mb-8">
+              Anuncie seu imóvel <span className="underline decoration-amber-400 decoration-4 underline-offset-[12px]">gratuitamente</span> na finHouse.
             </h1>
             
-            <p className="text-[18px] md:text-[22px] text-white/60 leading-relaxed mb-10 font-medium max-w-xl">
-              Sua casa na finHouse e nos maiores portais do país. Venda mais rápido com crédito integrado para o comprador e assessoria jurídica completa para você.
+            <p className="text-[18px] md:text-[21px] text-[#717171] leading-relaxed mb-10 font-medium max-w-xl">
+              Sua casa na plataforma que mais cresce em SJC. Venda mais rápido com crédito integrado e visibilidade nos maiores portais do país.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 mb-12">
               <button
                 onClick={onStart}
-                className="inline-flex items-center justify-center gap-3 px-10 py-5 rounded-2xl bg-white text-[#222] text-[16px] font-black uppercase hover:bg-amber-400 transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-black/40"
+                className="inline-flex items-center justify-center gap-3 px-10 py-5 rounded-2xl bg-[#222] text-white text-[16px] font-black uppercase hover:bg-black transition-all hover:scale-105 active:scale-95 shadow-xl shadow-black/10"
               >
-                Quero Anunciar Grátis <ArrowRight className="w-5 h-5" />
+                Começar agora <ArrowRight className="w-5 h-5" />
               </button>
-              <div className="flex items-center gap-4 px-6 py-4 rounded-2xl bg-white/5 border border-white/10 text-white/40 text-[13px] font-bold">
-                 <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+              <div className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-white border border-[#ebebeb] text-[#222]/60 text-[13px] font-bold">
+                 <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                  Zero Custo Fixo
               </div>
             </div>
 
-            {/* Trusted Portals */}
-            <div className="flex items-center gap-8 opacity-40">
-               <span className="text-white text-[12px] font-black uppercase tracking-widest">Nos Maiores Portais</span>
-               <div className="h-px bg-white/20 flex-1" />
-               <div className="flex gap-6 font-black text-white text-[14px]">
+            <div className="flex items-center gap-6 opacity-30 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+               <span className="text-[11px] font-black text-[#222] uppercase tracking-widest shrink-0">Nos Maiores Portais</span>
+               <div className="h-px bg-[#ebebeb] flex-1" />
+               <div className="flex gap-6 font-black text-[#222] text-[14px]">
                  <span>ZAP</span>
                  <span>OLX</span>
                  <span>VIVAREAL</span>
@@ -93,38 +89,38 @@ const LandingIntro = ({ onStart }: { onStart: () => void }) => {
             </div>
           </div>
 
-          {/* Benefit Cards (Glassmorphism Style) */}
-          <div className="grid sm:grid-cols-2 gap-4">
+          {/* Cards section */}
+          <div className="grid sm:grid-cols-2 gap-4 animate-in fade-in slide-in-from-right-8 duration-700 delay-200">
             {[
               { 
                 icon: Rocket, 
                 title: "Visibilidade Elite", 
-                desc: "Seu imóvel em destaque na finHouse e nos maiores portais do Brasil." 
+                desc: "Anúncio destaque na finHouse e nos maiores portais imobiliários." 
               },
               { 
                 icon: Zap, 
                 title: "Crédito Integrado", 
-                desc: "Financiamento e Consórcio para o seu comprador. Venda na velocidade da luz." 
+                desc: "Financiamento e Consórcio para acelerar a venda para o seu comprador." 
               },
               { 
                 icon: ShieldCheck, 
-                title: "Suporte 360°", 
-                desc: "Assessoria jurídica e operacional para blindar seu negócio do início ao fim." 
+                title: "Segurança Total", 
+                desc: "Assessoria jurídica e operacional do início ao fechamento do negócio." 
               },
               { 
                 icon: BadgeDollarSign, 
                 title: "Custo Zero", 
-                desc: "Anuncie grátis. Você só paga a comissão se o negócio for fechado com sucesso." 
+                desc: "Anúncio 100% grátis na plataforma. Sem taxas escondidas, sem mensalidade." 
               },
             ].map((item) => (
-              <div key={item.title} className="p-8 rounded-[32px] bg-white/[0.04] border border-white/5 hover:bg-white/[0.08] hover:border-white/10 transition-all group cursor-pointer" onClick={onStart}>
-                <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center mb-6 group-hover:bg-amber-400 transition-colors">
-                  <item.icon className="w-6 h-6 text-white/80 group-hover:text-[#222] transition-colors" strokeWidth={2.5} />
+              <div key={item.title} className="p-8 rounded-[32px] bg-white border border-[#ebebeb] hover:border-amber-400/50 hover:shadow-2xl hover:shadow-amber-500/5 transition-all group cursor-pointer" onClick={onStart}>
+                <div className="w-14 h-14 rounded-2xl bg-[#f7f7f7] flex items-center justify-center mb-6 group-hover:bg-amber-400 transition-colors">
+                  <item.icon className="w-6 h-6 text-[#222] group-hover:text-white transition-colors" strokeWidth={2.5} />
                 </div>
-                <h3 className="text-[18px] font-black text-white mb-2 tracking-tight">{item.title}</h3>
-                <p className="text-[15px] text-white/40 leading-relaxed font-medium">{item.desc}</p>
-                <div className="mt-4 flex items-center gap-2 text-[12px] font-black text-amber-400 opacity-0 group-hover:opacity-100 transition-all transform translate-x-[-10px] group-hover:translate-x-0">
-                  COMEÇAR <ChevronRight className="w-4 h-4" />
+                <h3 className="text-[18px] font-black text-[#222] mb-2 tracking-tight">{item.title}</h3>
+                <p className="text-[15px] text-[#717171] leading-relaxed font-medium">{item.desc}</p>
+                <div className="mt-4 flex items-center gap-2 text-[12px] font-black text-amber-500 opacity-0 group-hover:opacity-100 transition-all transform translate-x-[-10px] group-hover:translate-x-0 uppercase tracking-widest">
+                  Anunciar <ChevronRight className="w-4 h-4" />
                 </div>
               </div>
             ))}
@@ -401,12 +397,12 @@ function AnunciarWizardContent() {
 
   if (showIntro) {
     return (
-      <div className="min-h-screen bg-[#222]">
-        <header className="bg-white/5 border-b border-white/5 py-4 px-6 sticky top-0 z-50 backdrop-blur-md">
+      <div className="min-h-screen bg-white">
+        <header className="bg-white border-b border-[#ebebeb] py-4 px-6 sticky top-0 z-50">
           <div className="max-w-[1200px] mx-auto flex items-center justify-between">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push("/")}>
               <Image src="/logo.png" alt="finHouse" width={32} height={32} className="rounded-lg" />
-              <span className="text-[20px] font-bold text-white tracking-tight">finHouse.</span>
+              <span className="text-[20px] font-bold text-[#222] tracking-tight">finHouse.</span>
             </div>
           </div>
         </header>
@@ -435,10 +431,10 @@ function AnunciarWizardContent() {
         <div className="max-w-2xl mx-auto w-full">
           {step === 1 && (
             <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl shadow-black/5 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="mb-8 text-center md:text-left">
+              <div className="mb-8">
                 <p className="text-amber-500 font-bold text-sm tracking-widest uppercase mb-2">Passo 1 de 3</p>
-                <h1 className="text-3xl md:text-4xl font-extrabold text-[#222] mb-3">Dados do Imóvel</h1>
-                <p className="text-[#717171] text-lg">Conte-nos sobre o que você quer anunciar.</p>
+                <h1 className="text-3xl md:text-4xl font-extrabold text-[#222] mb-3">Sobre o Imóvel</h1>
+                <p className="text-[#717171] text-lg font-medium leading-tight">Conte-nos os detalhes do imóvel que deseja anunciar.</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -447,17 +443,17 @@ function AnunciarWizardContent() {
                   <div className="flex gap-4">
                     <label className="flex-1 cursor-pointer">
                       <input type="radio" className="peer sr-only" name="type" checked={propertyData.type === "venda"} onChange={() => setPropertyData({...propertyData, type: "venda"})} />
-                      <div className="p-4 rounded-2xl border-2 border-gray-200 peer-checked:border-[#222] peer-checked:bg-[#222] peer-checked:text-white text-center font-bold transition-all">À Venda</div>
+                      <div className="p-4 rounded-2xl border-2 border-gray-100 peer-checked:border-[#222] peer-checked:bg-[#222] peer-checked:text-white text-center font-bold transition-all">À Venda</div>
                     </label>
                     <label className="flex-1 cursor-pointer">
                       <input type="radio" className="peer sr-only" name="type" checked={propertyData.type === "aluguel"} onChange={() => setPropertyData({...propertyData, type: "aluguel"})} />
-                      <div className="p-4 rounded-2xl border-2 border-gray-200 peer-checked:border-[#222] peer-checked:bg-[#222] peer-checked:text-white text-center font-bold transition-all">Para Alugar</div>
+                      <div className="p-4 rounded-2xl border-2 border-gray-100 peer-checked:border-[#222] peer-checked:bg-[#222] peer-checked:text-white text-center font-bold transition-all">Para Alugar</div>
                     </label>
                   </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-[#222]">Tipo de Imóvel</label>
-                  <select value={propertyData.propertyType} onChange={e => setPropertyData({...propertyData, propertyType: e.target.value})} className="w-full h-14 px-4 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:border-black">
+                  <select value={propertyData.propertyType} onChange={e => setPropertyData({...propertyData, propertyType: e.target.value})} className="w-full h-14 px-4 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:border-black focus:ring-1 focus:ring-black">
                     <option value="Apartamento">Apartamento</option>
                     <option value="Casa">Casa</option>
                     <option value="Cobertura">Cobertura</option>
@@ -497,19 +493,19 @@ function AnunciarWizardContent() {
                 </div>
                 <div className="col-span-1 md:col-span-2 space-y-4">
                     <label className="text-sm font-semibold text-[#222]">Fotos (até 20) *</label>
-                    <label className="flex flex-col items-center justify-center w-full min-h-[100px] border-2 border-dashed border-[#ddd] rounded-2xl cursor-pointer hover:bg-[#f7f7f7] p-4 text-center">
+                    <label className="flex flex-col items-center justify-center w-full min-h-[120px] border-2 border-dashed border-[#ddd] rounded-3xl cursor-pointer hover:bg-[#f7f7f7] p-4 text-center transition-colors">
                         <UploadCloud className="w-8 h-8 text-[#b0b0b0] mb-2" />
-                        <span className="text-[14px] font-semibold text-[#222]">Clique para enviar fotos</span>
+                        <span className="text-[14px] font-bold text-[#222]">Selecionar Fotos</span>
                         <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileChange} />
                     </label>
                     {photos.length > 0 && (
                         <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mt-4">
                             {photos.map((photo, index) => (
-                                <div key={photo.id} className={`relative aspect-square rounded-xl overflow-hidden border border-[#ebebeb] ${coverPhotoId === photo.id ? 'ring-2 ring-amber-400 ring-offset-2' : ''}`}>
+                                <div key={photo.id} className={`relative aspect-square rounded-2xl overflow-hidden border border-[#ebebeb] ${coverPhotoId === photo.id ? 'ring-2 ring-amber-400 ring-offset-2' : ''}`}>
                                     <img src={photo.url} className="w-full h-full object-cover" />
-                                    <div className="absolute inset-0 bg-black/30 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                        <button onClick={() => setCoverPhotoId(photo.id)} className="p-1.5 bg-white rounded-lg"><Star className="w-4 h-4" /></button>
-                                        <button onClick={() => removePhoto(index)} className="p-1.5 bg-red-500 rounded-lg text-white"><Trash2 className="w-4 h-4" /></button>
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                        <button onClick={() => setCoverPhotoId(photo.id)} className="p-2 bg-white rounded-xl shadow-lg"><Star className="w-4 h-4 text-amber-500" /></button>
+                                        <button onClick={() => removePhoto(index)} className="p-2 bg-red-500 rounded-xl text-white shadow-lg"><Trash2 className="w-4 h-4" /></button>
                                     </div>
                                 </div>
                             ))}
@@ -517,13 +513,13 @@ function AnunciarWizardContent() {
                     )}
                 </div>
                 <div className="col-span-1 md:col-span-2 space-y-2 pt-4 border-t border-gray-100">
-                    <label className="text-sm font-semibold text-[#222]">Valor de {propertyData.type === 'venda' ? 'Venda' : 'Aluguel'} *</label>
-                    <input type="text" value={propertyData.price} onChange={e => setPropertyData({...propertyData, price: formatCurrency(e.target.value)})} className="w-full h-14 px-4 rounded-2xl bg-gray-50 border border-gray-200 text-lg font-bold" />
+                    <label className="text-sm font-semibold text-[#222]">Preço de {propertyData.type === 'venda' ? 'Venda' : 'Aluguel'} *</label>
+                    <input type="text" value={propertyData.price} onChange={e => setPropertyData({...propertyData, price: formatCurrency(e.target.value)})} className="w-full h-16 px-6 rounded-3xl bg-gray-50 border border-gray-200 text-xl font-black text-[#222] focus:outline-none focus:border-black transition-colors" />
                 </div>
               </div>
 
               <div className="mt-10 flex justify-end">
-                <button onClick={handleNextStep} disabled={!propertyData.price || photos.length === 0} className="w-full md:w-auto bg-[#222] text-white px-10 py-5 rounded-2xl font-black uppercase hover:bg-black transition-all hover:scale-105 active:scale-95 disabled:opacity-50">Continuar <ArrowRight className="w-5 h-5" /></button>
+                <button onClick={handleNextStep} disabled={!propertyData.price || photos.length === 0} className="w-full md:w-auto bg-[#222] text-white px-10 py-5 rounded-2xl font-black uppercase hover:bg-black transition-all hover:scale-105 active:scale-95 disabled:opacity-50 shadow-xl shadow-black/10">Continuar <ArrowRight className="w-5 h-5" /></button>
               </div>
             </div>
           )}
@@ -531,74 +527,77 @@ function AnunciarWizardContent() {
             <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl shadow-black/5 animate-in fade-in slide-in-from-right-4 duration-500 max-w-xl mx-auto">
               <div className="mb-8 text-center">
                 <p className="text-amber-500 font-bold text-sm tracking-widest uppercase mb-2">Passo 2 de 3</p>
-                <h1 className="text-3xl font-extrabold text-[#222] mb-3">Quase lá!</h1>
+                <h1 className="text-3xl font-extrabold text-[#222] mb-3">Sua Conta</h1>
+                <p className="text-[#717171] font-medium">Crie sua conta para gerenciar seu anúncio.</p>
               </div>
-              <div className="flex gap-2 mb-8 bg-gray-100 p-1.5 rounded-2xl">
-                <button onClick={() => setAuthData({...authData, isLogin: false})} className={`flex-1 py-3 rounded-xl font-bold text-sm transition-colors ${!authData.isLogin ? "bg-[#222] text-white shadow-sm" : "text-gray-500"}`}>Criar Conta</button>
-                <button onClick={() => setAuthData({...authData, isLogin: true})} className={`flex-1 py-3 rounded-xl font-bold text-sm transition-colors ${authData.isLogin ? "bg-[#222] text-white shadow-sm" : "text-gray-500"}`}>Login</button>
+              <div className="flex gap-2 mb-8 bg-[#f7f7f7] p-2 rounded-2xl">
+                <button onClick={() => setAuthData({...authData, isLogin: false})} className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${!authData.isLogin ? "bg-[#222] text-white shadow-lg" : "text-gray-500"}`}>Criar Conta</button>
+                <button onClick={() => setAuthData({...authData, isLogin: true})} className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${authData.isLogin ? "bg-[#222] text-white shadow-lg" : "text-gray-500"}`}>Login</button>
               </div>
               <form onSubmit={handleAuthSubmit} className="space-y-4">
                 {!authData.isLogin && (
                   <>
-                    <input type="text" required placeholder="Nome Completo" value={authData.name} onChange={e => setAuthData({...authData, name: e.target.value})} className="w-full h-14 px-4 rounded-2xl bg-gray-50 border border-gray-200" />
-                    <input type="tel" required placeholder="WhatsApp" value={maskPhone(authData.phone)} onChange={e => setAuthData({...authData, phone: e.target.value})} className="w-full h-14 px-4 rounded-2xl bg-gray-50 border border-gray-200" />
+                    <input type="text" required placeholder="Nome Completo" value={authData.name} onChange={e => setAuthData({...authData, name: e.target.value})} className="w-full h-14 px-6 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:border-black transition-colors" />
+                    <input type="tel" required placeholder="WhatsApp" value={maskPhone(authData.phone)} onChange={e => setAuthData({...authData, phone: e.target.value})} className="w-full h-14 px-6 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:border-black transition-colors" />
                   </>
                 )}
-                <input type="email" required placeholder="E-mail" value={authData.email} onChange={e => setAuthData({...authData, email: e.target.value})} className="w-full h-14 px-4 rounded-2xl bg-gray-50 border border-gray-200" />
-                <input type="password" required placeholder="Senha" value={authData.password} onChange={e => setAuthData({...authData, password: e.target.value})} className="w-full h-14 px-4 rounded-2xl bg-gray-50 border border-gray-200" />
+                <input type="email" required placeholder="E-mail" value={authData.email} onChange={e => setAuthData({...authData, email: e.target.value})} className="w-full h-14 px-6 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:border-black transition-colors" />
+                <input type="password" required placeholder="Senha" value={authData.password} onChange={e => setAuthData({...authData, password: e.target.value})} className="w-full h-14 px-6 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:border-black transition-colors" />
                 <div className="pt-6 flex gap-4">
-                  <button type="button" onClick={handlePrevStep} className="p-4 rounded-2xl hover:bg-gray-100 transition-colors"><ArrowLeft className="w-5 h-5" /></button>
-                  <button type="submit" disabled={isSubmitting} className="flex-1 bg-[#222] text-white h-14 rounded-2xl font-black uppercase hover:bg-black transition-all">Continuar</button>
+                  <button type="button" onClick={handlePrevStep} className="p-5 rounded-2xl hover:bg-gray-100 text-gray-400 transition-all"><ArrowLeft className="w-5 h-5" /></button>
+                  <button type="submit" disabled={isSubmitting} className="flex-1 bg-[#222] text-white h-14 rounded-2xl font-black uppercase hover:bg-black transition-all shadow-xl shadow-black/10">Continuar</button>
                 </div>
               </form>
             </div>
           )}
           {step === 3 && (
-            <div className="animate-in fade-in slide-in-from-right-4 duration-500 w-full max-w-[960px] mx-auto">
+            <div className="animate-in fade-in slide-in-from-right-4 duration-500 w-full max-w-[1000px] mx-auto">
               <div className="mb-10 text-center">
                 <p className="text-amber-500 font-bold text-sm tracking-widest uppercase mb-2">Passo 3 de 3</p>
-                <h1 className="text-3xl md:text-5xl font-extrabold text-[#222] mb-4">Escolha seu plano</h1>
+                <h1 className="text-3xl md:text-5xl font-black text-[#222] mb-4">Escolha seu Plano</h1>
+                <p className="text-[#717171] text-lg font-medium">Selecione como deseja anunciar seu imóvel.</p>
               </div>
               <div className={`grid gap-6 ${propertyData.type === 'venda' ? 'md:grid-cols-3' : 'md:grid-cols-2 max-w-[700px] mx-auto'}`}>
-                <div onClick={() => setSelectedPlan("free")} className={`bg-white rounded-[28px] p-6 md:p-8 border-2 cursor-pointer transition-all ${selectedPlan === "free" ? "border-[#222] shadow-xl scale-[1.02]" : "border-[#ebebeb]"}`}>
-                  <h3 className="text-xl font-extrabold mb-1">Básico</h3>
-                  <p className="text-sm font-bold text-emerald-600 mb-4">GRÁTIS</p>
-                  <ul className="space-y-3 mb-6 text-sm">
-                    <li className="flex items-start gap-2.5"><CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" /> Anúncio no site finHouse</li>
-                    <li className="flex items-start gap-2.5"><CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" /> Sem exclusividade</li>
+                <div onClick={() => setSelectedPlan("free")} className={`bg-white rounded-[40px] p-8 md:p-10 border-2 cursor-pointer transition-all hover:shadow-2xl ${selectedPlan === "free" ? "border-[#222] shadow-xl scale-[1.02]" : "border-[#ebebeb]"}`}>
+                  <h3 className="text-2xl font-black text-[#222] mb-2">Básico</h3>
+                  <p className="text-sm font-black text-emerald-600 mb-6 uppercase tracking-widest">Grátis</p>
+                  <ul className="space-y-4 mb-8 text-[15px] font-medium text-[#444]">
+                    <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" /> Anúncio no site finHouse</li>
+                    <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" /> Sem exclusividade</li>
                   </ul>
                 </div>
-                <div onClick={() => setSelectedPlan("premium")} className={`bg-black rounded-[28px] p-6 md:p-8 border-2 cursor-pointer transition-all relative ${selectedPlan === "premium" ? "border-amber-400 shadow-xl scale-[1.02]" : "border-transparent"}`}>
-                  <h3 className="text-xl font-extrabold text-white mb-1">Elite Premium</h3>
-                  <p className="text-sm font-bold text-amber-400 mb-4">{propertyData.type === 'aluguel' ? '8% mensal' : '6% comissão'}</p>
-                  <ul className="space-y-3 mb-6 text-sm text-white/90">
-                    <li className="flex items-start gap-2.5"><Zap className="w-4 h-4 text-amber-400 shrink-0" /> Anúncio em portais (ZAP, OLX...)</li>
-                    <li className="flex items-start gap-2.5"><ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" /> Assessoria Jurídica completa</li>
-                    <li className="flex items-start gap-2.5"><CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" /> Fotos Profissionais</li>
+                <div onClick={() => setSelectedPlan("premium")} className={`bg-black rounded-[40px] p-8 md:p-10 border-2 cursor-pointer transition-all hover:shadow-2xl relative ${selectedPlan === "premium" ? "border-amber-400 shadow-xl scale-[1.02]" : "border-transparent"}`}>
+                  <div className="absolute -top-4 right-8 bg-amber-400 text-[#222] px-4 py-1 rounded-full text-[11px] font-black uppercase tracking-widest">Recomendado</div>
+                  <h3 className="text-2xl font-black text-white mb-2">Elite Premium</h3>
+                  <p className="text-sm font-black text-amber-400 mb-6 uppercase tracking-widest">{propertyData.type === 'aluguel' ? '8% Mensal' : '6% Comissão'}</p>
+                  <ul className="space-y-4 mb-8 text-[15px] font-medium text-white/80">
+                    <li className="flex items-start gap-3"><Zap className="w-5 h-5 text-amber-400 shrink-0" /> Anúncio em todos os Portais</li>
+                    <li className="flex items-start gap-3"><ShieldCheck className="w-5 h-5 text-amber-400 shrink-0" /> Assessoria Jurídica Total</li>
+                    <li className="flex items-start gap-3"><Star className="w-5 h-5 text-amber-400 shrink-0" /> Fotos Profissionais</li>
                   </ul>
                 </div>
                 {propertyData.type === 'venda' && (
-                  <div onClick={() => setSelectedPlan("legal")} className={`bg-white rounded-[28px] p-6 md:p-8 border-2 cursor-pointer transition-all ${selectedPlan === "legal" ? "border-blue-600 shadow-xl scale-[1.02]" : "border-[#ebebeb]"}`}>
-                    <h3 className="text-xl font-extrabold mb-1">Jurídico</h3>
-                    <p className="text-sm font-bold text-blue-600 mb-4">1,9% comissão</p>
-                    <ul className="space-y-3 mb-6 text-sm">
-                      <li className="flex items-start gap-2.5"><CheckCircle2 className="w-4 h-4 text-blue-500 shrink-0" /> Elaboração de contrato</li>
-                      <li className="flex items-start gap-2.5"><CheckCircle2 className="w-4 h-4 text-blue-500 shrink-0" /> Acompanhamento em cartório</li>
+                  <div onClick={() => setSelectedPlan("legal")} className={`bg-white rounded-[40px] p-8 md:p-10 border-2 cursor-pointer transition-all hover:shadow-2xl ${selectedPlan === "legal" ? "border-blue-600 shadow-xl scale-[1.02]" : "border-[#ebebeb]"}`}>
+                    <h3 className="text-2xl font-black text-[#222] mb-2">Jurídico</h3>
+                    <p className="text-sm font-black text-blue-600 mb-6 uppercase tracking-widest">1,9% Comissão</p>
+                    <ul className="space-y-4 mb-8 text-[15px] font-medium text-[#444]">
+                      <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-blue-500 shrink-0" /> Elaboração de Contrato</li>
+                      <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-blue-500 shrink-0" /> Gestão de Documentos</li>
                     </ul>
                   </div>
                 )}
               </div>
-              <div className="mt-10 flex items-center justify-between gap-4">
-                <button type="button" onClick={handlePrevStep} className="p-4 rounded-2xl hover:bg-gray-200 transition-colors"><ArrowLeft className="w-5 h-5" /></button>
-                <button onClick={handleFinish} disabled={isSubmitting || !selectedPlan} className="flex-1 max-w-xs bg-[#222] text-white py-5 rounded-2xl font-black uppercase hover:bg-black shadow-lg transition-all">Publicar Anúncio</button>
+              <div className="mt-12 flex items-center justify-between gap-4">
+                <button type="button" onClick={handlePrevStep} className="p-5 rounded-2xl hover:bg-gray-200 transition-all"><ArrowLeft className="w-5 h-5" /></button>
+                <button onClick={handleFinish} disabled={isSubmitting || !selectedPlan} className="flex-1 max-w-xs bg-[#222] text-white py-6 rounded-3xl font-black uppercase hover:bg-black shadow-xl shadow-black/10 transition-all hover:scale-105">Publicar Anúncio</button>
               </div>
             </div>
           )}
           {step === 4 && (
-            <div className="text-center animate-in zoom-in duration-500 max-w-xl mx-auto">
-              <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-8"><CheckCircle2 className="w-12 h-12 text-emerald-600" /></div>
-              <h1 className="text-4xl font-black mb-4">Tudo pronto!</h1>
-              <p className="text-[#717171] text-lg mb-8">{tempUser ? `Verifique seu e-mail (${tempUser.email}) para confirmar sua conta.` : "Seu anúncio foi criado. Redirecionando..."}</p>
+            <div className="text-center animate-in zoom-in duration-500 max-w-xl mx-auto py-10">
+              <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-8 shadow-xl shadow-emerald-500/10"><CheckCircle2 className="w-12 h-12 text-emerald-600" /></div>
+              <h1 className="text-4xl font-black text-[#222] mb-4 tracking-tight">Tudo pronto!</h1>
+              <p className="text-[#717171] text-lg font-medium mb-8 leading-relaxed">{tempUser ? `Verifique seu e-mail (${tempUser.email}) para confirmar sua conta.` : "Seu anúncio foi criado com sucesso. Redirecionando para o seu painel..."}</p>
             </div>
           )}
         </div>
@@ -609,7 +608,7 @@ function AnunciarWizardContent() {
 
 export default function AnunciarWizard() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#222]"><Loader2 className="w-10 h-10 animate-spin text-amber-400" /></div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-white"><Loader2 className="w-10 h-10 animate-spin text-amber-400" /></div>}>
       <AnunciarWizardContent />
     </Suspense>
   );
