@@ -40,7 +40,7 @@ const LandingIntro = ({ onStart }: { onStart: () => void }) => {
         <img
           src="/anunciar-hero.png"
           alt=""
-          className="w-full h-full object-cover opacity-[0.03] lg:opacity-[0.05]"
+          className="w-full h-full object-cover opacity-[0.08] lg:opacity-[0.05]"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-white via-transparent to-white" />
       </div>
@@ -50,15 +50,6 @@ const LandingIntro = ({ onStart }: { onStart: () => void }) => {
           
           {/* Lado Esquerdo: Conteúdo */}
           <div>
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-12 h-12 rounded-2xl bg-[#f7f7f7] flex items-center justify-center border border-[#ebebeb] shadow-sm">
-                <Rocket className="w-6 h-6 text-[#222]" />
-              </div>
-              <span className="text-[14px] font-black text-[#222] uppercase tracking-widest">
-                Anunciar Imóvel
-              </span>
-            </div>
-            
             <h1 className="text-[42px] md:text-[64px] font-black text-[#222] leading-[1] tracking-[-0.04em] mb-8">
               Anuncie seu imóvel <span className="underline decoration-amber-400 decoration-4 underline-offset-[12px]">gratuitamente</span> na maior rede de elite.
             </h1>
