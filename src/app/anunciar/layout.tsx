@@ -8,13 +8,19 @@ export const metadata: Metadata = {
     description: "Anuncie seu imóvel grátis na finHouse. Vende melhor, mais rápido e com visibilidade nos maiores portais.",
     images: [
       {
-        url: "https://finhousebr.com.br/og-anunciar.png",
-        width: 1200,
-        height: 630,
-        alt: "Anuncie seu imóvel na finHouse",
+        url: "https://finhousebr.com.br/og-anunciar-house.png",
+        width: 1024,
+        height: 1024,
+        alt: "Anuncie seu imóvel na finHouse com a melhor visibilidade",
       },
     ],
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Anúncio Grátis de Imóveis | finHouse",
+    description: "Anuncie seu imóvel grátis na finHouse. Vende melhor, mais rápido e com segurança total.",
+    images: ["https://finhousebr.com.br/og-anunciar-house.png"],
   },
 };
 
