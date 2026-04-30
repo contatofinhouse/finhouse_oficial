@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     siteName: "finHouse",
     images: [
       {
-        url: "https://finhousebr.com.br/og-anunciar-v2.png",
+        url: "https://finhousebr.com.br/anunciar-hero.png?v=2",
         width: 1200,
         height: 630,
         alt: "Anuncie seu imóvel na finHouse",
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Anuncie seu Imóvel Grátis | finHouse",
     description: "Venda ou alugue seu imóvel mais rápido. Anúncio 100% grátis com visibilidade nos maiores portais do Brasil.",
-    images: ["https://finhousebr.com.br/og-anunciar-v2.png"],
+    images: ["https://finhousebr.com.br/anunciar-hero.png?v=2"],
   },
 };
 
