@@ -5,19 +5,17 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { 
   ArrowRight, ArrowLeft, Home, MapPin, BadgeDollarSign, 
-  CheckCircle2, Briefcase, Zap, ShieldCheck, Phone,
-  UploadCloud, Trash2, Star, Loader2, Search, Scale,
-  Building2, CalendarCheck, FileText, Users, Wrench, Receipt,
-  Rocket,
-  Check,
-  ChevronRight
+  CheckCircle2, Zap, ShieldCheck, UploadCloud, Trash2, Star, 
+  Loader2, Building2, Rocket, Check, ChevronRight, Users,
+  Scale, Phone
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { Listing } from "@/contexts/ListingsContext";
 import Footer from "@/components/Footer";
 
-type Step = 1 | 2 | 3 | 4;
+type Step = 1 | 2 | 3 | 4 | 5;
+type PlanType = "free" | "acelerador" | "full_service";
 
 const maskPhone = (value: string) => {
   const digits = value.replace(/\D/g, "");
@@ -34,43 +32,31 @@ const maskCep = (value: string) => {
   return `${digits.slice(0, 5)}-${digits.slice(5)}`;
 };
 
-const LandingIntro = ({ onStart }: { onStart: () => void }) => {
+const LandingIntro = ({ onStart }: { onStart: (plan: PlanType) => void }) => {
   return (
-    <div className="relative min-h-[calc(100vh-80px)] bg-white flex items-center justify-center py-16 md:py-24 overflow-hidden">
+    <div className="relative bg-white flex flex-col items-center justify-start pb-16 md:pb-24 overflow-hidden">
       {/* Background decoration */}
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-amber-500/[0.03] rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#f7f7f7] rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none" />
 
-      {/* Subtle background image for mobile/desktop background texture */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <img
-          src="/anunciar-hero.png"
-          alt=""
-          className="w-full h-full object-cover opacity-[0.04] md:opacity-[0.02]"
-        />
-      </div>
-
-      <div className="max-w-[1280px] mx-auto px-6 w-full relative z-10">
+      {/* Hero */}
+      <div className="min-h-[calc(100vh-80px)] max-w-[1280px] mx-auto px-6 w-full flex items-center justify-center relative z-10 py-16">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-          
           <div className="animate-in fade-in slide-in-from-left-8 duration-700">
             <h1 className="text-[44px] md:text-[64px] font-black text-[#222] leading-[1] tracking-[-0.04em] mb-8">
               Anuncie seu imóvel <span className="underline decoration-amber-400 decoration-4 underline-offset-[12px]">grátis</span> na finHouse.
             </h1>
-            
             <p className="text-[18px] md:text-[21px] text-[#717171] leading-relaxed mb-10 font-medium max-w-xl">
               Venda mais rápido com crédito integrado e visibilidade nos maiores portais do país.
             </p>
-
             <div className="flex flex-col sm:flex-row gap-4 mb-12">
-              <button
-                onClick={onStart}
-                className="inline-flex items-center justify-center gap-3 px-10 py-5 rounded-2xl bg-[#222] text-white text-[16px] font-black uppercase hover:bg-black transition-all hover:scale-105 active:scale-95 shadow-xl shadow-black/10"
-              >
-                Anunciar agora <ArrowRight className="w-5 h-5" />
+              <button onClick={() => {
+                const plansSection = document.getElementById('planos-section');
+                plansSection?.scrollIntoView({ behavior: 'smooth' });
+              }} className="inline-flex items-center justify-center gap-3 px-10 py-5 rounded-2xl bg-[#222] text-white text-[16px] font-black uppercase hover:bg-black transition-all hover:scale-105 active:scale-95 shadow-xl shadow-black/10">
+                Ver Planos <ArrowRight className="w-5 h-5" />
               </button>
             </div>
-
             <div className="flex items-center gap-6 opacity-30 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
                <span className="text-[11px] font-black text-[#222] uppercase tracking-widest shrink-0">Nos Maiores Portais</span>
                <div className="h-px bg-[#ebebeb] flex-1" />
@@ -82,41 +68,88 @@ const LandingIntro = ({ onStart }: { onStart: () => void }) => {
             </div>
           </div>
 
-          {/* Cards section */}
           <div className="grid sm:grid-cols-2 gap-4 animate-in fade-in slide-in-from-right-8 duration-700 delay-200">
             {[
-              { 
-                icon: Rocket, 
-                title: "Visibilidade Elite", 
-                desc: "Anúncio destaque na finHouse e nos maiores portais imobiliários." 
-              },
-              { 
-                icon: Zap, 
-                title: "Crédito Integrado", 
-                desc: "Financiamento e Consórcio para acelerar a venda para o seu comprador." 
-              },
-              { 
-                icon: ShieldCheck, 
-                title: "Segurança Total", 
-                desc: "Assessoria jurídica e operacional do início ao fechamento do negócio." 
-              },
-              { 
-                icon: BadgeDollarSign, 
-                title: "Custo Zero", 
-                desc: "Anúncio 100% grátis na plataforma. Sem taxas escondidas, sem mensalidade." 
-              },
+              { icon: Rocket, title: "Visibilidade Máxima", desc: "1 único anúncio integrado a diversos sites de forma automática." },
+              { icon: Zap, title: "Crédito Integrado", desc: "Financiamento e Consórcio para acelerar a venda para o comprador." },
+              { icon: ShieldCheck, title: "Segurança Total", desc: "Apoio jurídico e organização da nossa equipe do início ao fechamento." },
+              { icon: BadgeDollarSign, title: "Comece Grátis", desc: "Experimente nossa plataforma e publique sem taxas escondidas." },
             ].map((item) => (
-              <div key={item.title} className="p-8 rounded-[32px] bg-white border border-[#ebebeb] hover:border-amber-400/50 hover:shadow-2xl hover:shadow-amber-500/5 transition-all group cursor-pointer" onClick={onStart}>
+              <div key={item.title} className="p-8 rounded-[32px] bg-white border border-[#ebebeb] hover:border-amber-400/50 hover:shadow-2xl hover:shadow-amber-500/5 transition-all group">
                 <div className="w-14 h-14 rounded-2xl bg-[#f7f7f7] flex items-center justify-center mb-6 group-hover:bg-amber-400 transition-colors">
                   <item.icon className="w-6 h-6 text-[#222] group-hover:text-white transition-colors" strokeWidth={2.5} />
                 </div>
                 <h3 className="text-[18px] font-black text-[#222] mb-2 tracking-tight">{item.title}</h3>
                 <p className="text-[15px] text-[#717171] leading-relaxed font-medium">{item.desc}</p>
-                <div className="mt-4 flex items-center gap-2 text-[12px] font-black text-amber-500 opacity-0 group-hover:opacity-100 transition-all transform translate-x-[-10px] group-hover:translate-x-0 uppercase tracking-widest">
-                  Anunciar <ChevronRight className="w-4 h-4" />
-                </div>
               </div>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Planos Section */}
+      <div id="planos-section" className="w-full max-w-[1280px] mx-auto px-6 py-20 relative z-10 border-t border-[#f0f0f0]">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-5xl font-black text-[#222] mb-4 tracking-tight">Escolha seu Plano</h2>
+          <p className="text-[#717171] text-lg font-medium">Anuncie do seu jeito. Grátis ou com visibilidade máxima nos maiores portais do Brasil.</p>
+        </div>
+        <div className="grid md:grid-cols-3 gap-6 items-stretch">
+          {/* Básico */}
+          <div className="bg-white rounded-[40px] p-8 md:p-10 border-2 border-[#ebebeb] hover:border-amber-400/50 hover:shadow-2xl transition-all flex flex-col">
+            <h3 className="text-2xl font-black text-[#222] mb-2">Grátis</h3>
+            <p className="text-sm font-black text-emerald-600 mb-6 uppercase tracking-widest">Custo Zero</p>
+            <ul className="space-y-4 mb-8 text-[15px] font-medium text-[#444] flex-1">
+              <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" /> Anúncio no site finHouse</li>
+              <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" /> Sem exclusividade</li>
+              <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" /> Você mesmo negocia direto</li>
+            </ul>
+            <button onClick={() => onStart("free")} className="w-full py-4 rounded-2xl bg-[#f7f7f7] text-[#222] font-black uppercase hover:bg-gray-200 transition-colors mt-auto flex items-center justify-center gap-2">Começar Grátis <ArrowRight className="w-4 h-4"/></button>
+          </div>
+          
+          {/* Acelerador */}
+          <div className="bg-black rounded-[40px] p-8 md:p-10 border-2 border-amber-400 shadow-2xl scale-[1.02] relative flex flex-col z-10">
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-amber-400 text-[#222] px-6 py-1.5 rounded-full text-[12px] font-black uppercase tracking-widest whitespace-nowrap shadow-lg">O Mais Escolhido</div>
+            <h3 className="text-2xl font-black text-white mb-2">Acelerador</h3>
+            <p className="text-sm font-black text-amber-400 mb-6 uppercase tracking-widest">R$ 79 / mês</p>
+            <ul className="space-y-4 mb-8 text-[15px] font-medium text-white/80 flex-1">
+              <li className="flex items-start gap-3"><Zap className="w-5 h-5 text-amber-400 shrink-0" /> Anúncio nos principais portais do País (ZAP, VivaReal, OLX)</li>
+              <li className="flex items-start gap-3"><Star className="w-5 h-5 text-amber-400 shrink-0" /> 1 único cadastro espelhado em diversos sites automaticamente</li>
+              <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-amber-400 shrink-0" /> Zero comissão de corretagem na venda</li>
+            </ul>
+            <button onClick={() => onStart("acelerador")} className="w-full py-4 rounded-2xl bg-amber-400 text-[#222] font-black uppercase hover:bg-amber-500 transition-colors mt-auto flex items-center justify-center gap-2">Quero Visibilidade <ArrowRight className="w-4 h-4"/></button>
+          </div>
+
+          {/* Full Service */}
+          <div className="bg-white rounded-[40px] p-8 md:p-10 border-2 border-[#ebebeb] hover:border-amber-400/50 hover:shadow-2xl transition-all flex flex-col">
+            <h3 className="text-2xl font-black text-[#222] mb-2">Full Service</h3>
+            <p className="text-sm font-black text-blue-600 mb-6 uppercase tracking-widest">6% na Venda / 8% Aluguel</p>
+            <ul className="space-y-4 mb-8 text-[15px] font-medium text-[#444] flex-1">
+              <li className="flex items-start gap-3"><Rocket className="w-5 h-5 text-blue-500 shrink-0" /> Tudo do plano Acelerador +</li>
+              <li className="flex items-start gap-3"><Users className="w-5 h-5 text-blue-500 shrink-0" /> Corretor Dedicado (Organização de visitas, vistoria e análise de crédito de clientes)</li>
+              <li className="flex items-start gap-3"><ShieldCheck className="w-5 h-5 text-blue-500 shrink-0" /> Assessoria Jurídica e Contratos Inclusa</li>
+            </ul>
+            <button onClick={() => onStart("full_service")} className="w-full py-4 rounded-2xl bg-[#f7f7f7] text-[#222] font-black uppercase hover:bg-gray-200 transition-colors mt-auto flex items-center justify-center gap-2">Quero Comodidade <ArrowRight className="w-4 h-4"/></button>
+          </div>
+        </div>
+      </div>
+
+      {/* Quem Somos */}
+      <div className="w-full max-w-[1280px] mx-auto px-6 py-20">
+        <div className="bg-gray-50 rounded-[40px] overflow-hidden flex flex-col md:flex-row items-stretch border border-gray-100">
+          <div className="md:w-1/2 p-10 md:p-16 flex flex-col justify-center">
+            <h2 className="text-3xl md:text-4xl font-black text-[#222] mb-6 tracking-tight">Muito mais que um portal de imóveis.</h2>
+            <p className="text-[#717171] text-lg leading-relaxed font-medium">
+              A <strong>finHouse</strong> integra soluções jurídicas, financiamento imobiliário, consórcios e serviços de corretagem em um só lugar. 
+              Nossa missão é garantir agilidade, segurança total e o melhor negócio tanto para proprietários quanto para compradores.
+            </p>
+            <div className="mt-8 flex items-center gap-4">
+               <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center"><Building2 className="w-6 h-6 text-amber-600" /></div>
+               <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center"><Scale className="w-6 h-6 text-blue-600" /></div>
+               <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center"><BadgeDollarSign className="w-6 h-6 text-emerald-600" /></div>
+            </div>
+          </div>
+          <div className="md:w-1/2 relative min-h-[300px]">
+            <img src="/anunciar-hero.png" alt="Propriedade finHouse" className="absolute inset-0 w-full h-full object-cover" />
           </div>
         </div>
       </div>
@@ -128,7 +161,7 @@ function AnunciarWizardContent() {
   const router = useRouter();
   const { login, user } = useAuth();
   
-  const [showIntro, setShowIntro] = useState(true);
+  const [selectedPlan, setSelectedPlan] = useState<PlanType | null>(null);
   const [step, setStep] = useState<Step>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
@@ -200,8 +233,6 @@ function AnunciarWizardContent() {
     isLogin: false
   });
 
-  const [selectedPlan, setSelectedPlan] = useState<"free" | "premium" | "legal" | null>(null);
-
   const formatCurrency = (v: string) => {
     const num = v.replace(/\D/g, "");
     if (!num) return "";
@@ -209,19 +240,28 @@ function AnunciarWizardContent() {
   };
   const parseCurrency = (v: string) => Number(v.replace(/\D/g, "")) / 100;
 
+  const handleStartFlow = (plan: PlanType) => {
+    setSelectedPlan(plan);
+    setStep(1);
+    window.scrollTo(0, 0);
+  };
+
   const handleNextStep = () => {
     if (step === 1) {
       if (!propertyData.cep && !manualAddress) return alert("Preencha o CEP do imóvel");
       if (!propertyData.city) return alert("Informe a cidade");
       if (!propertyData.number) return alert("Informe o número do imóvel");
-      if (!propertyData.price) return alert("Preencha o valor do imóvel");
-      if (photos.length === 0) return alert("Envie pelo menos 1 foto do imóvel");
     }
-    if (step === 1 && !!user) { setStep(3); return; }
+    if (step === 2 && !!user) { setStep(3); return; } // Skip auth if logged in
+    if (step === 3) {
+      if (!propertyData.price) return alert("Preencha o valor do imóvel");
+    }
     setStep((prev) => (prev + 1) as Step);
   };
+  
   const handlePrevStep = () => {
-    if (step === 3 && !!user) { setStep(1); return; }
+    if (step === 1) { setSelectedPlan(null); return; } // Go back to landing
+    if (step === 3 && !!user) { setStep(1); return; } // Skip auth back to 1
     setStep((prev) => (prev - 1) as Step);
   };
 
@@ -321,7 +361,6 @@ function AnunciarWizardContent() {
   };
 
   const handleFinish = async () => {
-    if (!selectedPlan) { alert("Por favor, selecione um plano para continuar."); return; }
     setIsSubmitting(true);
     try {
       const { data: { user: sbUser } } = await supabase.auth.getUser();
@@ -354,7 +393,7 @@ function AnunciarWizardContent() {
       const fullAddress = [propertyData.street, propertyData.number, propertyData.complement].filter(Boolean).join(", ");
       const payload: Partial<Listing> = {
         title: propertyData.title || `${propertyData.propertyType} em ${propertyData.neighborhood || propertyData.city}`,
-        description: propertyData.description || `Plano selecionado: ${selectedPlan.toUpperCase()}.`,
+        description: propertyData.description || `Plano selecionado: ${selectedPlan?.toUpperCase() || 'GRATIS'}.`,
         type: propertyData.type as "venda" | "aluguel",
         propertyType: propertyData.propertyType,
         price: parseCurrency(propertyData.price) || 0,
@@ -378,17 +417,19 @@ function AnunciarWizardContent() {
         iptu: parseCurrency(propertyData.iptu) || 0,
         owner_name: authData.name || currentUser.email?.split("@")[0],
         owner_phone: authData.phone.replace(/\D/g, ""),
-        plan: selectedPlan,
+        plan: selectedPlan || "free",
         status: "pending_approval"
       };
       const { error } = await supabase.from('listings').insert([payload]);
       if (error) { alert("Erro ao salvar o anúncio: " + error.message); setIsSubmitting(false); return; }
-      setStep(4);
-      setTimeout(() => router.push("/dashboard"), 4000);
+      
+      // Sucesso
+      setStep(5);
+      
     } catch (err: any) { alert("Erro ao salvar o anúncio: " + err.message); } finally { setIsSubmitting(false); }
   };
 
-  if (showIntro) {
+  if (!selectedPlan) {
     return (
       <div className="min-h-screen bg-white">
         <header className="bg-white border-b border-[#ebebeb] py-4 px-6 sticky top-0 z-50">
@@ -399,7 +440,7 @@ function AnunciarWizardContent() {
             </div>
           </div>
         </header>
-        <LandingIntro onStart={() => setShowIntro(false)} />
+        <LandingIntro onStart={handleStartFlow} />
         <Footer />
       </div>
     );
@@ -409,26 +450,30 @@ function AnunciarWizardContent() {
     <div className="min-h-screen bg-[#f7f7f7] flex flex-col">
       <header className="bg-white border-b border-[#ebebeb] py-4 px-6 sticky top-0 z-50">
         <div className="max-w-[1200px] mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push("/")}>
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setSelectedPlan(null)}>
             <Image src="/logo.png" alt="finHouse" width={32} height={32} className="rounded-lg" />
             <span className="text-[20px] font-bold text-[#222] tracking-tight">finHouse.</span>
           </div>
-          <div className="flex items-center gap-2">
-            {[1, 2, 3].map((s) => (
-              <div key={s} className={`w-12 h-1.5 rounded-full transition-colors ${step >= s ? "bg-amber-400" : "bg-gray-200"}`} />
-            ))}
-          </div>
+          {step < 5 && (
+            <div className="flex items-center gap-2">
+              {[1, 2, 3, 4].map((s) => (
+                <div key={s} className={`w-8 h-1.5 rounded-full transition-colors ${step >= s ? "bg-amber-400" : "bg-gray-200"}`} />
+              ))}
+            </div>
+          )}
         </div>
       </header>
 
       <main className="flex-1 py-12 md:py-20 px-6">
         <div className="max-w-2xl mx-auto w-full">
+          
+          {/* PASSO 1: BÁSICO */}
           {step === 1 && (
             <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl shadow-black/5 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="mb-8">
-                <p className="text-amber-500 font-bold text-sm tracking-widest uppercase mb-2">Passo 1 de 3</p>
-                <h1 className="text-3xl md:text-4xl font-extrabold text-[#222] mb-3">Sobre o Imóvel</h1>
-                <p className="text-[#717171] text-lg font-medium leading-tight">Conte-nos os detalhes do imóvel que deseja anunciar.</p>
+                <p className="text-amber-500 font-bold text-sm tracking-widest uppercase mb-2">Passo 1 de 4</p>
+                <h1 className="text-3xl md:text-4xl font-extrabold text-[#222] mb-3">O que vamos anunciar?</h1>
+                <p className="text-[#717171] text-lg font-medium leading-tight">Plano escolhido: <strong className="uppercase text-amber-500">{selectedPlan.replace('_', ' ')}</strong></p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -466,8 +511,74 @@ function AnunciarWizardContent() {
                       <input type="text" value={propertyData.number} onChange={e => setPropertyData({...propertyData, number: e.target.value})} className="w-full h-14 px-4 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none" />
                     </div>
                   </div>
+                  {propertyData.street && (
+                    <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                      {propertyData.street}, Bairro {propertyData.neighborhood} - {propertyData.city}/{propertyData.uf}
+                    </div>
+                  )}
                 </div>
-                <div className="col-span-1 md:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-4">
+              </div>
+
+              <div className="mt-10 flex gap-4">
+                <button type="button" onClick={handlePrevStep} className="p-5 rounded-2xl hover:bg-gray-200 transition-all"><ArrowLeft className="w-5 h-5" /></button>
+                <button onClick={handleNextStep} disabled={!propertyData.cep || !propertyData.number} className="flex-1 bg-[#222] text-white px-10 py-5 rounded-2xl font-black uppercase hover:bg-black transition-all hover:scale-105 active:scale-95 disabled:opacity-50 shadow-xl shadow-black/10">Continuar <ArrowRight className="w-5 h-5" /></button>
+              </div>
+            </div>
+          )}
+
+          {/* PASSO 2: LEAD / AUTH */}
+          {step === 2 && (
+            <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl shadow-black/5 animate-in fade-in slide-in-from-right-4 duration-500 max-w-xl mx-auto">
+              <div className="mb-8 text-center">
+                <p className="text-amber-500 font-bold text-sm tracking-widest uppercase mb-2">Passo 2 de 4</p>
+                <h1 className="text-3xl font-extrabold text-[#222] mb-3">Seus Contatos</h1>
+                <p className="text-[#717171] font-medium">Como podemos avisar você sobre os interessados?</p>
+              </div>
+              
+              {!user && (
+                <div className="flex gap-2 mb-8 bg-[#f7f7f7] p-2 rounded-2xl">
+                  <button onClick={() => setAuthData({...authData, isLogin: false})} className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${!authData.isLogin ? "bg-[#222] text-white shadow-lg" : "text-gray-500"}`}>Novo Anunciante</button>
+                  <button onClick={() => setAuthData({...authData, isLogin: true})} className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${authData.isLogin ? "bg-[#222] text-white shadow-lg" : "text-gray-500"}`}>Já tenho conta</button>
+                </div>
+              )}
+
+              <form onSubmit={handleAuthSubmit} className="space-y-4">
+                {user ? (
+                   <div className="text-center py-6 bg-gray-50 rounded-2xl border border-gray-100">
+                     <p className="font-bold text-lg text-[#222]">Bem-vindo de volta, {user.email?.split('@')[0]}!</p>
+                     <p className="text-sm text-gray-500 mt-1">Você está conectado.</p>
+                   </div>
+                ) : (
+                  <>
+                    {!authData.isLogin && (
+                      <>
+                        <input type="text" required placeholder="Nome Completo" value={authData.name} onChange={e => setAuthData({...authData, name: e.target.value})} className="w-full h-14 px-6 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:border-black transition-colors" />
+                        <input type="tel" required placeholder="WhatsApp" value={maskPhone(authData.phone)} onChange={e => setAuthData({...authData, phone: e.target.value})} className="w-full h-14 px-6 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:border-black transition-colors" />
+                      </>
+                    )}
+                    <input type="email" required placeholder="E-mail" value={authData.email} onChange={e => setAuthData({...authData, email: e.target.value})} className="w-full h-14 px-6 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:border-black transition-colors" />
+                    <input type="password" required placeholder="Senha" value={authData.password} onChange={e => setAuthData({...authData, password: e.target.value})} className="w-full h-14 px-6 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:border-black transition-colors" />
+                  </>
+                )}
+                
+                <div className="pt-6 flex gap-4">
+                  <button type="button" onClick={handlePrevStep} className="p-5 rounded-2xl hover:bg-gray-100 text-gray-400 transition-all"><ArrowLeft className="w-5 h-5" /></button>
+                  <button type="submit" disabled={isSubmitting} className="flex-1 bg-[#222] text-white h-14 rounded-2xl font-black uppercase hover:bg-black transition-all shadow-xl shadow-black/10">{user ? "Continuar" : "Criar Conta & Continuar"}</button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* PASSO 3: CARACTERISTICAS */}
+          {step === 3 && (
+            <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl shadow-black/5 animate-in fade-in slide-in-from-right-4 duration-500">
+               <div className="mb-8">
+                <p className="text-amber-500 font-bold text-sm tracking-widest uppercase mb-2">Passo 3 de 4</p>
+                <h1 className="text-3xl font-extrabold text-[#222] mb-3">Detalhes do Imóvel</h1>
+                <p className="text-[#717171] font-medium">Informe o preço e tamanho para atrair interessados.</p>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-[#222]">Quartos</label>
                     <input type="number" value={propertyData.bedrooms} onChange={e => setPropertyData({...propertyData, bedrooms: e.target.value})} className="w-full h-14 px-4 rounded-2xl bg-gray-50 border border-gray-200" />
@@ -484,116 +595,92 @@ function AnunciarWizardContent() {
                     <label className="text-sm font-semibold text-[#222]">Área (m²)</label>
                     <input type="number" value={propertyData.area} onChange={e => setPropertyData({...propertyData, area: e.target.value})} className="w-full h-14 px-4 rounded-2xl bg-gray-50 border border-gray-200" />
                   </div>
-                </div>
-                <div className="col-span-1 md:col-span-2 space-y-4">
-                    <label className="text-sm font-semibold text-[#222]">Fotos (até 20) *</label>
-                    <label className="flex flex-col items-center justify-center w-full min-h-[120px] border-2 border-dashed border-[#ddd] rounded-3xl cursor-pointer hover:bg-[#f7f7f7] p-4 text-center transition-colors">
-                        <UploadCloud className="w-8 h-8 text-[#b0b0b0] mb-2" />
-                        <span className="text-[14px] font-bold text-[#222]">Selecionar Fotos</span>
-                        <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileChange} />
-                    </label>
-                    {photos.length > 0 && (
-                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mt-4">
-                            {photos.map((photo, index) => (
-                                <div key={photo.id} className={`relative aspect-square rounded-2xl overflow-hidden border border-[#ebebeb] ${coverPhotoId === photo.id ? 'ring-2 ring-amber-400 ring-offset-2' : ''}`}>
-                                    <img src={photo.url} className="w-full h-full object-cover" />
-                                    <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                        <button onClick={() => setCoverPhotoId(photo.id)} className="p-2 bg-white rounded-xl shadow-lg"><Star className="w-4 h-4 text-amber-500" /></button>
-                                        <button onClick={() => removePhoto(index)} className="p-2 bg-red-500 rounded-xl text-white shadow-lg"><Trash2 className="w-4 h-4" /></button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-                <div className="col-span-1 md:col-span-2 space-y-2 pt-4 border-t border-gray-100">
-                    <label className="text-sm font-semibold text-[#222]">Preço de {propertyData.type === 'venda' ? 'Venda' : 'Aluguel'} *</label>
-                    <input type="text" value={propertyData.price} onChange={e => setPropertyData({...propertyData, price: formatCurrency(e.target.value)})} className="w-full h-16 px-6 rounded-3xl bg-gray-50 border border-gray-200 text-xl font-black text-[#222] focus:outline-none focus:border-black transition-colors" />
-                </div>
               </div>
 
-              <div className="mt-10 flex justify-end">
-                <button onClick={handleNextStep} disabled={!propertyData.price || photos.length === 0} className="w-full md:w-auto bg-[#222] text-white px-10 py-5 rounded-2xl font-black uppercase hover:bg-black transition-all hover:scale-105 active:scale-95 disabled:opacity-50 shadow-xl shadow-black/10">Continuar <ArrowRight className="w-5 h-5" /></button>
+              <div className="space-y-2 pt-4 border-t border-gray-100">
+                  <label className="text-sm font-semibold text-[#222]">Preço de {propertyData.type === 'venda' ? 'Venda' : 'Aluguel'} *</label>
+                  <input type="text" value={propertyData.price} onChange={e => setPropertyData({...propertyData, price: formatCurrency(e.target.value)})} className="w-full h-16 px-6 rounded-3xl bg-gray-50 border border-gray-200 text-xl font-black text-[#222] focus:outline-none focus:border-black transition-colors" />
+              </div>
+
+              <div className="mt-10 flex gap-4">
+                  <button type="button" onClick={handlePrevStep} className="p-5 rounded-2xl hover:bg-gray-200 transition-all"><ArrowLeft className="w-5 h-5" /></button>
+                  <button onClick={handleNextStep} disabled={!propertyData.price} className="flex-1 bg-[#222] text-white px-10 py-5 rounded-2xl font-black uppercase hover:bg-black transition-all shadow-xl shadow-black/10">Continuar</button>
               </div>
             </div>
           )}
-          {step === 2 && (
-            <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl shadow-black/5 animate-in fade-in slide-in-from-right-4 duration-500 max-w-xl mx-auto">
-              <div className="mb-8 text-center">
-                <p className="text-amber-500 font-bold text-sm tracking-widest uppercase mb-2">Passo 2 de 3</p>
-                <h1 className="text-3xl font-extrabold text-[#222] mb-3">Sua Conta</h1>
-                <p className="text-[#717171] font-medium">Crie sua conta para gerenciar seu anúncio.</p>
-              </div>
-              <div className="flex gap-2 mb-8 bg-[#f7f7f7] p-2 rounded-2xl">
-                <button onClick={() => setAuthData({...authData, isLogin: false})} className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${!authData.isLogin ? "bg-[#222] text-white shadow-lg" : "text-gray-500"}`}>Criar Conta</button>
-                <button onClick={() => setAuthData({...authData, isLogin: true})} className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${authData.isLogin ? "bg-[#222] text-white shadow-lg" : "text-gray-500"}`}>Login</button>
-              </div>
-              <form onSubmit={handleAuthSubmit} className="space-y-4">
-                {!authData.isLogin && (
-                  <>
-                    <input type="text" required placeholder="Nome Completo" value={authData.name} onChange={e => setAuthData({...authData, name: e.target.value})} className="w-full h-14 px-6 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:border-black transition-colors" />
-                    <input type="tel" required placeholder="WhatsApp" value={maskPhone(authData.phone)} onChange={e => setAuthData({...authData, phone: e.target.value})} className="w-full h-14 px-6 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:border-black transition-colors" />
-                  </>
-                )}
-                <input type="email" required placeholder="E-mail" value={authData.email} onChange={e => setAuthData({...authData, email: e.target.value})} className="w-full h-14 px-6 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:border-black transition-colors" />
-                <input type="password" required placeholder="Senha" value={authData.password} onChange={e => setAuthData({...authData, password: e.target.value})} className="w-full h-14 px-6 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:border-black transition-colors" />
-                <div className="pt-6 flex gap-4">
-                  <button type="button" onClick={handlePrevStep} className="p-5 rounded-2xl hover:bg-gray-100 text-gray-400 transition-all"><ArrowLeft className="w-5 h-5" /></button>
-                  <button type="submit" disabled={isSubmitting} className="flex-1 bg-[#222] text-white h-14 rounded-2xl font-black uppercase hover:bg-black transition-all shadow-xl shadow-black/10">Continuar</button>
-                </div>
-              </form>
-            </div>
-          )}
-          {step === 3 && (
-            <div className="animate-in fade-in slide-in-from-right-4 duration-500 w-full max-w-[1000px] mx-auto">
-              <div className="mb-10 text-center">
-                <p className="text-amber-500 font-bold text-sm tracking-widest uppercase mb-2">Passo 3 de 3</p>
-                <h1 className="text-3xl md:text-5xl font-black text-[#222] mb-4">Escolha seu Plano</h1>
-                <p className="text-[#717171] text-lg font-medium">Selecione como deseja anunciar seu imóvel.</p>
-              </div>
-              <div className={`grid gap-6 ${propertyData.type === 'venda' ? 'md:grid-cols-3' : 'md:grid-cols-2 max-w-[700px] mx-auto'}`}>
-                <div onClick={() => setSelectedPlan("free")} className={`bg-white rounded-[40px] p-8 md:p-10 border-2 cursor-pointer transition-all hover:shadow-2xl ${selectedPlan === "free" ? "border-[#222] shadow-xl scale-[1.02]" : "border-[#ebebeb]"}`}>
-                  <h3 className="text-2xl font-black text-[#222] mb-2">Básico</h3>
-                  <p className="text-sm font-black text-emerald-600 mb-6 uppercase tracking-widest">Grátis</p>
-                  <ul className="space-y-4 mb-8 text-[15px] font-medium text-[#444]">
-                    <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" /> Anúncio no site finHouse</li>
-                    <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" /> Sem exclusividade</li>
-                  </ul>
-                </div>
-                <div onClick={() => setSelectedPlan("premium")} className={`bg-black rounded-[40px] p-8 md:p-10 border-2 cursor-pointer transition-all hover:shadow-2xl relative ${selectedPlan === "premium" ? "border-amber-400 shadow-xl scale-[1.02]" : "border-transparent"}`}>
-                  <div className="absolute -top-4 right-8 bg-amber-400 text-[#222] px-4 py-1 rounded-full text-[11px] font-black uppercase tracking-widest">Recomendado</div>
-                  <h3 className="text-2xl font-black text-white mb-2">Elite Premium</h3>
-                  <p className="text-sm font-black text-amber-400 mb-6 uppercase tracking-widest">{propertyData.type === 'aluguel' ? '8% Mensal' : '6% Comissão'}</p>
-                  <ul className="space-y-4 mb-8 text-[15px] font-medium text-white/80">
-                    <li className="flex items-start gap-3"><Zap className="w-5 h-5 text-amber-400 shrink-0" /> Anúncio em todos os Portais</li>
-                    <li className="flex items-start gap-3"><ShieldCheck className="w-5 h-5 text-amber-400 shrink-0" /> Assessoria Jurídica Total</li>
-                    <li className="flex items-start gap-3"><Star className="w-5 h-5 text-amber-400 shrink-0" /> Fotos Profissionais</li>
-                  </ul>
-                </div>
-                {propertyData.type === 'venda' && (
-                  <div onClick={() => setSelectedPlan("legal")} className={`bg-white rounded-[40px] p-8 md:p-10 border-2 cursor-pointer transition-all hover:shadow-2xl ${selectedPlan === "legal" ? "border-blue-600 shadow-xl scale-[1.02]" : "border-[#ebebeb]"}`}>
-                    <h3 className="text-2xl font-black text-[#222] mb-2">Jurídico</h3>
-                    <p className="text-sm font-black text-blue-600 mb-6 uppercase tracking-widest">1,9% Comissão</p>
-                    <ul className="space-y-4 mb-8 text-[15px] font-medium text-[#444]">
-                      <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-blue-500 shrink-0" /> Elaboração de Contrato</li>
-                      <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-blue-500 shrink-0" /> Gestão de Documentos</li>
-                    </ul>
-                  </div>
-                )}
-              </div>
-              <div className="mt-12 flex items-center justify-between gap-4">
-                <button type="button" onClick={handlePrevStep} className="p-5 rounded-2xl hover:bg-gray-200 transition-all"><ArrowLeft className="w-5 h-5" /></button>
-                <button onClick={handleFinish} disabled={isSubmitting || !selectedPlan} className="flex-1 max-w-xs bg-[#222] text-white py-6 rounded-3xl font-black uppercase hover:bg-black shadow-xl shadow-black/10 transition-all hover:scale-105">Publicar Anúncio</button>
-              </div>
-            </div>
-          )}
+
+          {/* PASSO 4: FOTOS (ÚLTIMO) */}
           {step === 4 && (
-            <div className="text-center animate-in zoom-in duration-500 max-w-xl mx-auto py-10">
-              <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-8 shadow-xl shadow-emerald-500/10"><CheckCircle2 className="w-12 h-12 text-emerald-600" /></div>
-              <h1 className="text-4xl font-black text-[#222] mb-4 tracking-tight">Tudo pronto!</h1>
-              <p className="text-[#717171] text-lg font-medium mb-8 leading-relaxed">{tempUser ? `Verifique seu e-mail (${tempUser.email}) para confirmar sua conta.` : "Seu anúncio foi criado com sucesso. Redirecionando para o seu painel..."}</p>
+            <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl shadow-black/5 animate-in fade-in slide-in-from-right-4 duration-500">
+               <div className="mb-8">
+                <p className="text-amber-500 font-bold text-sm tracking-widest uppercase mb-2">Último Passo (Opcional)</p>
+                <h1 className="text-3xl font-extrabold text-[#222] mb-3">Fotos do Imóvel</h1>
+                <p className="text-[#717171] font-medium">Adicione agora ou envie depois pelo seu painel.</p>
+              </div>
+
+              <div className="space-y-4">
+                  <label className="flex flex-col items-center justify-center w-full min-h-[160px] border-2 border-dashed border-[#ddd] rounded-3xl cursor-pointer hover:bg-[#f7f7f7] p-4 text-center transition-colors">
+                      <UploadCloud className="w-10 h-10 text-[#b0b0b0] mb-3" />
+                      <span className="text-[16px] font-bold text-[#222]">Selecionar Fotos</span>
+                      <span className="text-sm text-gray-400 mt-1">Formatos suportados: JPG, PNG</span>
+                      <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileChange} />
+                  </label>
+                  {photos.length > 0 && (
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mt-4">
+                          {photos.map((photo, index) => (
+                              <div key={photo.id} className={`relative aspect-square rounded-2xl overflow-hidden border border-[#ebebeb] ${coverPhotoId === photo.id ? 'ring-2 ring-amber-400 ring-offset-2' : ''}`}>
+                                  <img src={photo.url} className="w-full h-full object-cover" />
+                                  <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                      <button onClick={() => setCoverPhotoId(photo.id)} className="p-2 bg-white rounded-xl shadow-lg"><Star className="w-4 h-4 text-amber-500" /></button>
+                                      <button onClick={() => removePhoto(index)} className="p-2 bg-red-500 rounded-xl text-white shadow-lg"><Trash2 className="w-4 h-4" /></button>
+                                  </div>
+                              </div>
+                          ))}
+                      </div>
+                  )}
+              </div>
+
+              <div className="mt-10 flex gap-4">
+                  <button type="button" onClick={handlePrevStep} className="p-5 rounded-2xl hover:bg-gray-200 transition-all"><ArrowLeft className="w-5 h-5" /></button>
+                  <button onClick={handleFinish} disabled={isSubmitting} className="flex-1 bg-amber-400 text-[#222] px-10 py-5 rounded-2xl font-black uppercase hover:bg-amber-500 transition-all shadow-xl shadow-amber-500/20 flex justify-center items-center gap-2">
+                    {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Publicar Anúncio"}
+                  </button>
+              </div>
             </div>
           )}
+
+          {/* SUCESSO (PASSO 5) */}
+          {step === 5 && (
+            <div className="bg-white rounded-3xl p-10 md:p-14 shadow-xl shadow-black/5 text-center animate-in zoom-in duration-500 border-2 border-emerald-500/20">
+              <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-8 shadow-xl shadow-emerald-500/20">
+                <CheckCircle2 className="w-12 h-12 text-emerald-500" />
+              </div>
+              <h1 className="text-3xl md:text-4xl font-black text-[#222] mb-4 tracking-tight">Cadastro Recebido!</h1>
+              <p className="text-[#717171] text-lg font-medium mb-4 leading-relaxed">
+                Em breve um de nossos consultores entrará em contato com você para dar andamento de acordo com o plano escolhido (<strong className="uppercase text-amber-500">{selectedPlan?.replace('_', ' ')}</strong>).
+              </p>
+              
+              <div className="mt-8 bg-[#f7f7f7] p-6 rounded-2xl border border-[#ebebeb]">
+                <p className="text-[#444] font-medium mb-3">Caso precise de apoio imediato, entre em contato:</p>
+                <a 
+                  href="https://wa.me/5511955842951" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#25D366] text-white font-bold rounded-xl hover:bg-[#22c35e] transition-colors"
+                >
+                  <Phone className="w-5 h-5" />
+                  (11) 95584-2951
+                </a>
+              </div>
+
+              <div className="mt-10">
+                <button onClick={() => router.push("/dashboard")} className="px-8 py-4 bg-[#222] text-white rounded-xl font-bold uppercase hover:bg-black transition-colors w-full sm:w-auto">
+                  Acessar meu Painel
+                </button>
+              </div>
+            </div>
+          )}
+
         </div>
       </main>
       <Footer />
