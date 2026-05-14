@@ -66,7 +66,7 @@ export async function POST(req: Request) {
 
     const { data, error } = await resend.emails.send({
       from: 'Finhouse Leads <onboarding@resend.dev>', // No futuro o usuário pode configurar domínio próprio
-      to: ['rafael@finhousebr.com.br'], // Substituir pelo email de destino desejado
+      to: ['contatofinhouse@gmail.com.br'], // Email solicitado pelo usuário
       subject: `Novo Lead: ${nome_completo || cpf}`,
       html: emailHtml,
     });
