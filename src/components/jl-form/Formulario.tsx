@@ -205,6 +205,27 @@ export function Formulario({ cpf, initialData }: FormularioProps) {
   // Progress Bar Width
   const progress = (currentVisibleIndex / (visibleSteps.length - 1)) * 100;
 
+  const handleFinalize = async () => {
+    setSaveStatus('saving');
+    try {
+      const { error } = await supabase
+        .from('leads_jl')
+        .update({
+          status: 'finalizado',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('cpf', cpf);
+
+      if (error) throw error;
+      setSaveStatus('saved');
+      setIsFinished(true);
+    } catch (error) {
+      console.error('Erro ao finalizar:', error);
+      alert('Erro ao finalizar cadastro. Tente novamente.');
+      setSaveStatus('idle');
+    }
+  };
+
   if (isFinished) {
     return (
       <div 
@@ -484,11 +505,12 @@ export function Formulario({ cpf, initialData }: FormularioProps) {
                 Próximo <ChevronRight className="ml-2 h-4 w-4" />
               </Button>
             ) : (
-              <Button onClick={() => setIsFinished(true)} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+              <Button onClick={handleFinalize} className="bg-emerald-600 hover:bg-emerald-700 text-white" disabled={saveStatus === 'saving'}>
                 Finalizar Cadastro <CheckCircle2 className="ml-2 h-4 w-4" />
               </Button>
             )}
           </CardFooter>
+
         </Card>
       </div>
     </div>
