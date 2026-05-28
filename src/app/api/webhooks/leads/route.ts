@@ -64,9 +64,13 @@ export async function POST(req: Request) {
       </div>
     `;
 
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'Finhouse Leads <onboarding@resend.dev>';
+    const toEmailsEnv = process.env.RESEND_TO_EMAILS || 'contatofinhouse@gmail.com,phfmarcondes@gmail.com';
+    const toEmails = toEmailsEnv.split(',').map(email => email.trim());
+
     const { data, error } = await resend.emails.send({
-      from: 'Finhouse Leads <onboarding@resend.dev>', // No futuro o usuário pode configurar domínio próprio
-      to: ['contatofinhouse@gmail.com', 'phfmarcondes@gmail.com'], // Lista de destinatários
+      from: fromEmail,
+      to: toEmails,
       subject: `Novo Lead: ${nome_completo || cpf}`,
       html: emailHtml,
     });
