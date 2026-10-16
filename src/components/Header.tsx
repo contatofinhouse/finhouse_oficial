@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
-import { Menu, X, User, Instagram, MessageCircle, Megaphone, Building2, ChevronDown, Zap, Gift, BadgeDollarSign } from "lucide-react";
+import { Menu, X, User, Instagram, MessageCircle, Megaphone, Building2, ChevronDown, Zap, Gift, BadgeDollarSign, Sparkles } from "lucide-react";
 
 const WHATSAPP_LINK = "https://wa.me/5511955842951";
 const INSTAGRAM_LINK = "https://instagram.com/finhouse_oficial";
