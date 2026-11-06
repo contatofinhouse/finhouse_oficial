@@ -782,11 +782,11 @@ export default function LeilaoComIaPage() {
         zoomControl: false,
       });
 
-      const cartoKey =
-        process.env.NEXT_PUBLIC_CARTO_API_KEY ||
-        "cb1_53hz_1_8ecd996a52a5224357feae16";
+      const cartoKey = process.env.NEXT_PUBLIC_CARTO_API_KEY;
       L.tileLayer(
-        `https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${cartoKey}`,
+        `https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png${
+          cartoKey ? `?key=${cartoKey}` : ""
+        }`,
         {
           attribution: "&copy; OpenStreetMap &copy; CARTO",
           maxZoom: 20,
