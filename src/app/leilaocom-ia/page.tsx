@@ -782,17 +782,10 @@ export default function LeilaoComIaPage() {
         zoomControl: false,
       });
 
-      const cartoKey = process.env.NEXT_PUBLIC_CARTO_API_KEY;
-      L.tileLayer(
-        `https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png${
-          cartoKey ? `?key=${cartoKey}` : ""
-        }`,
-        {
-          attribution: "&copy; OpenStreetMap &copy; CARTO",
-          maxZoom: 20,
-          subdomains: "abcd",
-        }
-      ).addTo(map);
+      L.tileLayer("/api/leiloes/tile?z={z}&x={x}&y={y}&r={r}", {
+        attribution: "&copy; OpenStreetMap &copy; CARTO",
+        maxZoom: 20,
+      }).addTo(map);
 
       L.control.zoom({ position: "bottomright" }).addTo(map);
 
