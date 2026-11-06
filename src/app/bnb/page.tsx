@@ -190,6 +190,7 @@ export default function BnbPage() {
                         src="/bnb/copan.jpg"
                         alt="Apartamento no Edifício Copan em São Paulo gerenciado pela finHouse"
                         fill
+                        sizes="(max-width: 768px) 100vw, 50vw"
                         className="object-cover"
                         priority
                       />
@@ -216,6 +217,7 @@ export default function BnbPage() {
                         src="/bnb/riviera.jpg"
                         alt="Flats na Riviera de São Lourenço gerenciados pela finHouse"
                         fill
+                        sizes="(max-width: 768px) 100vw, 50vw"
                         className="object-cover"
                         priority
                       />
@@ -526,8 +528,8 @@ export default function BnbPage() {
                 Avaliar meu imóvel
               </a>
             </div>
-          </div>
-          <div className="mt-3 text-[11px] text-[#64748B] text-center">
+
+            <div className="mt-3 text-[11px] text-[#64748B] text-center">
               *Projeção estimada com base no histórico real dos imóveis geridos e benchmarks do mercado local. A rentabilidade real pode variar conforme localização, decoração, sazonalidade e condições de mercado.
             </div>
           </div>
@@ -716,7 +718,7 @@ export default function BnbPage() {
               {/* Case 1: Copan */}
               <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden">
                 <div className="relative h-60 w-full">
-                  <Image src="/bnb/copan.jpg" alt="Edifício Copan São Paulo" fill className="object-cover" />
+                  <Image src="/bnb/copan.jpg" alt="Edifício Copan São Paulo" fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" />
                   <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold text-[#0F172A]">
                     República · São Paulo Capital
                   </div>
@@ -751,7 +753,7 @@ export default function BnbPage() {
               {/* Case 2: Riviera de São Lourenço */}
               <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden">
                 <div className="relative h-60 w-full">
-                  <Image src="/bnb/riviera.jpg" alt="Flats na Riviera de São Lourenço" fill className="object-cover" />
+                  <Image src="/bnb/riviera.jpg" alt="Flats na Riviera de São Lourenço" fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" />
                   <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold text-[#0F172A]">
                     Riviera de São Lourenço · Bertioga
                   </div>

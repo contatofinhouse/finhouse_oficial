@@ -25,6 +25,7 @@ export default function Footer() {
                         <ul className="space-y-2.5">
                             {[
                                 { label: "Imóveis", href: "/imoveis" },
+                                { label: "Leilões com IA", href: "/leilaocom-ia" },
                                 { label: "Indicação", href: "/#indicacao" },
                                 { label: "Financiamento", href: "/#financiamento" },
                                 { label: "Painel do Corretor", href: "/login" },
