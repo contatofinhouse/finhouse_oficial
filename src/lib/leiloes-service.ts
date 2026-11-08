@@ -5,7 +5,14 @@ import path from "path";
 export interface ScrapedAuctionLot {
   id: string;
   code: string;
-  source: "Mega Leilões" | "Portal Zuk";
+  source:
+    | "Mega Leilões"
+    | "Portal Zuk"
+    | "Superbid"
+    | "Sold Leilões"
+    | "Sodré Santoro"
+    | "Banco do Brasil"
+    | "Caixa";
   sourceUrl: string;
   imageUrl: string;
   title: string;
@@ -540,17 +547,518 @@ export async function scrapePortalZuk(uf: string): Promise<ScrapedAuctionLot[]> 
 }
 
 /**
- * Executa a raspagem unificada do Mega Leilões e Portal Zuk com deduplicação
+ * Raspa Superbid Exchange & Sold Leilões (Estado de SP — Apenas Imóveis)
+ */
+export async function scrapeSuperbidAndSold(uf = "sp"): Promise<ScrapedAuctionLot[]> {
+  if (uf.toLowerCase() !== "sp") return [];
+
+  const targetUrl =
+    "https://offer-query.superbid.net/offers/?portalId=[2,15]&filter=product.productType.description:imoveis;product.location.state:S%C3%A3o%20Paulo&orderBy=id:desc&pageNumber=1&pageSize=45";
+
+  try {
+    const res = await fetch(targetUrl, {
+      headers: {
+        Accept: "application/json",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      },
+      next: { revalidate: 600 },
+    });
+
+    if (!res.ok) return [];
+    const data = await res.json();
+    const offers = Array.isArray(data?.offers) ? data.offers : [];
+    const results: ScrapedAuctionLot[] = [];
+
+    for (const o of offers) {
+      const minBid = typeof o.price === "number" ? Math.round(o.price) : 0;
+      if (minBid < 25000) continue;
+
+      const shortDesc = stripTags(o.product?.shortDesc || "");
+      const detailedDesc = stripTags(o.product?.detailedDescription || "");
+      const sellerName = stripTags(o.seller?.name || o.store?.name || "Comitente Superbid");
+      const storeName = (o.store?.name || "").toUpperCase();
+
+      if (
+        !shortDesc ||
+        shortDesc.toLowerCase().includes("teste") ||
+        sellerName.toLowerCase().includes("demo")
+      ) {
+        continue;
+      }
+
+      // Garante estritamente Estado de SP
+      const rawCityState = o.product?.location?.city || "São Paulo - SP";
+      const rawState = (o.product?.location?.state || "SP").toLowerCase();
+      if (
+        !rawState.includes("paulo") &&
+        rawState !== "sp" &&
+        !rawCityState.toUpperCase().includes("SP")
+      ) {
+        continue;
+      }
+
+      const cityClean = toTitleCase(
+        rawCityState.replace(/\s*[-/]\s*SP$/i, "").trim() || "São Paulo"
+      );
+
+      // Tenta extrair bairro da descrição curta (ex: "Apartamento - Vila Matilde - São Paulo/SP")
+      const descParts = shortDesc
+        .replace(/\.\s*$/, "")
+        .split(/\s+-\s+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      let neighborhood = "Centro";
+      if (descParts.length >= 3) {
+        neighborhood = toTitleCase(descParts[descParts.length - 2].replace(/\/SP$/i, ""));
+      } else if (descParts.length === 2) {
+        neighborhood = toTitleCase(descParts[1].replace(/\/SP$/i, ""));
+      }
+
+      // Extrai área m² da descrição
+      const combinedText = `${shortDesc} ${detailedDesc}`;
+      const areaMatch = combinedText.match(/(\d+(?:[.,]\d+)?)\s*m[²2]/i);
+      const areaM2 = areaMatch
+        ? Math.round(parseFloat(areaMatch[1].replace(".", "").replace(",", ".")))
+        : null;
+
+      // Extrai desconto explícito se houver "(XX% abaixo da avaliação)"
+      const discMatch = combinedText.match(/(\d{1,2})\s*%\s*abaixo/i);
+      const discountPct = discMatch ? parseInt(discMatch[1], 10) : 25;
+      const marketValue =
+        discountPct > 0 && discountPct < 85
+          ? Math.round(minBid / (1 - discountPct / 100))
+          : Math.round(minBid * 1.33);
+
+      // Define a fonte exata (Sold Leilões, Superbid, Caixa ou Banco do Brasil)
+      const sellerLower = sellerName.toLowerCase();
+      let source: ScrapedAuctionLot["source"] = storeName.includes("SOLD")
+        ? "Sold Leilões"
+        : "Superbid";
+      if (sellerLower.includes("caixa") || sellerLower.includes("cef")) {
+        source = "Caixa";
+      } else if (sellerLower.includes("banco do brasil")) {
+        source = "Banco do Brasil";
+      }
+
+      const code = `SB-${o.id}`;
+      const geoLat = o.product?.location?.locationGeo?.lat;
+      const geoLon = o.product?.location?.locationGeo?.lon;
+      const [fallbackLat, fallbackLng] = resolveCoords(neighborhood, cityClean, "SP", code);
+      const lat =
+        typeof geoLat === "number" && Number.isFinite(geoLat) && geoLat < -19 && geoLat > -26
+          ? geoLat
+          : fallbackLat;
+      const lng =
+        typeof geoLon === "number" && Number.isFinite(geoLon) && geoLon < -44 && geoLon > -54
+          ? geoLon
+          : fallbackLng;
+
+      const isJudicial =
+        sellerLower.includes("tribunal") ||
+        sellerLower.includes("justiça") ||
+        storeName.includes("JUDICIAL");
+
+      // Formata data de encerramento (ex: "2026-12-10 11:30:30" -> "10/12/2026 às 11:30")
+      let auctionDate = "Em aberto";
+      if (typeof o.endDate === "string" && o.endDate.includes("-")) {
+        const [dPart, tPart] = o.endDate.split(" ");
+        const [yyyy, mm, dd] = (dPart || "").split("-");
+        if (yyyy && mm && dd) {
+          auctionDate = `${dd}/${mm}/${yyyy}${tPart ? ` às ${tPart.slice(0, 5)}` : ""}`;
+        }
+      }
+
+      const sourceUrl = `https://www.superbid.net/oferta/${o.id}`;
+      const matMatch = detailedDesc.match(/matr[íi]cula\s*:?\s*([\d.]+)/i);
+
+      results.push({
+        id: `sb-${o.id}`,
+        code,
+        source,
+        sourceUrl,
+        imageUrl: o.product?.thumbnailUrl || "",
+        title: shortDesc.length > 95 ? `${shortDesc.slice(0, 92)}...` : shortDesc,
+        address: `${neighborhood} · ${cityClean}/SP`,
+        neighborhood,
+        city: cityClean,
+        state: "SP",
+        lat,
+        lng,
+        marketValue,
+        minBid,
+        discountPct,
+        modality: isJudicial ? "Leilão Judicial" : `Extrajudicial · ${sellerName}`,
+        seller: sellerName,
+        auctionDate,
+        areaM2: areaM2 && areaM2 > 10 && areaM2 < 10000 ? areaM2 : null,
+        acceptsFinancing: !isJudicial,
+        occupancy: combinedText.toLowerCase().includes("desocupad") ? "Desocupado" : "Ocupado",
+        riskLevel: !isJudicial ? "baixo" : "medio",
+        riskScore: !isJudicial ? 90 : 79,
+        aiSummary:
+          detailedDesc.slice(0, 380) ||
+          `Imóvel em leilão via ${source} (${sellerName}) localizado em ${cityClean}/SP.`,
+        aiChecklist: {
+          debts: !isJudicial
+            ? `Leilão corporativo/bancário (${sellerName}): verificar regra de quitação de IPTU e condomínio no edital.`
+            : "Leilão Judicial: IPTU sub-roga no preço da arrematação (Art. 130 CTN).",
+          matriculaStatus: matMatch
+            ? `Matrícula nº ${matMatch[1]} identificada na descrição oficial do lote.`
+            : "Matrícula e certidões disponíveis no edital oficial da oferta.",
+          paymentRule: !isJudicial
+            ? "À vista, parcelamento conforme edital ou análise de financiamento via finHouse."
+            : "À vista ou parcelamento judicial (Art. 895 CPC).",
+          lawyerAlert:
+            "Conferir condições de venda do comitente e situação ocupacional antes do lance.",
+        },
+        documentsRead: [{ label: `Oferta e Edital Oficial (${source})`, url: sourceUrl }],
+      });
+    }
+
+    return results;
+  } catch (err) {
+    console.warn("[Scraper] Aviso ao raspar Superbid/Sold:", err);
+    return [];
+  }
+}
+
+/**
+ * Raspa Sodré Santoro (Estado de SP — Apenas Imóveis)
+ */
+export async function scrapeSodreSantoro(uf = "sp"): Promise<ScrapedAuctionLot[]> {
+  if (uf.toLowerCase() !== "sp") return [];
+
+  try {
+    const pageRes = await fetch("https://www.sodresantoro.com.br/imoveis/lotes", {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      },
+      next: { revalidate: 600 },
+    });
+
+    const getSetCookie = (pageRes.headers as any).getSetCookie;
+    const cookies =
+      typeof getSetCookie === "function"
+        ? getSetCookie
+            .call(pageRes.headers)
+            .map((c: string) => c.split(";")[0])
+            .join("; ")
+        : pageRes.headers.get("set-cookie") || "";
+
+    const searchRes = await fetch("https://www.sodresantoro.com.br/api/search-lots", {
+      method: "POST",
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Content-Type": "application/json",
+        Cookie: cookies,
+        Origin: "https://www.sodresantoro.com.br",
+        Referer: "https://www.sodresantoro.com.br/imoveis/lotes",
+      },
+      body: JSON.stringify({
+        page: 1,
+        perPage: 30,
+        query: {
+          bool: {
+            filter: [{ term: { segment_base: "imoveis" } }],
+          },
+        },
+      }),
+    });
+
+    if (!searchRes.ok) return [];
+    const data = await searchRes.json();
+    const items = Array.isArray(data?.results) ? data.results : [];
+    const results: ScrapedAuctionLot[] = [];
+
+    for (const item of items) {
+      const st = (item.lot_state || "").toLowerCase();
+      const loc = (item.lot_location || "").toLowerCase();
+      if (!st.includes("paulo") && st !== "sp" && !loc.includes("/ sp")) {
+        continue;
+      }
+
+      const bidInitial = parseFloat(item.bid_initial || item.bid_actual || "0");
+      const secondPracaVal = parseFloat(item.tj_praca_value || "0");
+      const minBid =
+        secondPracaVal > 0 && secondPracaVal < bidInitial
+          ? Math.round(secondPracaVal)
+          : Math.round(bidInitial);
+      if (!minBid || minBid < 20000) continue;
+
+      const discountPct = item.tj_praca_discount
+        ? parseInt(String(item.tj_praca_discount), 10)
+        : secondPracaVal > 0 && bidInitial > secondPracaVal
+        ? Math.round((1 - secondPracaVal / bidInitial) * 100)
+        : 0;
+      const marketValue =
+        bidInitial > minBid ? Math.round(bidInitial) : Math.round(minBid * 1.35);
+
+      const city = toTitleCase(item.lot_city || "São Paulo");
+      const neighborhood = toTitleCase(item.lot_neighborhood || "Centro");
+      const street = item.lot_street ? toTitleCase(item.lot_street) : "";
+      const code = `SS-${item.lot_id || item.id}`;
+
+      let lat = 0;
+      let lng = 0;
+      if (typeof item.lot_coordinates === "string" && item.lot_coordinates.includes(",")) {
+        const [cLat, cLng] = item.lot_coordinates.split(",").map((s: string) => parseFloat(s.trim()));
+        if (Number.isFinite(cLat) && Number.isFinite(cLng)) {
+          lat = cLat;
+          lng = cLng;
+        }
+      }
+      if (!lat || !lng) {
+        [lat, lng] = resolveCoords(neighborhood, city, "SP", code);
+      }
+
+      const desc = stripTags(item.lot_description || "");
+      const areaMatch = desc.match(/(\d+(?:[.,]\d+)?)\s*m²/i);
+      const areaM2 = areaMatch
+        ? Math.round(parseFloat(areaMatch[1].replace(".", "").replace(",", ".")))
+        : null;
+      const matMatch = desc.match(/matr[íi]cula\s*n?[º°]?\s*([\d.]+[^,.;\n]{0,40})/i);
+
+      const rawDate = item.lot_date_end || item.auction_date_2 || item.auction_date_end || "";
+      let auctionDate = "Em aberto";
+      if (typeof rawDate === "string" && rawDate.includes("-")) {
+        const [dPart, tPart] = rawDate.split(" ");
+        const [yyyy, mm, dd] = (dPart || "").split("-");
+        if (yyyy && mm && dd) {
+          auctionDate = `${dd}/${mm}/${yyyy}${tPart ? ` às ${tPart.slice(0, 5)}` : ""}`;
+        }
+      }
+
+      const isJudicial = Boolean(item.lot_is_judicial);
+      const seller = toTitleCase(item.client_name || "Sodré Santoro");
+      const sourceUrl = `https://leilao.sodresantoro.com.br/leilao/${item.auction_id}/lote/${item.lot_id}/`;
+      const imageUrl =
+        Array.isArray(item.lot_pictures) && item.lot_pictures[0] ? item.lot_pictures[0] : "";
+
+      results.push({
+        id: `ss-${item.lot_id || item.id}`,
+        code,
+        source: "Sodré Santoro",
+        sourceUrl,
+        imageUrl,
+        title: `${toTitleCase(item.lot_category || "Imóvel")}${areaM2 ? ` ${areaM2}m²` : ""} · ${neighborhood} (${city})`,
+        address: street ? `${street} — ${neighborhood}, ${city}/SP` : `${neighborhood} · ${city}/SP`,
+        neighborhood,
+        city,
+        state: "SP",
+        lat,
+        lng,
+        marketValue,
+        minBid,
+        discountPct,
+        modality: isJudicial ? "Leilão Judicial" : `Extrajudicial · ${seller}`,
+        seller,
+        auctionDate,
+        areaM2,
+        acceptsFinancing: !isJudicial,
+        occupancy:
+          (item.lot_occupied || "").toLowerCase().includes("desocupad")
+            ? "Desocupado"
+            : "Ocupado",
+        riskLevel: !isJudicial ? "baixo" : "medio",
+        riskScore: !isJudicial ? 90 : 80,
+        aiSummary: desc.slice(0, 420) || `Lote oficial Sodré Santoro em ${city}/SP.`,
+        aiChecklist: {
+          debts: isJudicial
+            ? "Leilão Judicial Sodré Santoro: IPTU sub-roga no preço da arrematação (Art. 130 CTN)."
+            : "Verificar regras do comitente vendedor no edital para IPTU e condomínio.",
+          matriculaStatus: matMatch
+            ? `Extraído da descrição: Matrícula ${matMatch[1].trim()}.`
+            : "Matrícula e edital disponíveis na página oficial do lote.",
+          paymentRule: isJudicial
+            ? "À vista ou parcelamento judicial conforme Art. 895 do CPC."
+            : "À vista ou financiamento conforme condições de venda.",
+          lawyerAlert: item.lot_judicial_process
+            ? `Processo Judicial nº ${item.lot_judicial_process} (${toTitleCase(item.lot_judicial_court || "TJSP")}): recomendada revisão dos autos antes do lance.`
+            : "Recomendada conferência das condições de venda e posse antes do lance.",
+        },
+        documentsRead: [{ label: "Edital e Ficha Oficial (Sodré Santoro)", url: sourceUrl }],
+      });
+    }
+
+    return results;
+  } catch (err) {
+    console.warn("[Scraper] Aviso ao raspar Sodré Santoro:", err);
+    return [];
+  }
+}
+
+/**
+ * Raspa Seu Imóvel BB — Banco do Brasil (Estado de SP — Apenas Imóveis)
+ */
+export async function scrapeBancoDoBrasil(uf = "sp"): Promise<ScrapedAuctionLot[]> {
+  if (uf.toLowerCase() !== "sp") return [];
+
+  try {
+    const bbPage = await fetch("https://seuimovelbb.com.br/catalogo/imoveis?uf=SP", {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      },
+      next: { revalidate: 600 },
+    });
+
+    if (!bbPage.ok) return [];
+    const getSetCookie = (bbPage.headers as any).getSetCookie;
+    const cookies =
+      typeof getSetCookie === "function"
+        ? getSetCookie
+            .call(bbPage.headers)
+            .map((c: string) => c.split(";")[0])
+            .join("; ")
+        : bbPage.headers.get("set-cookie") || "";
+
+    const bbHtml = await bbPage.text();
+    const cppnp = bbHtml.match(/id="_cppnp"[^>]*>([^<]+)</)?.[1] || "";
+    if (!cppnp) return [];
+
+    const form = new URLSearchParams({
+      pagina: "1",
+      categorias: "",
+      tipoVenda: "",
+      tipoPagamento: "",
+      evolua: "",
+      localidade: "SP||",
+      minimo: "",
+      maximo: "",
+      texto: "",
+      ordem: "0",
+      contento: "0",
+      cppnp,
+    });
+
+    const bbPost = await fetch("https://seuimovelbb.com.br/catalogo", {
+      method: "POST",
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "X-Requested-With": "XMLHttpRequest",
+        Referer: "https://seuimovelbb.com.br/catalogo/imoveis?uf=SP",
+        Origin: "https://seuimovelbb.com.br",
+        Cookie: cookies,
+      },
+      body: form.toString(),
+    });
+
+    if (!bbPost.ok) return [];
+    const bbJson = await bbPost.json();
+    const cards = (bbJson?.lista || "").split('<div class="card carta">').slice(1);
+    const results: ScrapedAuctionLot[] = [];
+
+    for (const c of cards.slice(0, 28)) {
+      const hrefMatch = c.match(/href="(\/imovel\/id\/(\d+))"/);
+      const imgMatch = c.match(/src="(\/imagem\/imovel\/[^"]+)"/);
+      const tipoMatch = c.match(/<div class="tipo">[\s\S]*?<\/i>\s*([^<]+)</);
+      const valorMatch = c.match(/<div class="valor">\s*(R\$\s*[\d.,]+)/i);
+      const avalMatch = c.match(/<div class="avaliacao">\s*(?:Avalia[çc][ãa]o:?\s*)?(R\$\s*[\d.,]+)/i);
+      const locMatch = c.match(/<div class="localidade">[\s\S]*?<\/i>\s*([^<]+)</);
+      const shareMatch = c.match(/_compartilhar\('([\s\S]*?)',\s*'([^']+)'\)/);
+
+      if (!hrefMatch || !valorMatch) continue;
+      const bbId = hrefMatch[2];
+      const minBid = parseBRLNumber(valorMatch[1]);
+      if (minBid < 20000) continue;
+
+      const evalVal = parseBRLNumber(avalMatch?.[1]);
+      const marketValue = evalVal > minBid ? evalVal : Math.round(minBid * 1.38);
+      const discountPct =
+        marketValue > minBid ? Math.round((1 - minBid / marketValue) * 100) : 28;
+
+      const rawLoc = (locMatch?.[1] || "São Paulo - SP").trim();
+      const city = toTitleCase(rawLoc.replace(/\s*-\s*SP$/i, "").trim() || "São Paulo");
+      const propType = toTitleCase((tipoMatch?.[1] || "Imóvel").trim());
+
+      const shareDesc = stripTags((shareMatch?.[1] || "").replace(/\s+/g, " "));
+      const areaMatch = shareDesc.match(/(\d+(?:[.,]\d+)?)\s*m²/i);
+      const areaM2 = areaMatch
+        ? Math.round(parseFloat(areaMatch[1].replace(".", "").replace(",", ".")))
+        : null;
+
+      // Tenta extrair bairro da descrição legal se houver ("Bairro X", "Jardim X", "Vila X")
+      const bairroMatch = shareDesc.match(
+        /\b((?:Jardim|Vila|Parque|Residencial|Centro|Bairro)\s+[A-Za-zÀ-ÿ\s]{2,22}?)(?:[,.]|em\s|\s-\s|$)/i
+      );
+      const neighborhood = bairroMatch ? toTitleCase(bairroMatch[1].trim()) : "Centro";
+
+      const code = `BB-${bbId}`;
+      const [lat, lng] = resolveCoords(neighborhood, city, "SP", code);
+      const sourceUrl = `https://seuimovelbb.com.br${hrefMatch[1]}`;
+      const imageUrl = imgMatch?.[1] ? `https://seuimovelbb.com.br${imgMatch[1]}` : "";
+
+      results.push({
+        id: `bb-${bbId}`,
+        code,
+        source: "Banco do Brasil",
+        sourceUrl,
+        imageUrl,
+        title: `${propType}${areaM2 ? ` ${areaM2}m²` : ""} · ${neighborhood} (${city})`,
+        address: `${neighborhood} · ${city}/SP`,
+        neighborhood,
+        city,
+        state: "SP",
+        lat,
+        lng,
+        marketValue,
+        minBid,
+        discountPct,
+        modality: "Venda Direta / Leilão · Banco do Brasil",
+        seller: "Banco do Brasil S.A.",
+        auctionDate: "Proposta Imediata",
+        areaM2,
+        acceptsFinancing: true,
+        occupancy: "Ver no Edital",
+        riskLevel: "baixo",
+        riskScore: 92,
+        aiSummary:
+          shareDesc ||
+          `Imóvel retomado do Banco do Brasil S.A. em ${city}/SP com venda direta/leilão.`,
+        aiChecklist: {
+          debts:
+            "Imóvel patrimonial do Banco do Brasil (Seu Imóvel BB): regra geral com quitação de débitos anteriores até a data da venda conforme edital.",
+          matriculaStatus:
+            "Propriedade consolidada em nome do Banco do Brasil S.A.",
+          paymentRule:
+            "Aceita proposta à vista ou financiamento imobiliário elegível conforme regras do BB / finHouse.",
+          lawyerAlert:
+            "Conferir situação ocupacional e termos da proposta na ficha oficial do Seu Imóvel BB.",
+        },
+        documentsRead: [{ label: "Ficha Oficial (Seu Imóvel BB)", url: sourceUrl }],
+      });
+    }
+
+    return results;
+  } catch (err) {
+    console.warn("[Scraper] Aviso ao raspar Banco do Brasil:", err);
+    return [];
+  }
+}
+
+/**
+ * Executa a raspagem unificada de todas as fontes em SP (apenas Imóveis) com deduplicação
  */
 export async function runDailyScrape(uf = "sp"): Promise<ScrapedAuctionLot[]> {
-  const [megaLots, zukLots] = await Promise.allSettled([
+  const [megaLots, zukLots, sbSoldLots, sodreLots, bbLots] = await Promise.allSettled([
     scrapeMegaLeiloes(uf),
     scrapePortalZuk(uf),
+    scrapeSuperbidAndSold(uf),
+    scrapeSodreSantoro(uf),
+    scrapeBancoDoBrasil(uf),
   ]);
 
   const rawCombined: ScrapedAuctionLot[] = [
     ...(zukLots.status === "fulfilled" ? zukLots.value : []),
     ...(megaLots.status === "fulfilled" ? megaLots.value : []),
+    ...(sbSoldLots.status === "fulfilled" ? sbSoldLots.value : []),
+    ...(sodreLots.status === "fulfilled" ? sodreLots.value : []),
+    ...(bbLots.status === "fulfilled" ? bbLots.value : []),
   ];
 
   const seenIds = new Set<string>();
@@ -567,6 +1075,7 @@ export async function runDailyScrape(uf = "sp"): Promise<ScrapedAuctionLot[]> {
 }
 
 const LOCAL_STORAGE_DIR = path.join(process.cwd(), ".next", "cache", "leiloes");
+const SNAPSHOT_VERSION = "v2";
 
 /**
  * Salva o Snapshot no Vercel Blob (se disponível), em arquivo local e em memória
@@ -587,10 +1096,13 @@ export async function saveDailySnapshot(
   // 1. Atualiza memória RAM
   inMemorySnapshot = snapshot;
 
+  const blobKey = `leiloes/${uf.toLowerCase()}_${SNAPSHOT_VERSION}_latest.json`;
+  const localFileName = `${uf.toLowerCase()}_${SNAPSHOT_VERSION}_latest.json`;
+
   // 2. Tenta salvar no Vercel Blob se o token estiver configurado
   if (process.env.BLOB_READ_WRITE_TOKEN) {
     try {
-      await put(`leiloes/${uf.toLowerCase()}_latest.json`, JSON.stringify(snapshot), {
+      await put(blobKey, JSON.stringify(snapshot), {
         access: "public",
         addRandomSuffix: false,
       });
@@ -603,12 +1115,12 @@ export async function saveDailySnapshot(
   // 3. Salva em disco local como garantia/fallback
   try {
     await fs.mkdir(LOCAL_STORAGE_DIR, { recursive: true });
-    const filePath = path.join(LOCAL_STORAGE_DIR, `${uf.toLowerCase()}_latest.json`);
+    const filePath = path.join(LOCAL_STORAGE_DIR, localFileName);
     await fs.writeFile(filePath, JSON.stringify(snapshot, null, 2), "utf-8");
   } catch (err) {
     // Em serverless puro somente /tmp é gravável
     try {
-      const tmpPath = path.join("/tmp", `leiloes_${uf.toLowerCase()}_latest.json`);
+      const tmpPath = path.join("/tmp", `leiloes_${localFileName}`);
       await fs.writeFile(tmpPath, JSON.stringify(snapshot), "utf-8");
     } catch {}
   }
@@ -621,6 +1133,8 @@ export async function saveDailySnapshot(
  */
 export async function loadDailySnapshot(uf = "sp"): Promise<DailySnapshot | null> {
   const now = Date.now();
+  const blobKey = `leiloes/${uf.toLowerCase()}_${SNAPSHOT_VERSION}_latest.json`;
+  const localFileName = `${uf.toLowerCase()}_${SNAPSHOT_VERSION}_latest.json`;
 
   // 1. Tenta carregar da memória RAM
   if (inMemorySnapshot && now - inMemorySnapshot.timestamp < DAILY_TTL_MS) {
@@ -630,7 +1144,7 @@ export async function loadDailySnapshot(uf = "sp"): Promise<DailySnapshot | null
   // 2. Tenta ler do Vercel Blob
   if (process.env.BLOB_READ_WRITE_TOKEN) {
     try {
-      const { blobs } = await list({ prefix: `leiloes/${uf.toLowerCase()}_latest.json` });
+      const { blobs } = await list({ prefix: blobKey });
       if (blobs.length > 0 && blobs[0].downloadUrl) {
         const res = await fetch(blobs[0].downloadUrl, { cache: "no-store" });
         if (res.ok) {
@@ -648,7 +1162,7 @@ export async function loadDailySnapshot(uf = "sp"): Promise<DailySnapshot | null
 
   // 3. Tenta carregar do disco local
   try {
-    const filePath = path.join(LOCAL_STORAGE_DIR, `${uf.toLowerCase()}_latest.json`);
+    const filePath = path.join(LOCAL_STORAGE_DIR, localFileName);
     const fileContent = await fs.readFile(filePath, "utf-8");
     const data: DailySnapshot = JSON.parse(fileContent);
     if (data && now - data.timestamp < DAILY_TTL_MS) {
@@ -659,7 +1173,7 @@ export async function loadDailySnapshot(uf = "sp"): Promise<DailySnapshot | null
 
   // 4. Tenta carregar do /tmp
   try {
-    const tmpPath = path.join("/tmp", `leiloes_${uf.toLowerCase()}_latest.json`);
+    const tmpPath = path.join("/tmp", `leiloes_${localFileName}`);
     const fileContent = await fs.readFile(tmpPath, "utf-8");
     const data: DailySnapshot = JSON.parse(fileContent);
     if (data && now - data.timestamp < DAILY_TTL_MS) {

@@ -975,6 +975,16 @@ export default function LeilaoComIaPage() {
           ? `-${lot.discountPct}%`
           : lot.source === "Portal Zuk"
           ? "ZUK"
+          : lot.source === "Superbid"
+          ? "SB"
+          : lot.source === "Sold Leilões"
+          ? "SOLD"
+          : lot.source === "Sodré Santoro"
+          ? "SS"
+          : lot.source === "Banco do Brasil"
+          ? "BB"
+          : lot.source === "Caixa"
+          ? "CEF"
           : "ML";
 
       const icon = L.divIcon({
@@ -1344,7 +1354,7 @@ export default function LeilaoComIaPage() {
                     </span>
                     <span className="text-[#CBD5E1]">|</span>
                     <span className="hidden sm:inline text-[#64748B]">
-                      Mega Leilões & Portal Zuk
+                      Zuk, Mega, Superbid, Sold, Sodré & BB
                     </span>
                   </>
                 )}
