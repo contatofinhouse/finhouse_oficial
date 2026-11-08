@@ -439,6 +439,7 @@ export default function LeilaoComIaPage() {
   const [modalMode, setModalMode] = useState<
     null | "lawyer" | "credit" | "dossie_checkout" | "dossie_view"
   >(null);
+  const [mobileMapPreviewLotId, setMobileMapPreviewLotId] = useState<string | null>(null);
   const [leadName, setLeadName] = useState("");
   const [leadPhone, setLeadPhone] = useState("");
   const [leadBudget, setLeadBudget] = useState("");
@@ -654,6 +655,11 @@ export default function LeilaoComIaPage() {
       null
     );
   }, [filteredLots, lots, selectedId]);
+
+  const mobileMapPreviewLot = useMemo(() => {
+    if (!mobileMapPreviewLotId) return null;
+    return lots.find((l) => l.id === mobileMapPreviewLotId) || null;
+  }, [lots, mobileMapPreviewLotId]);
 
   const viability = useMemo(() => {
     if (!selectedLot) return null;
@@ -898,7 +904,7 @@ export default function LeilaoComIaPage() {
     };
   }, []);
 
-  // Quando o usuário alterna abas no mobile, força recálculo das dimensões do Leaflet e garante foco em SP
+  // Quando o usuário alterna abas no mobile, força recálculo das dimensões do Leaflet sem alterar o zoom atual
   useEffect(() => {
     if (mapReady && mapInstanceRef.current && mobileTab === "map") {
       const fix = () => {
@@ -911,16 +917,7 @@ export default function LeilaoComIaPage() {
         }
         try {
           mapInstanceRef.current.invalidateSize({ pan: false });
-          if (
-            hasUserInteractedRef.current &&
-            selectedLot &&
-            Number.isFinite(selectedLot.lat) &&
-            Number.isFinite(selectedLot.lng)
-          ) {
-            mapInstanceRef.current.setView([selectedLot.lat, selectedLot.lng], 13, {
-              animate: false,
-            });
-          } else if (!hasUserInteractedRef.current) {
+          if (!hasUserInteractedRef.current) {
             mapInstanceRef.current.setView([-23.5505, -46.6333], 9, { animate: false });
           }
         } catch {}
@@ -929,7 +926,7 @@ export default function LeilaoComIaPage() {
       setTimeout(fix, 200);
       setTimeout(fix, 500);
     }
-  }, [mobileTab, mapReady, selectedLot]);
+  }, [mobileTab, mapReady]);
 
   // Quando os lotes terminam de carregar da API, garante que o mapa permaneça perfeitamente focado em SP
   useEffect(() => {
@@ -1022,29 +1019,16 @@ export default function LeilaoComIaPage() {
           .on("click", () => {
             hasUserInteractedRef.current = true;
             setSelectedId(lot.id);
+            // No mobile, mantém o mapa exatamente como está (sem dar zoom) e abre o modal com o card do lote
+            if (typeof window !== "undefined" && window.innerWidth < 1024) {
+              setMobileMapPreviewLotId(lot.id);
+            }
           });
 
         markersRef.current[lot.id] = marker;
       } catch {}
     });
   }, [mapReady, filteredLots, selectedLot]);
-
-  // Centraliza mapa no lote selecionado APENAS se o mapa estiver visível na tela (evita divisão por 0 no flyTo quando hidden no mobile)
-  useEffect(() => {
-    if (!mapReady || !mapInstanceRef.current || !selectedLot) return;
-    if (!hasUserInteractedRef.current) return;
-    if (!Number.isFinite(selectedLot.lat) || !Number.isFinite(selectedLot.lng)) return;
-
-    try {
-      const container = mapContainerRef.current;
-      if (!container || container.clientWidth === 0 || container.clientHeight === 0) {
-        return;
-      }
-      mapInstanceRef.current.setView([selectedLot.lat, selectedLot.lng], 13, {
-        animate: false,
-      });
-    } catch {}
-  }, [selectedLot?.id, selectedLot?.lat, selectedLot?.lng, mapReady]);
 
   const handleLeadSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1371,7 +1355,9 @@ export default function LeilaoComIaPage() {
                 onClick={() => {
                   if (mapInstanceRef.current) {
                     hasUserInteractedRef.current = false;
-                    mapInstanceRef.current.flyTo([-23.5505, -46.6333], 9, { duration: 0.55 });
+                    try {
+                      mapInstanceRef.current.setView([-23.5505, -46.6333], 9, { animate: false });
+                    } catch {}
                   }
                 }}
                 className="bg-white/95 backdrop-blur-sm border border-[#CBD5E1] hover:border-[#0F2744] rounded-full px-3 py-1.5 shadow-sm text-[11px] font-semibold text-[#0F2744] hover:bg-slate-50 transition-colors pointer-events-auto flex items-center gap-1.5 cursor-pointer shrink-0"
@@ -1395,6 +1381,9 @@ export default function LeilaoComIaPage() {
                     onClick={() => {
                       hasUserInteractedRef.current = true;
                       setSelectedId(lot.id);
+                      if (typeof window !== "undefined" && window.innerWidth < 1024) {
+                        setMobileMapPreviewLotId(lot.id);
+                      }
                     }}
                     className={`flex items-center gap-3 p-2.5 rounded-2xl border transition-all shrink-0 w-[295px] sm:w-[325px] cursor-pointer ${
                       active
@@ -2057,6 +2046,165 @@ export default function LeilaoComIaPage() {
           </div>
         </div>
       </div>
+
+      {/* ─── MODAL MOBILE DE PREVIEW DO LOTE NO MAPA (CARD IDÊNTICO À ABA VER IMÓVEIS) ─── */}
+      {mobileMapPreviewLot && (
+        <div
+          onClick={() => setMobileMapPreviewLotId(null)}
+          className="lg:hidden fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-xs flex items-center justify-center p-4"
+        >
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              setMobileMapPreviewLotId(null);
+              openLotDetail(mobileMapPreviewLot.id);
+            }}
+            className="w-full max-w-sm bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden shadow-2xl transition-all cursor-pointer relative animate-in fade-in zoom-in-95 duration-150"
+          >
+            {/* Foto Principal Limpa com Desconto + Favoritar/Share + Fechar */}
+            <div className="relative h-48 sm:h-52 w-full bg-slate-100">
+              {mobileMapPreviewLot.imageUrl ? (
+                <img
+                  src={mobileMapPreviewLot.imageUrl}
+                  alt={mobileMapPreviewLot.title}
+                  className="w-full h-full object-cover"
+                  loading="eager"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLElement).style.display = "none";
+                  }}
+                />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 text-slate-400">
+                  <Landmark className="w-10 h-10 stroke-[1.5]" />
+                  <span className="text-[11px] font-medium mt-1">Foto oficial no edital</span>
+                </div>
+              )}
+
+              <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1.5 pointer-events-none">
+                <div className="flex items-center gap-1.5 pointer-events-auto">
+                  {mobileMapPreviewLot.discountPct > 0 && (
+                    <span className="bg-emerald-600/95 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-sm whitespace-nowrap">
+                      -{mobileMapPreviewLot.discountPct}% OFF
+                    </span>
+                  )}
+                  <span className="bg-slate-900/75 backdrop-blur-md text-white text-[10px] font-medium px-2.5 py-1 rounded-full shadow-sm">
+                    {mobileMapPreviewLot.source}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1.5 pointer-events-auto">
+                  <button
+                    type="button"
+                    onClick={(e) => handleShare(mobileMapPreviewLot, e)}
+                    className="w-8 h-8 rounded-full bg-white/90 hover:bg-white backdrop-blur-md text-[#0F172A] flex items-center justify-center shadow-md active:scale-90 transition-all cursor-pointer"
+                    title="Compartilhar imóvel"
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => toggleFavorite(mobileMapPreviewLot.id, e)}
+                    className="w-8 h-8 rounded-full bg-white/90 hover:bg-white backdrop-blur-md flex items-center justify-center shadow-md active:scale-90 transition-all cursor-pointer"
+                    title={
+                      favorites[mobileMapPreviewLot.id]
+                        ? "Remover dos favoritos"
+                        : "Salvar nos favoritos"
+                    }
+                  >
+                    <Heart
+                      className={`w-4 h-4 transition-colors ${
+                        favorites[mobileMapPreviewLot.id]
+                          ? "fill-rose-500 text-rose-500"
+                          : "text-[#0F172A] hover:text-rose-500"
+                      }`}
+                    />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMobileMapPreviewLotId(null);
+                    }}
+                    className="w-8 h-8 rounded-full bg-slate-900/80 hover:bg-slate-900 text-white flex items-center justify-center shadow-md active:scale-90 transition-all cursor-pointer"
+                    title="Fechar card"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Dados do Imóvel Limpos (Idêntico à aba Ver Imóveis) */}
+            <div className="p-4 space-y-2.5">
+              <div>
+                <div className="text-[11px] font-medium text-[#64748B]">
+                  {mobileMapPreviewLot.modality} · Lote {mobileMapPreviewLot.code}
+                </div>
+                <h3 className="text-sm font-bold text-[#0F172A] line-clamp-2 leading-snug mt-0.5">
+                  {mobileMapPreviewLot.title}
+                </h3>
+                <div className="text-xs text-[#475569] truncate mt-1">
+                  {mobileMapPreviewLot.address}
+                </div>
+              </div>
+
+              {/* Data e Área */}
+              <div className="flex items-center justify-between text-xs text-[#64748B] pt-0.5">
+                <span className="truncate">
+                  Encerramento: {mobileMapPreviewLot.auctionDate || "Ver no Edital"}
+                </span>
+                {mobileMapPreviewLot.areaM2 && (
+                  <span className="font-semibold text-[#0F172A] shrink-0">
+                    {mobileMapPreviewLot.areaM2} m²
+                  </span>
+                )}
+              </div>
+
+              {/* Bloco de Preço e CTAs */}
+              <div className="pt-2.5 border-t border-[#F1F5F9] flex items-end justify-between gap-2">
+                <div>
+                  <div className="text-[11px] text-[#64748B]">Lance Mínimo</div>
+                  <div className="text-base font-bold text-[#0F172A]">
+                    {mobileMapPreviewLot.minBid > 0
+                      ? formatBRL(mobileMapPreviewLot.minBid)
+                      : "Ver Edital"}
+                  </div>
+                  {mobileMapPreviewLot.marketValue > mobileMapPreviewLot.minBid && (
+                    <div className="text-[11px] text-[#94A3B8] line-through">
+                      Avaliação: {formatBRL(mobileMapPreviewLot.marketValue)}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMobileMapPreviewLotId(null);
+                      openLotDetail(mobileMapPreviewLot.id);
+                    }}
+                    className="px-3 py-2 rounded-xl border border-[#CBD5E1] text-[#0F2744] hover:bg-slate-50 text-xs font-semibold whitespace-nowrap shrink-0 transition-colors cursor-pointer"
+                  >
+                    Detalhes
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      setMobileMapPreviewLotId(null);
+                      openDossieModal(mobileMapPreviewLot.id, e);
+                    }}
+                    className="px-3.5 py-2 rounded-xl bg-[#0F2744] hover:bg-[#0A1B30] text-white text-xs font-bold shadow-xs flex items-center gap-1 whitespace-nowrap shrink-0 transition-colors cursor-pointer"
+                  >
+                    <span>Ver Dossiê</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ─── MODAIS DE CONVERSÃO & DOSSIÊ DE R$ 49,90 ─── */}
       {modalMode && selectedLot && viability && (
