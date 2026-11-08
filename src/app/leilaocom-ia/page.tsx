@@ -402,12 +402,14 @@ export default function LeilaoComIaPage() {
     hasUserInteractedRef.current = true;
     setSelectedId(lotId);
     setMobileTab("detail");
-    if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, behavior: "instant" });
-    }
-    if (rightColumnRef.current) {
-      rightColumnRef.current.scrollTo({ top: 0, behavior: "instant" });
-    }
+    try {
+      if (typeof window !== "undefined") {
+        window.scrollTo(0, 0);
+      }
+      if (rightColumnRef.current) {
+        rightColumnRef.current.scrollTop = 0;
+      }
+    } catch {}
   };
 
   const openDossieModal = (lotId: string, e?: React.MouseEvent) => {
@@ -422,12 +424,14 @@ export default function LeilaoComIaPage() {
 
   useEffect(() => {
     if (mobileTab === "detail") {
-      if (typeof window !== "undefined") {
-        window.scrollTo({ top: 0, behavior: "instant" });
-      }
-      if (rightColumnRef.current) {
-        rightColumnRef.current.scrollTo({ top: 0, behavior: "instant" });
-      }
+      try {
+        if (typeof window !== "undefined") {
+          window.scrollTo(0, 0);
+        }
+        if (rightColumnRef.current) {
+          rightColumnRef.current.scrollTop = 0;
+        }
+      } catch {}
     }
   }, [mobileTab, selectedId]);
 
@@ -681,25 +685,64 @@ export default function LeilaoComIaPage() {
       setLots((prev) =>
         prev.map((item) => {
           if (item.id !== lot.id) return item;
+          const safeLat =
+            typeof result.exactLat === "number" && Number.isFinite(result.exactLat)
+              ? result.exactLat
+              : item.lat;
+          const safeLng =
+            typeof result.exactLng === "number" && Number.isFinite(result.exactLng)
+              ? result.exactLng
+              : item.lng;
+
+          const rawChecklist = result.aiChecklist || {};
+          const toSafeStr = (val: any, fallback: string) =>
+            typeof val === "string" && val.trim()
+              ? val.trim()
+              : val && typeof val === "object"
+              ? Object.values(val).filter(Boolean).join(" ") || fallback
+              : fallback;
+
           return {
             ...item,
-            imageUrl: result.imageUrl || item.imageUrl,
-            lat: result.exactLat || item.lat,
-            lng: result.exactLng || item.lng,
+            imageUrl:
+              typeof result.imageUrl === "string" && result.imageUrl
+                ? result.imageUrl
+                : item.imageUrl,
+            lat: safeLat,
+            lng: safeLng,
             riskLevel: result.riskLevel || item.riskLevel,
-            riskScore: result.riskScore || item.riskScore,
+            riskScore:
+              typeof result.riskScore === "number"
+                ? result.riskScore
+                : item.riskScore,
             occupancy: result.occupancy || item.occupancy,
             acceptsFinancing:
               typeof result.acceptsFinancing === "boolean"
                 ? result.acceptsFinancing
                 : item.acceptsFinancing,
-            auctionDate: result.auctionDate || item.auctionDate,
-            aiSummary: result.aiSummary || item.aiSummary,
-            aiChecklist: result.aiChecklist || item.aiChecklist,
-            documentsRead:
-              result.documentsRead?.length > 0
-                ? result.documentsRead
-                : item.documentsRead,
+            auctionDate:
+              typeof result.auctionDate === "string" && result.auctionDate
+                ? result.auctionDate
+                : item.auctionDate,
+            aiSummary: toSafeStr(result.aiSummary, item.aiSummary),
+            aiChecklist: {
+              debts: toSafeStr(rawChecklist.debts, item.aiChecklist?.debts || ""),
+              matriculaStatus: toSafeStr(
+                rawChecklist.matriculaStatus,
+                item.aiChecklist?.matriculaStatus || ""
+              ),
+              paymentRule: toSafeStr(
+                rawChecklist.paymentRule,
+                item.aiChecklist?.paymentRule || ""
+              ),
+              lawyerAlert: toSafeStr(
+                rawChecklist.lawyerAlert,
+                item.aiChecklist?.lawyerAlert || ""
+              ),
+            },
+            documentsRead: Array.isArray(result.documentsRead) && result.documentsRead.length > 0
+              ? result.documentsRead
+              : item.documentsRead,
           };
         })
       );
@@ -797,11 +840,19 @@ export default function LeilaoComIaPage() {
       setMapReady(true);
 
       const enforceSpFocus = () => {
-        if (cancelled || !mapInstanceRef.current) return;
-        mapInstanceRef.current.invalidateSize({ pan: false });
-        if (!hasUserInteractedRef.current) {
-          mapInstanceRef.current.setView(SP_CENTER, SP_MACRO_ZOOM, { animate: false });
+        if (cancelled || !mapInstanceRef.current || !mapContainerRef.current) return;
+        if (
+          mapContainerRef.current.clientWidth === 0 ||
+          mapContainerRef.current.clientHeight === 0
+        ) {
+          return;
         }
+        try {
+          mapInstanceRef.current.invalidateSize({ pan: false });
+          if (!hasUserInteractedRef.current) {
+            mapInstanceRef.current.setView(SP_CENTER, SP_MACRO_ZOOM, { animate: false });
+          }
+        } catch {}
       };
 
       enforceSpFocus();
@@ -838,7 +889,9 @@ export default function LeilaoComIaPage() {
         window.removeEventListener("orientationchange", handleResize);
       }
       if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
+        try {
+          mapInstanceRef.current.remove();
+        } catch {}
         mapInstanceRef.current = null;
       }
       setMapReady(false);
@@ -849,25 +902,49 @@ export default function LeilaoComIaPage() {
   useEffect(() => {
     if (mapReady && mapInstanceRef.current && mobileTab === "map") {
       const fix = () => {
-        if (!mapInstanceRef.current) return;
-        mapInstanceRef.current.invalidateSize({ pan: false });
-        if (!hasUserInteractedRef.current) {
-          mapInstanceRef.current.setView([-23.5505, -46.6333], 9, { animate: false });
+        if (!mapInstanceRef.current || !mapContainerRef.current) return;
+        if (
+          mapContainerRef.current.clientWidth === 0 ||
+          mapContainerRef.current.clientHeight === 0
+        ) {
+          return;
         }
+        try {
+          mapInstanceRef.current.invalidateSize({ pan: false });
+          if (
+            hasUserInteractedRef.current &&
+            selectedLot &&
+            Number.isFinite(selectedLot.lat) &&
+            Number.isFinite(selectedLot.lng)
+          ) {
+            mapInstanceRef.current.setView([selectedLot.lat, selectedLot.lng], 13, {
+              animate: false,
+            });
+          } else if (!hasUserInteractedRef.current) {
+            mapInstanceRef.current.setView([-23.5505, -46.6333], 9, { animate: false });
+          }
+        } catch {}
       };
       setTimeout(fix, 50);
       setTimeout(fix, 200);
       setTimeout(fix, 500);
     }
-  }, [mobileTab, mapReady]);
+  }, [mobileTab, mapReady, selectedLot]);
 
   // Quando os lotes terminam de carregar da API, garante que o mapa permaneça perfeitamente focado em SP
   useEffect(() => {
     if (mapReady && mapInstanceRef.current && !hasUserInteractedRef.current && lots.length > 0) {
       setTimeout(() => {
-        if (mapInstanceRef.current && !hasUserInteractedRef.current) {
-          mapInstanceRef.current.invalidateSize({ pan: false });
-          mapInstanceRef.current.setView([-23.5505, -46.6333], 9, { animate: false });
+        if (
+          mapInstanceRef.current &&
+          mapContainerRef.current &&
+          mapContainerRef.current.clientWidth > 0 &&
+          !hasUserInteractedRef.current
+        ) {
+          try {
+            mapInstanceRef.current.invalidateSize({ pan: false });
+            mapInstanceRef.current.setView([-23.5505, -46.6333], 9, { animate: false });
+          } catch {}
         }
       }, 120);
     }
@@ -879,7 +956,11 @@ export default function LeilaoComIaPage() {
     const L = (window as any).L;
     const map = mapInstanceRef.current;
 
-    Object.values(markersRef.current).forEach((m: any) => m.remove());
+    Object.values(markersRef.current).forEach((m: any) => {
+      try {
+        m.remove();
+      } catch {}
+    });
     markersRef.current = {};
 
     filteredLots.forEach((lot) => {
@@ -930,28 +1011,39 @@ export default function LeilaoComIaPage() {
         iconAnchor: [57, 16],
       });
 
-      const marker = L.marker([lot.lat, lot.lng], {
-        icon,
-        zIndexOffset: zIndex,
-      })
-        .addTo(map)
-        .on("click", () => {
-          hasUserInteractedRef.current = true;
-          setSelectedId(lot.id);
-        });
+      if (!Number.isFinite(lot.lat) || !Number.isFinite(lot.lng)) return;
 
-      markersRef.current[lot.id] = marker;
+      try {
+        const marker = L.marker([lot.lat, lot.lng], {
+          icon,
+          zIndexOffset: zIndex,
+        })
+          .addTo(map)
+          .on("click", () => {
+            hasUserInteractedRef.current = true;
+            setSelectedId(lot.id);
+          });
+
+        markersRef.current[lot.id] = marker;
+      } catch {}
     });
   }, [mapReady, filteredLots, selectedLot]);
 
-  // Centraliza mapa no lote selecionado APENAS se o usuário clicou ativamente em um lote/pin
+  // Centraliza mapa no lote selecionado APENAS se o mapa estiver visível na tela (evita divisão por 0 no flyTo quando hidden no mobile)
   useEffect(() => {
     if (!mapReady || !mapInstanceRef.current || !selectedLot) return;
-    if (!hasUserInteractedRef.current) return; // Mantém a visão macro de SP com 5x zoom out na abertura inicial!
+    if (!hasUserInteractedRef.current) return;
+    if (!Number.isFinite(selectedLot.lat) || !Number.isFinite(selectedLot.lng)) return;
 
-    mapInstanceRef.current.flyTo([selectedLot.lat, selectedLot.lng], 13, {
-      duration: 0.55,
-    });
+    try {
+      const container = mapContainerRef.current;
+      if (!container || container.clientWidth === 0 || container.clientHeight === 0) {
+        return;
+      }
+      mapInstanceRef.current.setView([selectedLot.lat, selectedLot.lng], 13, {
+        animate: false,
+      });
+    } catch {}
   }, [selectedLot?.id, selectedLot?.lat, selectedLot?.lng, mapReady]);
 
   const handleLeadSubmit = (e: React.FormEvent) => {
@@ -1861,19 +1953,19 @@ export default function LeilaoComIaPage() {
                           <div className="p-3 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-2 text-xs text-[#334155]">
                             <div>
                               <strong className="text-[#0F172A]">Pagamento: </strong>
-                              {selectedLot.aiChecklist.paymentRule}
+                              {String(selectedLot.aiChecklist?.paymentRule || "Consultar edital")}
                             </div>
                             <div>
                               <strong className="text-[#0F172A]">Dívidas (IPTU/Condomínio): </strong>
-                              {selectedLot.aiChecklist.debts}
+                              {String(selectedLot.aiChecklist?.debts || "Consultar edital")}
                             </div>
                             <div>
                               <strong className="text-[#0F172A]">Matrícula: </strong>
-                              {selectedLot.aiChecklist.matriculaStatus}
+                              {String(selectedLot.aiChecklist?.matriculaStatus || "Consultar edital")}
                             </div>
                             <div className="text-amber-800 font-medium">
                               <strong>Atenção jurídica: </strong>
-                              {selectedLot.aiChecklist.lawyerAlert}
+                              {String(selectedLot.aiChecklist?.lawyerAlert || "Validar certidões antes do lance")}
                             </div>
                           </div>
                         )}
@@ -2187,7 +2279,7 @@ export default function LeilaoComIaPage() {
                   Relatório Prévio de Análise Documental (Edital & Matrícula)
                 </div>
                 <p className="text-[#334155] leading-relaxed">
-                  {selectedLot.aiSummary}
+                  {String(selectedLot.aiSummary || "")}
                 </p>
                 <div className="grid sm:grid-cols-2 gap-2.5 pt-1">
                   <div className="p-2.5 rounded-lg bg-white border border-[#E2E8F0]">
@@ -2195,7 +2287,7 @@ export default function LeilaoComIaPage() {
                       Dívidas (IPTU / Condomínio):
                     </span>
                     <span className="text-[#475569]">
-                      {selectedLot.aiChecklist.debts}
+                      {String(selectedLot.aiChecklist?.debts || "Consultar edital")}
                     </span>
                   </div>
                   <div className="p-2.5 rounded-lg bg-white border border-[#E2E8F0]">
@@ -2203,7 +2295,7 @@ export default function LeilaoComIaPage() {
                       Matrícula & Gravames:
                     </span>
                     <span className="text-[#475569]">
-                      {selectedLot.aiChecklist.matriculaStatus}
+                      {String(selectedLot.aiChecklist?.matriculaStatus || "Consultar edital")}
                     </span>
                   </div>
                 </div>
