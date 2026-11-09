@@ -68,7 +68,11 @@ const STATE_CENTERS: Record<string, [number, number]> = {
   go: [-16.6869, -49.2648],
 };
 
-const NEIGHBORHOOD_COORDS: Record<string, [number, number]> = {
+/**
+ * Bairros EXCLUSIVOS da cidade de São Paulo (Capital).
+ * NUNCA devem ser aplicados quando a cidade for diferente de "São Paulo".
+ */
+const SP_CAPITAL_NEIGHBORHOOD_COORDS: Record<string, [number, number]> = {
   "alto da mooca": [-23.5614, -46.5924],
   mooca: [-23.5558, -46.5967],
   centro: [-23.5453, -46.636],
@@ -78,45 +82,118 @@ const NEIGHBORHOOD_COORDS: Record<string, [number, number]> = {
   "bela vista": [-23.5616, -46.649],
   consolacao: [-23.5535, -46.6582],
   pinheiros: [-23.5642, -46.6894],
+  "alto de pinheiros": [-23.5512, -46.7089],
+  "vila madalena": [-23.5518, -46.6914],
   "jardim paulista": [-23.5679, -46.6612],
   jardins: [-23.5679, -46.6612],
   "itaim bibi": [-23.5848, -46.6784],
   moema: [-23.5991, -46.6658],
   indianopolis: [-23.6032, -46.6621],
   "vila mariana": [-23.5815, -46.6382],
+  "chacara klabin": [-23.5919, -46.6248],
+  aclimacao: [-23.5718, -46.6292],
+  liberdade: [-23.5594, -46.6347],
+  cambuci: [-23.5656, -46.6164],
   "vila olimpia": [-23.5955, -46.6848],
   brooklin: [-23.6122, -46.6895],
+  "jardim edith": [-23.6098, -46.6938],
   "jardim das acacias": [-23.6215, -46.6951],
   "santo amaro": [-23.6528, -46.7074],
+  "chacara santo antonio": [-23.6319, -46.7019],
   "campo belo": [-23.6224, -46.6708],
+  "vila mascote": [-23.6431, -46.6628],
   jabaquara: [-23.6461, -46.6411],
+  "cidade ademar": [-23.6731, -46.6552],
   ipiranga: [-23.5858, -46.6097],
+  sacoma: [-23.6012, -46.6025],
+  cursino: [-23.6184, -46.6158],
   saude: [-23.6148, -46.6368],
+  "bosque da saude": [-23.6098, -46.6251],
   perdizes: [-23.5368, -46.6741],
+  sumare: [-23.5458, -46.6784],
   pompeia: [-23.5298, -46.6836],
+  "barra funda": [-23.5258, -46.6631],
+  "agua branca": [-23.5214, -46.6789],
   lapa: [-23.5236, -46.7022],
+  "vila leopoldina": [-23.5294, -46.7289],
+  jaguare: [-23.5425, -46.7481],
   butanta: [-23.5719, -46.7086],
+  "rio pequeno": [-23.5761, -46.7539],
   morumbi: [-23.5972, -46.7201],
+  "vila andrade": [-23.6258, -46.7352],
+  "parque reboucas": [-23.6239, -46.7495],
+  "campo limpo": [-23.6489, -46.7589],
+  "capao redondo": [-23.6689, -46.7789],
   "vila sonia": [-23.5988, -46.7375],
   santana: [-23.5015, -46.6248],
+  mandaqui: [-23.4795, -46.6318],
+  tremembe: [-23.4558, -46.6189],
   tucuruvi: [-23.4792, -46.6031],
+  "vila maria": [-23.5142, -46.5889],
+  "vila guilherme": [-23.5148, -46.6078],
+  "casa verde": [-23.5058, -46.6558],
+  limao: [-23.5028, -46.6728],
+  "freguesia do o": [-23.4958, -46.6989],
+  pirituba: [-23.4858, -46.7258],
+  jaragua: [-23.4558, -46.7489],
+  perus: [-23.4089, -46.7528],
   tatuape: [-23.5402, -46.5766],
+  belem: [-23.5418, -46.5931],
+  bras: [-23.5452, -46.6164],
+  "bom retiro": [-23.5278, -46.6389],
+  "agua rasa": [-23.5628, -46.5728],
   "vila formosa": [-23.5665, -46.5469],
+  "vila carrao": [-23.5518, -46.5358],
+  aricanduva: [-23.5678, -46.5128],
   penha: [-23.5234, -46.5409],
+  "vila matilde": [-23.5364, -46.5248],
+  "artur alvim": [-23.5398, -46.4858],
+  "vila campanela": [-23.5412, -46.4695],
   itaquera: [-23.5418, -46.4539],
+  "sao miguel paulista": [-23.4958, -46.4418],
+  "itaim paulista": [-23.5018, -46.3989],
+  guaianases: [-23.5428, -46.4128],
+  "sao mateus": [-23.5989, -46.4758],
+  sapopemba: [-23.6042, -46.5089],
   "vila prudente": [-23.5835, -46.5819],
+  "vila zelina": [-23.5892, -46.5689],
   interlagos: [-23.6815, -46.6889],
-  barra: [-23.0003, -43.3658],
-  copacabana: [-22.9698, -43.1869],
-  ipanema: [-22.9838, -43.2096],
-  botafogo: [-22.9519, -43.1857],
-  tijuca: [-22.9248, -43.2325],
-  recreio: [-23.0205, -43.4694],
-  savassi: [-19.9388, -43.9348],
-  lourdes: [-19.9311, -43.9438],
-  batel: [-25.4418, -49.2869],
+  "cidade dutra": [-23.7128, -46.6989],
+  grajau: [-23.7458, -46.6958],
 };
 
+/**
+ * Bairros específicos de outras cidades da Grande SP / Interior ("cidade:bairro")
+ */
+const CITY_NEIGHBORHOOD_COORDS: Record<string, [number, number]> = {
+  "diadema:centro": [-23.6864, -46.6228],
+  "diadema:piraporinha": [-23.6932, -46.5978],
+  "diadema:canhema": [-23.6798, -46.6095],
+  "diadema:taboao": [-23.6685, -46.6042],
+  "diadema:campanario": [-23.6718, -46.6255],
+  "diadema:conceicao": [-23.6961, -46.6248],
+  "diadema:serraria": [-23.7024, -46.6164],
+  "diadema:eldorado": [-23.7245, -46.6258],
+  "diadema:casa grande": [-23.7068, -46.5992],
+  "santo andre:centro": [-23.6578, -46.5278],
+  "santo andre:jardim": [-23.6538, -46.5382],
+  "santo andre:campestre": [-23.6412, -46.5448],
+  "santo andre:vila assuncao": [-23.6678, -46.5218],
+  "sao bernardo do campo:centro": [-23.7012, -46.5512],
+  "sao bernardo do campo:rudge ramos": [-23.6558, -46.5698],
+  "sao bernardo do campo:baeta neves": [-23.6918, -46.5448],
+  "sao bernardo do campo:assuncao": [-23.7218, -46.5658],
+  "sao caetano do sul:centro": [-23.6148, -46.5692],
+  "sao caetano do sul:santa paula": [-23.6182, -46.5592],
+  "barueri:alphaville": [-23.4958, -46.8518],
+  "barueri:tambore": [-23.4858, -46.8358],
+  "santana de parnaiba:alphaville": [-23.4689, -46.8689],
+  "cotia:granja viana": [-23.5912, -46.8364],
+};
+
+/**
+ * Coordenadas oficiais de municípios do Estado de São Paulo (IBGE / Centro Urbano)
+ */
 const SP_CITIES_COORDS: Record<string, [number, number]> = {
   "sao paulo": [-23.5505, -46.6333],
   campinas: [-22.9099, -47.0626],
@@ -126,63 +203,159 @@ const SP_CITIES_COORDS: Record<string, [number, number]> = {
   guaruja: [-23.9934, -46.2564],
   "sao vicente": [-23.9632, -46.3919],
   "sao bernardo do campo": [-23.6914, -46.5646],
+  "sao bernado do campo": [-23.6914, -46.5646],
   "santo andre": [-23.6639, -46.5383],
+  "sao caetano do sul": [-23.6229, -46.5548],
+  diadema: [-23.6864, -46.6228],
+  maua: [-23.6678, -46.4614],
+  "ribeirao pires": [-23.7114, -46.4136],
+  "rio grande da serra": [-23.7439, -46.3983],
   osasco: [-23.5329, -46.792],
+  barueri: [-23.5105, -46.8761],
+  "santana de parnaiba": [-23.4439, -46.9178],
+  carapicuiba: [-23.5228, -46.8356],
+  jandira: [-23.5275, -46.9028],
+  itapevi: [-23.5489, -46.9344],
+  cotia: [-23.6039, -46.919],
+  "vargem grande paulista": [-23.6033, -47.0258],
+  "taboao da serra": [-23.6089, -46.7578],
+  "embu das artes": [-23.6489, -46.8522],
+  "itapecerica da serra": [-23.7169, -46.8492],
+  cajamar: [-23.3561, -46.8769],
+  caieiras: [-23.3644, -46.7408],
+  "franco da rocha": [-23.3217, -46.7269],
+  "francisco morato": [-23.2817, -46.7425],
+  mairipora: [-23.3186, -46.5869],
+  aruja: [-23.3967, -46.3203],
+  "santa isabel": [-23.3158, -46.2208],
+  itaquaquecetuba: [-23.4864, -46.3486],
+  poa: [-23.5286, -46.345],
+  "ferraz de vasconcelos": [-23.5408, -46.3686],
+  suzano: [-23.5425, -46.3108],
+  "mogi das cruzes": [-23.5225, -46.1883],
+  guararema: [-23.4147, -46.0369],
   "ribeirao preto": [-21.1775, -47.8103],
   "sao jose dos campos": [-23.2237, -45.9009],
   "sao jose do rio preto": [-20.8113, -49.3758],
   piracicaba: [-22.7253, -47.6492],
   jundiai: [-23.1857, -46.8978],
+  "campo limpo paulista": [-23.2064, -46.7844],
+  "varzea paulista": [-23.2114, -46.8289],
+  jarinu: [-23.1022, -46.7283],
+  itupeva: [-23.1528, -47.0578],
+  louveira: [-23.0858, -46.9486],
+  cabreuva: [-23.3075, -47.1328],
   bauru: [-22.3145, -49.0587],
   marilia: [-22.2139, -49.9458],
   indaiatuba: [-23.0903, -47.2181],
   "rio claro": [-22.4149, -47.5614],
   jaboticabal: [-21.2558, -48.3244],
   taubate: [-23.0205, -45.5564],
+  pindamonhangaba: [-22.9239, -45.4617],
+  guaratingueta: [-22.8164, -45.1925],
+  aparecida: [-22.8469, -45.2297],
+  lorena: [-22.7308, -45.1247],
+  "cachoeira paulista": [-22.665, -45.0094],
+  cruzeiro: [-22.5761, -44.9614],
+  "campos do jordao": [-22.7394, -45.5914],
+  cacapava: [-23.1008, -45.7069],
+  jacarei: [-23.3053, -45.9658],
   americana: [-22.7374, -47.3333],
+  "santa barbara d'oeste": [-22.7539, -47.4144],
+  "santa barbara doeste": [-22.7539, -47.4144],
   araraquara: [-21.7944, -48.1758],
+  "sao carlos": [-22.0175, -47.8908],
   franca: [-20.5386, -47.4008],
-  barueri: [-23.5105, -46.8761],
-  cotia: [-23.6039, -46.919],
+  "patrocinio paulista": [-20.6394, -47.2819],
   praia_grande: [-24.0058, -46.4028],
   "praia grande": [-24.0058, -46.4028],
   itanhaem: [-24.1831, -46.7889],
-  bertioga: [-23.8542, -46.1383],
-  assis: [-22.6617, -50.4181],
-  "mogi mirim": [-22.4319, -46.9578],
-  avare: [-23.0989, -48.9256],
-  "aguas de santa barbara": [-22.8814, -49.2414],
-  "mogi guacu": [-22.3686, -46.9425],
-  salto: [-23.2008, -47.2869],
-  itatiba: [-23.0058, -46.8408],
-  carapicuiba: [-23.5228, -46.8356],
-  aracatuba: [-21.2089, -50.4328],
-  itapetininga: [-23.5894, -48.0531],
-  aruja: [-23.3967, -46.3203],
-  diadema: [-23.6864, -46.6228],
-  maua: [-23.6678, -46.4614],
-  suzano: [-23.5425, -46.3108],
-  limeira: [-22.5647, -47.4017],
-  sumare: [-22.8208, -47.2669],
-  "sao carlos": [-22.0175, -47.8908],
-  jacarei: [-23.3053, -45.9658],
-  hortolandia: [-22.8583, -47.2203],
-  "presidente prudente": [-22.1256, -51.3889],
-  itapevi: [-23.5489, -46.9344],
   mongagua: [-24.0931, -46.6208],
   peruibe: [-24.3208, -46.9983],
+  bertioga: [-23.8542, -46.1383],
+  cubatao: [-23.895, -46.4253],
+  "sao sebastiao": [-23.8058, -45.4019],
+  ilhabela: [-23.7781, -45.3581],
   caraguatatuba: [-23.6228, -45.4128],
   ubatuba: [-23.4339, -45.0839],
+  assis: [-22.6617, -50.4181],
+  ourinhos: [-22.9789, -49.8708],
+  "santa cruz do rio pardo": [-22.8989, -49.6328],
+  palmital: [-22.7889, -50.2175],
+  "paraguacu paulista": [-22.4119, -50.5758],
+  "mogi mirim": [-22.4319, -46.9578],
+  "mogi guacu": [-22.3686, -46.9425],
+  itapira: [-22.4361, -46.8219],
+  araras: [-22.3569, -47.3842],
+  leme: [-22.1856, -47.3903],
+  conchal: [-22.3292, -47.1725],
+  "sao joao da boa vista": [-21.9692, -46.7989],
+  "vargem grande do sul": [-21.8289, -46.8936],
+  "sao sebastiao da grama": [-21.7111, -46.8208],
+  avare: [-23.0989, -48.9256],
+  arandu: [-23.1344, -49.0542],
+  "aguas de santa barbara": [-22.8814, -49.2414],
+  botucatu: [-22.8858, -48.445],
+  pardinho: [-23.0811, -48.3736],
+  "sao manuel": [-22.7311, -48.5706],
+  "barra bonita": [-22.4947, -48.5581],
+  jau: [-22.2964, -48.5586],
+  salto: [-23.2008, -47.2869],
+  itu: [-23.2642, -47.2992],
+  "capela do alto": [-23.4708, -47.7347],
+  tatui: [-23.3556, -47.8569],
+  boituva: [-23.2831, -47.6722],
+  itapetininga: [-23.5894, -48.0531],
+  itarare: [-24.1125, -49.3314],
+  itapeva: [-23.9822, -48.8756],
+  itatiba: [-23.0058, -46.8408],
   atibaia: [-23.1172, -46.5561],
   "braganca paulista": [-22.9525, -46.5419],
   valinhos: [-22.9708, -46.9958],
   vinhedo: [-23.0297, -46.9744],
   paulinia: [-22.7611, -47.1539],
-  itu: [-23.2642, -47.2992],
-  botucatu: [-22.8858, -48.445],
+  jaguariuna: [-22.7056, -46.9858],
+  cosmopolis: [-22.6458, -47.1961],
+  hortolandia: [-22.8583, -47.2203],
+  sumare: [-22.8208, -47.2669],
+  limeira: [-22.5647, -47.4017],
+  charqueada: [-22.5097, -47.7781],
+  aracatuba: [-21.2089, -50.4328],
+  birigui: [-21.2886, -50.3408],
+  penapolis: [-21.4197, -50.0775],
+  barbosa: [-21.2667, -49.9492],
+  buritama: [-21.0669, -50.1475],
+  "ilha solteira": [-20.4328, -51.3425],
+  andradina: [-20.8961, -51.3794],
+  "presidente prudente": [-22.1256, -51.3889],
+  martinopolis: [-22.1464, -51.1708],
+  "santo anastacio": [-21.9769, -51.6519],
+  panorama: [-21.3564, -51.8597],
+  tupa: [-21.9347, -50.5136],
+  lins: [-21.6786, -49.7458],
+  promissao: [-21.5369, -49.8581],
+  "julio mesquita": [-22.0089, -49.7872],
   catanduva: [-21.1389, -48.9731],
+  novais: [-20.9922, -48.9189],
+  potirendaba: [-21.0428, -49.3769],
+  mendonca: [-21.1664, -49.5808],
+  ubarana: [-21.1669, -49.7186],
+  zacarias: [-21.0519, -50.0508],
+  "nova granada": [-20.5339, -49.3142],
+  votuporanga: [-20.4228, -49.9728],
+  fernandopolis: [-20.2839, -50.2464],
+  "santa fe do sul": [-20.2111, -50.9258],
+  urania: [-20.2461, -50.6428],
+  jales: [-20.2689, -50.5458],
   barretos: [-20.5572, -48.5678],
-  jau: [-22.2964, -48.5586],
+  bebedouro: [-20.9494, -48.4792],
+  olimpia: [-20.7372, -48.9147],
+  itapolis: [-21.5956, -48.8128],
+  guariba: [-21.3603, -48.2283],
+  pontal: [-21.0225, -48.0372],
+  sertaozinho: [-21.1378, -47.9903],
+  cravinhos: [-21.3403, -47.7294],
+  "sao simao": [-21.4792, -47.5508],
 };
 
 function normalizeStr(s: string) {
@@ -203,25 +376,108 @@ function hashOffset(seed: string): [number, number] {
   return [((h1 - 500) / 500) * 0.012, ((h2 - 500) / 500) * 0.012];
 }
 
+const SORTED_CITY_KEYS = Object.keys(SP_CITIES_COORDS).sort((a, b) => b.length - a.length);
+const SORTED_SP_NEIGHBORHOOD_KEYS = Object.keys(SP_CAPITAL_NEIGHBORHOOD_COORDS).sort(
+  (a, b) => b.length - a.length
+);
+
+function findCityCoords(normC: string): [number, number] | null {
+  if (!normC) return null;
+  if (SP_CITIES_COORDS[normC]) return SP_CITIES_COORDS[normC];
+  for (const cKey of SORTED_CITY_KEYS) {
+    if (cKey.length >= 4 && (normC.includes(cKey) || cKey.includes(normC))) {
+      return SP_CITIES_COORDS[cKey];
+    }
+  }
+  return null;
+}
+
 function resolveCoords(neighborhood: string, city: string, uf: string, code: string): [number, number] {
   const normN = normalizeStr(neighborhood);
   const normC = normalizeStr(city);
-  const [dLat, dLng] = hashOffset(code + neighborhood + city);
+  const [dLat, dLng] = hashOffset(code + "|" + normN + "|" + normC);
 
-  for (const [key, coords] of Object.entries(NEIGHBORHOOD_COORDS)) {
-    if (normN.includes(key) || key.includes(normN)) {
-      return [coords[0] + dLat * 0.4, coords[1] + dLng * 0.4];
+  // 1. Se a cidade for São Paulo (Capital), usa o mapa de bairros da Capital
+  if (normC === "sao paulo") {
+    if (normN && SP_CAPITAL_NEIGHBORHOOD_COORDS[normN]) {
+      const coords = SP_CAPITAL_NEIGHBORHOOD_COORDS[normN];
+      return [coords[0] + dLat * 0.25, coords[1] + dLng * 0.25];
     }
+    if (normN && normN.length >= 4) {
+      for (const key of SORTED_SP_NEIGHBORHOOD_KEYS) {
+        if (normN.includes(key) || key.includes(normN)) {
+          const coords = SP_CAPITAL_NEIGHBORHOOD_COORDS[key];
+          return [coords[0] + dLat * 0.25, coords[1] + dLng * 0.25];
+        }
+      }
+    }
+    const spBase = SP_CITIES_COORDS["sao paulo"];
+    return [spBase[0] + dLat * 0.4, spBase[1] + dLng * 0.4];
   }
 
-  for (const [cKey, coords] of Object.entries(SP_CITIES_COORDS)) {
-    if (normC.includes(cKey) || cKey.includes(normC)) {
-      return [coords[0] + dLat * 1.5, coords[1] + dLng * 1.5];
-    }
+  // 2. Bairros mapeados para outras cidades específicas ("diadema:centro", "barueri:alphaville", etc.)
+  const compositeKey = `${normC}:${normN}`;
+  if (CITY_NEIGHBORHOOD_COORDS[compositeKey]) {
+    const coords = CITY_NEIGHBORHOOD_COORDS[compositeKey];
+    return [coords[0] + dLat * 0.2, coords[1] + dLng * 0.2];
   }
 
+  // 3. Coordenada exata do município no Estado de SP (com micro-offset de ~300m para nunca sair do município)
+  const cityCoords = findCityCoords(normC);
+  if (cityCoords) {
+    return [cityCoords[0] + dLat * 0.28, cityCoords[1] + dLng * 0.28];
+  }
+
+  // 4. Fallback estadual caso município não esteja listado
   const base = STATE_CENTERS[uf.toLowerCase()] || STATE_CENTERS.sp;
-  return [base[0] + dLat * 2.5, base[1] + dLng * 2.5];
+  return [base[0] + dLat * 0.5, base[1] + dLng * 0.5];
+}
+
+/**
+ * Valida se a coordenada GPS vinda do leiloeiro é consistente com o município do lote.
+ * Evita que coordenadas genéricas da praça/sede em São Paulo joguem lotes de Diadema/ABC/Interior dentro da Capital.
+ */
+function validateOrResolveCoords(
+  rawLat: number | null | undefined,
+  rawLng: number | null | undefined,
+  neighborhood: string,
+  city: string,
+  uf: string,
+  code: string
+): [number, number] {
+  const [resolvedLat, resolvedLng] = resolveCoords(neighborhood, city, uf, code);
+  if (
+    typeof rawLat !== "number" ||
+    typeof rawLng !== "number" ||
+    !Number.isFinite(rawLat) ||
+    !Number.isFinite(rawLng) ||
+    rawLat > -19 ||
+    rawLat < -26 ||
+    rawLng > -44 ||
+    rawLng < -54
+  ) {
+    return [resolvedLat, resolvedLng];
+  }
+
+  // Coordenada placeholder genérica do Superbid para Centro de SP (-23.555771, -46.639557)
+  const isSuperbidDefaultPlaceholder =
+    Math.abs(rawLat - -23.555771) < 0.002 && Math.abs(rawLng - -46.639557) < 0.002;
+  if (isSuperbidDefaultPlaceholder) {
+    return [resolvedLat, resolvedLng];
+  }
+
+  const normC = normalizeStr(city);
+  const cityCenter = findCityCoords(normC);
+  if (cityCenter) {
+    const distFromCity = Math.hypot(rawLat - cityCenter[0], rawLng - cityCenter[1]);
+    // Para cidades fora da Capital (ex: Diadema, São Caetano, Osasco), se o ponto estiver a mais de ~8km do centro da cidade, usa resolvedCoords
+    const maxDistDeg = normC === "sao paulo" ? 0.16 : 0.075;
+    if (distFromCity > maxDistDeg) {
+      return [resolvedLat, resolvedLng];
+    }
+  }
+
+  return [rawLat, rawLng];
 }
 
 function parseBRLNumber(raw?: string | null): number {
@@ -674,20 +930,28 @@ export async function scrapeSuperbidAndSold(uf = "sp"): Promise<ScrapedAuctionLo
       }
 
       const cityClean = toTitleCase(
-        rawCityState.replace(/\s*[-/]\s*SP$/i, "").trim() || "São Paulo"
+        rawCityState.replace(/(?:\s*[-/]\s*SP)+$/gi, "").trim() || "São Paulo"
       );
 
-      // Tenta extrair bairro da descrição curta (ex: "Apartamento - Vila Matilde - São Paulo/SP")
+      // Tenta extrair bairro da descrição curta (ex: "Apartamento - Vila Matilde - São Paulo/SP" ou "no bairro Jardim Edith em São Paulo/SP")
       const descParts = shortDesc
         .replace(/\.\s*$/, "")
         .split(/\s+-\s+/)
         .map((s) => s.trim())
         .filter(Boolean);
       let neighborhood = "Centro";
-      if (descParts.length >= 3) {
+      const bairroRegexMatch =
+        shortDesc.match(/no\s+bairro\s+([^,|-]+?)(?:\s*\([^)]+\))?\s+em\s+/i) ||
+        shortDesc.match(/\|\s*([^|,]+?),\s*[^|,]+\/SP/i);
+      if (bairroRegexMatch?.[1]?.trim()) {
+        neighborhood = toTitleCase(bairroRegexMatch[1].trim());
+      } else if (descParts.length >= 3) {
         neighborhood = toTitleCase(descParts[descParts.length - 2].replace(/\/SP$/i, ""));
       } else if (descParts.length === 2) {
-        neighborhood = toTitleCase(descParts[1].replace(/\/SP$/i, ""));
+        const candidate = descParts[1].replace(/\/SP$/i, "").replace(/^em\s+/i, "").trim();
+        if (normalizeStr(candidate) !== normalizeStr(cityClean)) {
+          neighborhood = toTitleCase(candidate);
+        }
       }
 
       // Extrai área m² da descrição
@@ -719,15 +983,14 @@ export async function scrapeSuperbidAndSold(uf = "sp"): Promise<ScrapedAuctionLo
       const code = `SB-${o.id}`;
       const geoLat = o.product?.location?.locationGeo?.lat;
       const geoLon = o.product?.location?.locationGeo?.lon;
-      const [fallbackLat, fallbackLng] = resolveCoords(neighborhood, cityClean, "SP", code);
-      const lat =
-        typeof geoLat === "number" && Number.isFinite(geoLat) && geoLat < -19 && geoLat > -26
-          ? geoLat
-          : fallbackLat;
-      const lng =
-        typeof geoLon === "number" && Number.isFinite(geoLon) && geoLon < -44 && geoLon > -54
-          ? geoLon
-          : fallbackLng;
+      const [lat, lng] = validateOrResolveCoords(
+        geoLat,
+        geoLon,
+        neighborhood,
+        cityClean,
+        "SP",
+        code
+      );
 
       const isJudicial =
         sellerLower.includes("tribunal") ||
@@ -890,18 +1153,16 @@ export async function scrapeSodreSantoro(uf = "sp"): Promise<ScrapedAuctionLot[]
       const street = item.lot_street ? toTitleCase(item.lot_street) : "";
       const code = `SS-${item.lot_id || item.id}`;
 
-      let lat = 0;
-      let lng = 0;
+      let rawLat: number | null = null;
+      let rawLng: number | null = null;
       if (typeof item.lot_coordinates === "string" && item.lot_coordinates.includes(",")) {
         const [cLat, cLng] = item.lot_coordinates.split(",").map((s: string) => parseFloat(s.trim()));
         if (Number.isFinite(cLat) && Number.isFinite(cLng)) {
-          lat = cLat;
-          lng = cLng;
+          rawLat = cLat;
+          rawLng = cLng;
         }
       }
-      if (!lat || !lng) {
-        [lat, lng] = resolveCoords(neighborhood, city, "SP", code);
-      }
+      const [lat, lng] = validateOrResolveCoords(rawLat, rawLng, neighborhood, city, "SP", code);
 
       const desc = stripTags(item.lot_description || "");
       const areaMatch = desc.match(/(\d+(?:[.,]\d+)?)\s*m²/i);
@@ -1071,7 +1332,12 @@ export async function scrapeBancoDoBrasil(uf = "sp"): Promise<ScrapedAuctionLot[
         marketValue > minBid ? Math.round((1 - minBid / marketValue) * 100) : 28;
 
       const rawLoc = (locMatch?.[1] || "São Paulo - SP").trim();
-      const city = toTitleCase(rawLoc.replace(/\s*-\s*SP$/i, "").trim() || "São Paulo");
+      const city = toTitleCase(
+        rawLoc
+          .replace(/(?:\s*[-/]\s*SP)+$/gi, "")
+          .replace(/Bernado/i, "Bernardo")
+          .trim() || "São Paulo"
+      );
       const propType = toTitleCase((tipoMatch?.[1] || "Imóvel").trim());
 
       const shareDesc = stripTags((shareMatch?.[1] || "").replace(/\s+/g, " "));
@@ -1173,7 +1439,7 @@ export async function runDailyScrape(uf = "sp"): Promise<ScrapedAuctionLot[]> {
 }
 
 const LOCAL_STORAGE_DIR = path.join(process.cwd(), ".next", "cache", "leiloes");
-const SNAPSHOT_VERSION = "v3";
+const SNAPSHOT_VERSION = "v4";
 
 /**
  * Salva o Snapshot no Vercel Blob (se disponível), em arquivo local e em memória
