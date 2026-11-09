@@ -255,23 +255,79 @@ function toTitleCase(str: string): string {
     .join(" ");
 }
 
+/**
+ * Garante que apenas leilões A VENCER (hoje ou no futuro) sejam aceitos,
+ * descartando qualquer lote com data vencida/encerrada.
+ */
+function isAuctionUpcoming(dateStr?: string | null): boolean {
+  if (!dateStr) return false;
+  const clean = dateStr.trim().toLowerCase();
+  if (clean.includes("proposta imediata")) return true;
+  if (
+    clean.includes("encerrad") ||
+    clean.includes("vendid") ||
+    clean.includes("suspens") ||
+    clean.includes("cancelad") ||
+    clean.includes("sustad")
+  ) {
+    return false;
+  }
+
+  // Formato brasileiro DD/MM/YYYY ou DD/MM/YY
+  const brMatch = clean.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+  if (brMatch) {
+    const day = parseInt(brMatch[1], 10);
+    const month = parseInt(brMatch[2], 10);
+    let year = parseInt(brMatch[3], 10);
+    if (year < 100) year += 2000;
+    const endOfAuctionDay = new Date(year, month - 1, day, 23, 59, 59).getTime();
+    return endOfAuctionDay >= Date.now();
+  }
+
+  // Formato ISO YYYY-MM-DD
+  const isoMatch = clean.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) {
+    const year = parseInt(isoMatch[1], 10);
+    const month = parseInt(isoMatch[2], 10);
+    const day = parseInt(isoMatch[3], 10);
+    const endOfAuctionDay = new Date(year, month - 1, day, 23, 59, 59).getTime();
+    return endOfAuctionDay >= Date.now();
+  }
+
+  return true;
+}
+
 export async function scrapeMegaLeiloes(uf: string): Promise<ScrapedAuctionLot[]> {
-  const targetUrl = `https://www.megaleiloes.com.br/imoveis/${uf.toLowerCase()}`;
+  const pages = [1, 2, 3];
+  const htmlPages = await Promise.allSettled(
+    pages.map(async (p) => {
+      const targetUrl =
+        p === 1
+          ? `https://www.megaleiloes.com.br/imoveis/${uf.toLowerCase()}`
+          : `https://www.megaleiloes.com.br/imoveis/${uf.toLowerCase()}?pagina=${p}`;
+      const res = await fetch(targetUrl, {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        },
+        next: { revalidate: 600 },
+      });
+      if (!res.ok) return "";
+      return res.text();
+    })
+  );
 
-  const res = await fetch(targetUrl, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-    },
-    next: { revalidate: 600 },
-  });
+  // <div class="card open"> garante apenas lotes com pregão ABERTO no Mega Leilões
+  const blocks: string[] = [];
+  for (const hp of htmlPages) {
+    if (hp.status === "fulfilled" && hp.value) {
+      blocks.push(...hp.value.split('<div class="card open">').slice(1));
+    }
+  }
 
-  if (!res.ok) return [];
-  const html = await res.text();
-  const blocks = html.split('<div class="card open">').slice(1);
   const results: ScrapedAuctionLot[] = [];
 
-  for (const b of blocks.slice(0, 28)) {
+  for (const b of blocks) {
     const urlMatch = b.match(/class="card-title"\s+href="([^"]+)"/);
     const titleMatch = b.match(/class="card-title"[^>]*>([\s\S]*?)<\/a>/);
     const codeMatch = b.match(/class="card-number[^"]*">([^<]+)</);
@@ -293,6 +349,9 @@ export async function scrapeMegaLeiloes(uf: string): Promise<ScrapedAuctionLot[]
     const code = codeMatch?.[1]?.trim() || `ML-${results.length + 1}`;
     const sourceUrl = (urlMatch?.[1] || "").split("?")[0];
     if (!rawTitle || !sourceUrl) continue;
+
+    const auctionDate = secondDateMatch?.[1]?.trim() || "";
+    if (!isAuctionUpcoming(auctionDate)) continue;
 
     const minBid = parseBRLNumber(priceMatch?.[1]);
     if (minBid <= 0) continue;
@@ -361,7 +420,7 @@ export async function scrapeMegaLeiloes(uf: string): Promise<ScrapedAuctionLot[]
       discountPct,
       modality: isJudicial ? "Leilão Judicial" : "Extrajudicial",
       seller: isJudicial ? "Tribunal de Justiça" : "Comitente Bancário",
-      auctionDate: secondDateMatch?.[1]?.trim() || "Em aberto",
+      auctionDate,
       areaM2,
       acceptsFinancing: !isJudicial,
       occupancy: "Ver no Edital",
@@ -406,7 +465,7 @@ export async function scrapePortalZuk(uf: string): Promise<ScrapedAuctionLot[]> 
   const blocks = html.split('class="card-property card_lotes_div"').slice(1);
   const results: ScrapedAuctionLot[] = [];
 
-  for (const b of blocks.slice(0, 28)) {
+  for (const b of blocks) {
     const cutIdx = b.indexOf("<script");
     const safeB = cutIdx > -1 ? b.slice(0, cutIdx) : b;
 
@@ -433,6 +492,9 @@ export async function scrapePortalZuk(uf: string): Promise<ScrapedAuctionLot[]> 
 
     const sourceUrl = urlMatch?.[1];
     if (!sourceUrl) continue;
+
+    const auctionDate = dateBlocks[dateBlocks.length - 1]?.[1]?.trim() || "Em aberto";
+    if (!isAuctionUpcoming(auctionDate)) continue;
 
     const p1 = parseBRLNumber(priceBlocks[0]?.[1]);
     const p2 = parseBRLNumber(priceBlocks[1]?.[1]);
@@ -547,30 +609,43 @@ export async function scrapePortalZuk(uf: string): Promise<ScrapedAuctionLot[]> 
 }
 
 /**
- * Raspa Superbid Exchange & Sold Leilões (Estado de SP — Apenas Imóveis)
+ * Raspa Superbid Exchange & Sold Leilões (Estado de SP — Apenas Imóveis, Paginado p/ 1..3 e Apenas Leilões a Vencer)
  */
 export async function scrapeSuperbidAndSold(uf = "sp"): Promise<ScrapedAuctionLot[]> {
   if (uf.toLowerCase() !== "sp") return [];
 
-  const targetUrl =
-    "https://offer-query.superbid.net/offers/?portalId=[2,15]&filter=product.productType.description:imoveis;product.location.state:S%C3%A3o%20Paulo&orderBy=id:desc&pageNumber=1&pageSize=45";
-
   try {
-    const res = await fetch(targetUrl, {
-      headers: {
-        Accept: "application/json",
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-      },
-      next: { revalidate: 600 },
-    });
+    const pages = [1, 2, 3];
+    const pageResponses = await Promise.allSettled(
+      pages.map(async (pageNumber) => {
+        const targetUrl = `https://offer-query.superbid.net/offers/?portalId=[2,15]&filter=product.productType.description:imoveis;product.location.state:S%C3%A3o%20Paulo;statusId:1&orderBy=id:desc&pageNumber=${pageNumber}&pageSize=50`;
+        const res = await fetch(targetUrl, {
+          headers: {
+            Accept: "application/json",
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+          },
+          next: { revalidate: 600 },
+        });
+        if (!res.ok) return [];
+        const data = await res.json();
+        return Array.isArray(data?.offers) ? data.offers : [];
+      })
+    );
 
-    if (!res.ok) return [];
-    const data = await res.json();
-    const offers = Array.isArray(data?.offers) ? data.offers : [];
+    const offers = pageResponses.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
     const results: ScrapedAuctionLot[] = [];
+    const nowMs = Date.now();
 
     for (const o of offers) {
+      if (o.statusId && o.statusId !== 1) continue;
+      if (typeof o.endDate === "string" && o.endDate.includes("-")) {
+        const endMs = Date.parse(o.endDate.replace(" ", "T") + "-03:00");
+        if (Number.isFinite(endMs) && endMs < nowMs) {
+          continue; // Lote já encerrado / vencido
+        }
+      }
+
       const minBid = typeof o.price === "number" ? Math.round(o.price) : 0;
       if (minBid < 25000) continue;
 
@@ -759,7 +834,7 @@ export async function scrapeSodreSantoro(uf = "sp"): Promise<ScrapedAuctionLot[]
       },
       body: JSON.stringify({
         page: 1,
-        perPage: 30,
+        perPage: 50,
         query: {
           bool: {
             filter: [{ term: { segment_base: "imoveis" } }],
@@ -774,6 +849,20 @@ export async function scrapeSodreSantoro(uf = "sp"): Promise<ScrapedAuctionLot[]
     const results: ScrapedAuctionLot[] = [];
 
     for (const item of items) {
+      // Filtra apenas leilões abertos e lotes em andamento
+      const auctionSt = String(item.auction_status || "").toLowerCase();
+      const lotSt = String(item.lot_status || "").toLowerCase();
+      if (
+        auctionSt.includes("encerrad") ||
+        auctionSt.includes("fechad") ||
+        lotSt.includes("vendid") ||
+        lotSt.includes("encerrad") ||
+        lotSt.includes("sustad") ||
+        lotSt.includes("suspens")
+      ) {
+        continue;
+      }
+
       const st = (item.lot_state || "").toLowerCase();
       const loc = (item.lot_location || "").toLowerCase();
       if (!st.includes("paulo") && st !== "sp" && !loc.includes("/ sp")) {
@@ -830,6 +919,7 @@ export async function scrapeSodreSantoro(uf = "sp"): Promise<ScrapedAuctionLot[]
           auctionDate = `${dd}/${mm}/${yyyy}${tPart ? ` às ${tPart.slice(0, 5)}` : ""}`;
         }
       }
+      if (!isAuctionUpcoming(auctionDate)) continue;
 
       const isJudicial = Boolean(item.lot_is_judicial);
       const seller = toTitleCase(item.client_name || "Sodré Santoro");
@@ -891,7 +981,7 @@ export async function scrapeSodreSantoro(uf = "sp"): Promise<ScrapedAuctionLot[]
 }
 
 /**
- * Raspa Seu Imóvel BB — Banco do Brasil (Estado de SP — Apenas Imóveis)
+ * Raspa Seu Imóvel BB — Banco do Brasil (Estado de SP — Apenas Imóveis, Paginado p/ 1..2)
  */
 export async function scrapeBancoDoBrasil(uf = "sp"): Promise<ScrapedAuctionLot[]> {
   if (uf.toLowerCase() !== "sp") return [];
@@ -919,41 +1009,49 @@ export async function scrapeBancoDoBrasil(uf = "sp"): Promise<ScrapedAuctionLot[
     const cppnp = bbHtml.match(/id="_cppnp"[^>]*>([^<]+)</)?.[1] || "";
     if (!cppnp) return [];
 
-    const form = new URLSearchParams({
-      pagina: "1",
-      categorias: "",
-      tipoVenda: "",
-      tipoPagamento: "",
-      evolua: "",
-      localidade: "SP||",
-      minimo: "",
-      maximo: "",
-      texto: "",
-      ordem: "0",
-      contento: "0",
-      cppnp,
-    });
+    // Pagina pelas páginas 1 e 2 do catálogo de SP do Seu Imóvel BB
+    const pages = ["1", "2"];
+    const pageCards = await Promise.allSettled(
+      pages.map(async (pagina) => {
+        const form = new URLSearchParams({
+          pagina,
+          categorias: "",
+          tipoVenda: "",
+          tipoPagamento: "",
+          evolua: "",
+          localidade: "SP||",
+          minimo: "",
+          maximo: "",
+          texto: "",
+          ordem: "0",
+          contento: "0",
+          cppnp,
+        });
 
-    const bbPost = await fetch("https://seuimovelbb.com.br/catalogo", {
-      method: "POST",
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-        "X-Requested-With": "XMLHttpRequest",
-        Referer: "https://seuimovelbb.com.br/catalogo/imoveis?uf=SP",
-        Origin: "https://seuimovelbb.com.br",
-        Cookie: cookies,
-      },
-      body: form.toString(),
-    });
+        const bbPost = await fetch("https://seuimovelbb.com.br/catalogo", {
+          method: "POST",
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+            "X-Requested-With": "XMLHttpRequest",
+            Referer: "https://seuimovelbb.com.br/catalogo/imoveis?uf=SP",
+            Origin: "https://seuimovelbb.com.br",
+            Cookie: cookies,
+          },
+          body: form.toString(),
+        });
 
-    if (!bbPost.ok) return [];
-    const bbJson = await bbPost.json();
-    const cards = (bbJson?.lista || "").split('<div class="card carta">').slice(1);
+        if (!bbPost.ok) return [];
+        const bbJson = await bbPost.json();
+        return (bbJson?.lista || "").split('<div class="card carta">').slice(1);
+      })
+    );
+
+    const cards = pageCards.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
     const results: ScrapedAuctionLot[] = [];
 
-    for (const c of cards.slice(0, 28)) {
+    for (const c of cards) {
       const hrefMatch = c.match(/href="(\/imovel\/id\/(\d+))"/);
       const imgMatch = c.match(/src="(\/imagem\/imovel\/[^"]+)"/);
       const tipoMatch = c.match(/<div class="tipo">[\s\S]*?<\/i>\s*([^<]+)</);
@@ -1042,7 +1140,7 @@ export async function scrapeBancoDoBrasil(uf = "sp"): Promise<ScrapedAuctionLot[
 }
 
 /**
- * Executa a raspagem unificada de todas as fontes em SP (apenas Imóveis) com deduplicação
+ * Executa a raspagem unificada de todas as fontes em SP (apenas Imóveis e apenas leilões a vencer) com deduplicação
  */
 export async function runDailyScrape(uf = "sp"): Promise<ScrapedAuctionLot[]> {
   const [megaLots, zukLots, sbSoldLots, sodreLots, bbLots] = await Promise.allSettled([
@@ -1064,7 +1162,7 @@ export async function runDailyScrape(uf = "sp"): Promise<ScrapedAuctionLot[]> {
   const seenIds = new Set<string>();
   const combined: ScrapedAuctionLot[] = [];
   for (const lot of rawCombined) {
-    if (!seenIds.has(lot.id)) {
+    if (!seenIds.has(lot.id) && isAuctionUpcoming(lot.auctionDate)) {
       seenIds.add(lot.id);
       combined.push(lot);
     }
@@ -1075,7 +1173,7 @@ export async function runDailyScrape(uf = "sp"): Promise<ScrapedAuctionLot[]> {
 }
 
 const LOCAL_STORAGE_DIR = path.join(process.cwd(), ".next", "cache", "leiloes");
-const SNAPSHOT_VERSION = "v2";
+const SNAPSHOT_VERSION = "v3";
 
 /**
  * Salva o Snapshot no Vercel Blob (se disponível), em arquivo local e em memória
