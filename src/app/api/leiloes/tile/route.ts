@@ -48,3 +48,4 @@ export async function GET(req: NextRequest) {
     return new NextResponse("Falha no proxy de mapa", { status: 502 });
   }
 }
+
