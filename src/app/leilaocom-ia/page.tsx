@@ -991,7 +991,19 @@ export default function LeilaoComIaPage() {
           ? `-${lot.discountPct}%`
           : lot.source === "Portal Zuk"
           ? "ZUK"
-          : "ML";
+          : lot.source === "Mega Leilões"
+          ? "ML"
+          : lot.source === "Sold Leilões"
+          ? "SL"
+          : lot.source === "Superbid"
+          ? "SB"
+          : lot.source === "Sodré Santoro"
+          ? "SS"
+          : lot.source === "Banco do Brasil"
+          ? "BB"
+          : lot.source === "Caixa"
+          ? "CEF"
+          : "LOTE";
 
       const icon = L.divIcon({
         className: "finhouse-auction-pin",
@@ -1199,10 +1211,18 @@ export default function LeilaoComIaPage() {
             </div>
           </div>
 
-          {/* Status de Sincronização Diária no Estado de SP */}
-          <div className="hidden sm:flex items-center gap-2 text-xs text-[#64748B]">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-            <span>Base SP sincronizada ({updatedAtLabel})</span>
+          {/* Status de Sincronização Diária no Estado de SP + Link Painel Premium */}
+          <div className="hidden sm:flex items-center gap-3 text-xs text-[#64748B]">
+            <Link
+              href="/premium"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors"
+            >
+              <span>⚡ Screener & Comparador Premium</span>
+            </Link>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+              <span>Base SP ({updatedAtLabel})</span>
+            </div>
           </div>
         </div>
 
@@ -1361,7 +1381,7 @@ export default function LeilaoComIaPage() {
                     </span>
                     <span className="text-[#CBD5E1]">|</span>
                     <span className="hidden sm:inline text-[#64748B]">
-                      Mega Leilões & Portal Zuk
+                      Mega, Zuk, Superbid & Sold
                     </span>
                   </>
                 )}
@@ -1978,25 +1998,26 @@ export default function LeilaoComIaPage() {
                       </div>
                     </div>
 
-                    {/* Botão Principal de Compra/Abertura do Dossiê (Preço Nunca Quebra) */}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setModalMode(
-                          isSelectedUnlocked ? "dossie_view" : "dossie_checkout"
-                        )
-                      }
-                      className="w-full py-3.5 px-4 rounded-xl bg-[#0F2744] hover:bg-[#0A1B30] text-white font-bold text-xs sm:text-sm transition-all flex items-center justify-between gap-2 cursor-pointer shadow-sm"
-                    >
-                      <span>
-                        {isSelectedUnlocked
-                          ? "Abrir Relatório Completo para Impressão (PDF)"
-                          : "Desbloquear Dossiê Completo do Imóvel"}
-                      </span>
-                      <span className="whitespace-nowrap shrink-0 bg-white/15 px-2.5 py-1 rounded-lg text-xs font-bold">
-                        {isSelectedUnlocked ? "Abrir PDF →" : DOSSIE_PRICE}
-                      </span>
-                    </button>
+                    {/* Botão Principal de Abertura Direta do Dossiê Interativo + Simulador */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <Link
+                        href={`/premium/analise/${encodeURIComponent(selectedLot.id)}`}
+                        className="sm:col-span-2 py-3.5 px-4 rounded-xl bg-[#0F2744] hover:bg-[#0A1B30] text-white font-bold text-xs sm:text-sm transition-all flex items-center justify-between gap-2 cursor-pointer shadow-sm"
+                      >
+                        <span>
+                          Abrir Dossiê Completo + Simulador de Lance Teto
+                        </span>
+                        <span className="whitespace-nowrap shrink-0 bg-emerald-500 text-slate-950 px-2.5 py-1 rounded-lg text-xs font-extrabold">
+                          Grátis (Teste 15d) →
+                        </span>
+                      </Link>
+                      <Link
+                        href={`/premium/comparar?lotes=${encodeURIComponent(selectedLot.id)}`}
+                        className="py-3.5 px-3 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-900 font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5"
+                      >
+                        <span>Comparar (até 3)</span>
+                      </Link>
+                    </div>
                   </div>
 
                   {/* 5. Serviços finHouse (Botões Secundários Sóbrios e Limpos) */}
@@ -2039,18 +2060,13 @@ export default function LeilaoComIaPage() {
                     >
                       Financiar
                     </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        isSelectedUnlocked
-                          ? setModalMode("dossie_view")
-                          : setModalMode("dossie_checkout")
-                      }
+                    <Link
+                      href={`/premium/analise/${encodeURIComponent(selectedLot.id)}`}
                       className="px-3.5 py-2 rounded-xl bg-[#0F2744] hover:bg-[#0A1B30] text-white font-bold text-xs shadow-xs flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap shrink-0"
                     >
-                      <span>{isSelectedUnlocked ? "Ver Dossiê" : `Dossiê · ${DOSSIE_PRICE}`}</span>
+                      <span>Abrir Dossiê</span>
                       <ChevronRight className="w-3.5 h-3.5 shrink-0" />
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </>

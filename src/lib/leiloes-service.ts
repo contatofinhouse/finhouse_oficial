@@ -5,7 +5,14 @@ import path from "path";
 export interface ScrapedAuctionLot {
   id: string;
   code: string;
-  source: "Mega Leilões" | "Portal Zuk";
+  source:
+    | "Mega Leilões"
+    | "Portal Zuk"
+    | "Superbid"
+    | "Sold Leilões"
+    | "Sodré Santoro"
+    | "Banco do Brasil"
+    | "Caixa";
   sourceUrl: string;
   imageUrl: string;
   title: string;
