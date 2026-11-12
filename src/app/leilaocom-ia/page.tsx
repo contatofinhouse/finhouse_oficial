@@ -380,6 +380,7 @@ export default function LeilaoComIaPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterFinancing, setFilterFinancing] = useState(false);
   const [filterHighDiscount, setFilterHighDiscount] = useState(false);
+  const [filterSecondStageOnly, setFilterSecondStageOnly] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [minValue, setMinValue] = useState<string>("");
   const [maxValue, setMaxValue] = useState<string>("");
@@ -389,11 +390,12 @@ export default function LeilaoComIaPage() {
     let count = 0;
     if (filterFinancing) count++;
     if (filterHighDiscount) count++;
+    if (filterSecondStageOnly) count++;
     if (minValue) count++;
     if (maxValue) count++;
     if (filterFavoritesOnly) count++;
     return count;
-  }, [filterFinancing, filterHighDiscount, minValue, maxValue, filterFavoritesOnly]);
+  }, [filterFinancing, filterHighDiscount, filterSecondStageOnly, minValue, maxValue, filterFavoritesOnly]);
 
   // Referência da coluna de detalhes para resetar scroll ao topo
   const rightColumnRef = useRef<HTMLDivElement | null>(null);
@@ -519,14 +521,27 @@ export default function LeilaoComIaPage() {
       return copy.sort((a, b) => b.discountPct - a.discountPct);
     };
 
-    // 1. Aplica filtros base (Valor, Financiamento, Super Desconto e Favoritos)
+    // 1. Aplica filtros base (Valor, Financiamento, Super Desconto, 2ª Praça e Favoritos)
     const baseLots = lots.filter((lot) => {
       const matchesFinancing = !filterFinancing || lot.acceptsFinancing;
       const matchesDiscount = !filterHighDiscount || lot.discountPct >= 35;
+      const isSecondStage =
+        lot.discountPct > 0 ||
+        /2[ªa]\s*praça|segunda\s*praça|2[ºo]\s*leilão|segundo\s*leilão/i.test(
+          `${lot.title} ${lot.aiSummary || ""} ${lot.modality || ""}`
+        );
+      const matchesSecondStage = !filterSecondStageOnly || isSecondStage;
       const matchesFavorite = !filterFavoritesOnly || Boolean(favorites[lot.id]);
       const matchesMin = isNaN(minNum) || minNum === 0 || lot.minBid >= minNum;
       const matchesMax = isNaN(maxNum) || maxNum === Infinity || lot.minBid <= maxNum;
-      return matchesFinancing && matchesDiscount && matchesFavorite && matchesMin && matchesMax;
+      return (
+        matchesFinancing &&
+        matchesDiscount &&
+        matchesSecondStage &&
+        matchesFavorite &&
+        matchesMin &&
+        matchesMax
+      );
     });
 
     if (!normQuery && !normCepBairro) {
@@ -640,6 +655,7 @@ export default function LeilaoComIaPage() {
     cepResolvedCity,
     filterFinancing,
     filterHighDiscount,
+    filterSecondStageOnly,
     filterFavoritesOnly,
     favorites,
     minValue,
@@ -1170,6 +1186,7 @@ export default function LeilaoComIaPage() {
                   onClick={() => {
                     setFilterFinancing(false);
                     setFilterHighDiscount(false);
+                    setFilterSecondStageOnly(false);
                     setFilterFavoritesOnly(false);
                     setMinValue("");
                     setMaxValue("");
@@ -2740,7 +2757,38 @@ export default function LeilaoComIaPage() {
               </div>
             </div>
 
-            {/* 2. Desconto Mínimo */}
+            {/* 2. Praça do Leilão (1ª / 2ª Praça) */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-[#475569]">
+                Praça do Leilão
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFilterSecondStageOnly(false)}
+                  className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                    !filterSecondStageOnly
+                      ? "bg-[#0F2744] text-white border-[#0F2744] shadow-xs"
+                      : "bg-white text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1]"
+                  }`}
+                >
+                  Todas as Praças
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterSecondStageOnly(true)}
+                  className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    filterSecondStageOnly
+                      ? "bg-amber-600 text-white border-amber-600 shadow-xs"
+                      : "bg-white text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1]"
+                  }`}
+                >
+                  <span>🔥 Apenas 2ª Praça</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 3. Desconto Mínimo */}
             <div className="space-y-2">
               <label className="text-xs font-bold uppercase tracking-wider text-[#475569]">
                 Desconto sobre Avaliação
@@ -2772,7 +2820,7 @@ export default function LeilaoComIaPage() {
               </div>
             </div>
 
-            {/* 3. Faixa de Preço (Lance Mínimo) */}
+            {/* 4. Faixa de Preço (Lance Mínimo) */}
             <div className="space-y-2">
               <label className="text-xs font-bold uppercase tracking-wider text-[#475569]">
                 Faixa de Preço (Lance Mínimo)
@@ -2799,55 +2847,9 @@ export default function LeilaoComIaPage() {
                   />
                 </div>
               </div>
-
-              {/* Atalhos Rápidos de Valor */}
-              <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                <button
-                  type="button"
-                  onClick={() => { setMinValue(""); setMaxValue("350000"); }}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-colors cursor-pointer ${
-                    maxValue === "350000" && !minValue
-                      ? "bg-[#0F2744] text-white border-[#0F2744]"
-                      : "bg-slate-50 text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1]"
-                  }`}
-                >
-                  Até R$ 350k
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setMinValue(""); setMaxValue("700000"); }}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-colors cursor-pointer ${
-                    maxValue === "700000" && !minValue
-                      ? "bg-[#0F2744] text-white border-[#0F2744]"
-                      : "bg-slate-50 text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1]"
-                  }`}
-                >
-                  Até R$ 700k
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setMinValue(""); setMaxValue("1500000"); }}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-colors cursor-pointer ${
-                    maxValue === "1500000" && !minValue
-                      ? "bg-[#0F2744] text-white border-[#0F2744]"
-                      : "bg-slate-50 text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1]"
-                  }`}
-                >
-                  Até R$ 1,5M
-                </button>
-                {(minValue || maxValue) && (
-                  <button
-                    type="button"
-                    onClick={() => { setMinValue(""); setMaxValue(""); }}
-                    className="px-2 py-1 rounded-lg text-[11px] font-medium text-rose-600 hover:bg-rose-50 cursor-pointer"
-                  >
-                    Qualquer valor
-                  </button>
-                )}
-              </div>
             </div>
 
-            {/* 4. Apenas Salvos */}
+            {/* 5. Apenas Salvos */}
             <div className="p-3 rounded-xl bg-slate-50 border border-[#E2E8F0] flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Heart className={`w-4 h-4 ${filterFavoritesOnly ? "fill-rose-500 text-rose-500" : "text-[#64748B]"}`} />
@@ -2873,6 +2875,7 @@ export default function LeilaoComIaPage() {
                 onClick={() => {
                   setFilterFinancing(false);
                   setFilterHighDiscount(false);
+                  setFilterSecondStageOnly(false);
                   setFilterFavoritesOnly(false);
                   setMinValue("");
                   setMaxValue("");
