@@ -145,8 +145,8 @@ export default function PremiumDashboardPage() {
         lot.discountPct > 0
           ? lot.discountPct
           : sim.marketValueEffective > lot.minBid
-          ? Math.round((1 - lot.minBid / sim.marketValueEffective) * 100)
-          : 0;
+            ? Math.round((1 - lot.minBid / sim.marketValueEffective) * 100)
+            : 0;
 
       return {
         lot,
@@ -363,17 +363,17 @@ export default function PremiumDashboardPage() {
 
   const hasActiveFilters = Boolean(
     searchQuery ||
-      cityFilter !== "all" ||
-      categoryFilter !== "all" ||
-      tierFilter !== "all" ||
-      sourceFilter !== "all" ||
-      maxBidFilter > 0 ||
-      minScoreFilter > 0 ||
-      onlySecondPraca ||
-      onlyDesocupado ||
-      onlySaleAboveBid ||
-      onlyFinancing ||
-      onlyFavs
+    cityFilter !== "all" ||
+    categoryFilter !== "all" ||
+    tierFilter !== "all" ||
+    sourceFilter !== "all" ||
+    maxBidFilter > 0 ||
+    minScoreFilter > 0 ||
+    onlySecondPraca ||
+    onlyDesocupado ||
+    onlySaleAboveBid ||
+    onlyFinancing ||
+    onlyFavs
   );
 
   const resetFilters = () => {
@@ -487,38 +487,38 @@ export default function PremiumDashboardPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] font-sans antialiased pb-24">
+    <div className="min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-[#F8FAFC] text-[#0F172A] font-sans antialiased pb-24">
       {/* Header Institucional */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#E2E8F0]">
-        <div className="max-w-[1400px] mx-auto h-16 px-4 sm:px-6 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3 shrink-0">
+        <div className="max-w-[1400px] mx-auto h-14 sm:h-16 px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-6 min-w-0">
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
               <Link href="/" className="flex items-center gap-2 shrink-0">
                 <Image
                   src="/logo.png"
                   alt="finHouse"
-                  width={30}
-                  height={30}
+                  width={28}
+                  height={28}
                   className="rounded-lg"
                 />
-                <span className="text-[18px] font-semibold tracking-[-0.02em] text-[#222222]">
+                <span className="hidden sm:inline text-[18px] font-semibold tracking-[-0.02em] text-[#222222]">
                   finHouse
                 </span>
               </Link>
 
-              <span className="h-5 w-px bg-[#E2E8F0]" aria-hidden="true" />
+              <span className="h-4 sm:h-5 w-px bg-[#E2E8F0]" aria-hidden="true" />
 
               <Link
                 href="/leilaocom-ia"
-                className="flex items-center gap-1.5 shrink-0 select-none"
+                className="flex items-center gap-1 sm:gap-1.5 shrink-0 select-none"
               >
-                <span className="text-[17px] tracking-[-0.02em] flex items-baseline">
+                <span className="text-[15px] sm:text-[17px] tracking-[-0.02em] flex items-baseline">
                   <span className="font-semibold text-[#222222]">leilão</span>
-                  <span className="font-normal text-[#717171] text-[14px] mx-1">
+                  <span className="font-normal text-[#717171] text-[12px] sm:text-[14px] mx-0.5 sm:mx-1">
                     com
                   </span>
                 </span>
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-[#0F2744] text-white text-[11px] font-bold tracking-tight leading-none">
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-[#0F2744] text-white text-[10px] sm:text-[11px] font-bold tracking-tight leading-none">
                   IA
                 </span>
               </Link>
@@ -534,21 +534,19 @@ export default function PremiumDashboardPage() {
               </Link>
               <button
                 onClick={() => setActiveTab("screener")}
-                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
-                  activeTab === "screener"
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${activeTab === "screener"
                     ? "bg-white text-[#0F172A] shadow-2xs"
                     : "text-[#475569] hover:text-[#0F172A]"
-                }`}
+                  }`}
               >
                 Screener & Base ({enrichedRows.length})
               </button>
               <button
                 onClick={() => setActiveTab("my_analyses")}
-                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
-                  activeTab === "my_analyses"
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${activeTab === "my_analyses"
                     ? "bg-white text-[#0F172A] shadow-2xs"
                     : "text-[#475569] hover:text-[#0F172A]"
-                }`}
+                  }`}
               >
                 Dossiês Analisados ({analyzedCount})
               </button>
@@ -556,8 +554,8 @@ export default function PremiumDashboardPage() {
                 href={
                   selectedForCompare.length > 0
                     ? `/leilaocom-ia/premium/comparar?lotes=${selectedForCompare
-                        .map(encodeURIComponent)
-                        .join(",")}`
+                      .map(encodeURIComponent)
+                      .join(",")}`
                     : "/leilaocom-ia/premium/comparar"
                 }
                 className="px-3 py-1.5 rounded-md text-xs font-medium text-[#475569] hover:text-[#0F172A] transition-colors"
@@ -567,7 +565,7 @@ export default function PremiumDashboardPage() {
             </nav>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <div className="hidden lg:flex items-center gap-3 text-xs text-[#475569] border-r border-[#E2E8F0] pr-3">
               <span>
                 Período de avaliação:{" "}
@@ -584,7 +582,9 @@ export default function PremiumDashboardPage() {
 
             <button
               onClick={handleExportCSV}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-[#0F172A] bg-white hover:bg-[#F8FAFC] border border-[#CBD5E1] px-3 py-2 rounded-lg transition-colors cursor-pointer"
+              title="Exportar CSV"
+              aria-label="Exportar CSV"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-[#0F172A] bg-white hover:bg-[#F8FAFC] border border-[#CBD5E1] px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors cursor-pointer shrink-0"
             >
               <Download className="w-3.5 h-3.5 text-[#475569]" />
               <span className="hidden sm:inline">Exportar CSV</span>
@@ -592,12 +592,55 @@ export default function PremiumDashboardPage() {
 
             <button
               onClick={() => setUpgradeModalOpen(true)}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold bg-[#0F2744] hover:bg-[#0A1B30] text-white px-3.5 py-2 rounded-lg transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-semibold bg-[#0F2744] hover:bg-[#0A1B30] text-white px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
             >
-              <span>Plano Semestral</span>
+              <span className="sm:hidden">Plano</span>
+              <span className="hidden sm:inline">Plano Semestral</span>
             </button>
           </div>
         </div>
+
+        {/* Navegação Mobile */}
+        <nav className="md:hidden border-t border-[#E2E8F0] px-3 py-1.5 flex items-center gap-1.5 overflow-x-auto">
+          <Link
+            href="/leilaocom-ia"
+            className="px-2.5 py-1 rounded-md text-[11px] font-medium text-[#475569] hover:text-[#0F172A] whitespace-nowrap shrink-0"
+          >
+            Mapa &amp; Imóveis
+          </Link>
+          <button
+            onClick={() => setActiveTab("screener")}
+            className={`px-2.5 py-1 rounded-md text-[11px] font-semibold whitespace-nowrap shrink-0 cursor-pointer ${
+              activeTab === "screener"
+                ? "bg-[#0F2744] text-white"
+                : "bg-[#F1F5F9] text-[#475569]"
+            }`}
+          >
+            Screener ({enrichedRows.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("my_analyses")}
+            className={`px-2.5 py-1 rounded-md text-[11px] font-semibold whitespace-nowrap shrink-0 cursor-pointer ${
+              activeTab === "my_analyses"
+                ? "bg-[#0F2744] text-white"
+                : "bg-[#F1F5F9] text-[#475569]"
+            }`}
+          >
+            Dossiês ({analyzedCount})
+          </button>
+          <Link
+            href={
+              selectedForCompare.length > 0
+                ? `/leilaocom-ia/premium/comparar?lotes=${selectedForCompare
+                    .map(encodeURIComponent)
+                    .join(",")}`
+                : "/leilaocom-ia/premium/comparar"
+            }
+            className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-[#F1F5F9] text-[#475569] whitespace-nowrap shrink-0"
+          >
+            Comparar ({selectedForCompare.length}/3)
+          </Link>
+        </nav>
       </header>
 
       <main className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-6 space-y-4">
@@ -748,11 +791,10 @@ export default function PremiumDashboardPage() {
                 <button
                   key={pill.label}
                   onClick={pill.onClick}
-                  className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer ${
-                    pill.active
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer ${pill.active
                       ? "bg-[#0F2744] text-white border-[#0F2744]"
                       : "bg-white text-[#475569] border-[#CBD5E1] hover:border-[#94A3B8] hover:text-[#0F172A]"
-                  }`}
+                    }`}
                 >
                   {pill.label}
                 </button>
@@ -936,9 +978,8 @@ export default function PremiumDashboardPage() {
                   return (
                     <tr
                       key={lot.id}
-                      className={`transition-colors ${
-                        isSelected ? "bg-[#F1F5F9]" : "hover:bg-[#F8FAFC]"
-                      }`}
+                      className={`transition-colors ${isSelected ? "bg-[#F1F5F9]" : "hover:bg-[#F8FAFC]"
+                        }`}
                     >
                       {/* Checkbox discreto */}
                       <td className="py-3 px-3.5 text-center align-middle">
@@ -1012,13 +1053,12 @@ export default function PremiumDashboardPage() {
                       <td className="py-3 px-3.5 text-center">
                         <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md border border-[#E2E8F0] bg-[#F8FAFC]">
                           <span
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              prelim.verdictStatus === "green"
+                            className={`w-1.5 h-1.5 rounded-full ${prelim.verdictStatus === "green"
                                 ? "bg-emerald-600"
                                 : prelim.verdictStatus === "yellow"
-                                ? "bg-amber-500"
-                                : "bg-red-600"
-                            }`}
+                                  ? "bg-amber-500"
+                                  : "bg-red-600"
+                              }`}
                           />
                           <span className="font-semibold text-[#0F172A]">
                             {prelim.prelimScore}
@@ -1071,11 +1111,10 @@ export default function PremiumDashboardPage() {
                       {/* Lucro Líquido / ROI */}
                       <td className="py-3 px-3.5 text-right">
                         <div
-                          className={`font-semibold ${
-                            sim.netProfit > 0
+                          className={`font-semibold ${sim.netProfit > 0
                               ? "text-[#047857]"
                               : "text-[#B91C1C]"
-                          }`}
+                            }`}
                         >
                           {formatBRL(sim.netProfit)}
                         </div>
@@ -1091,17 +1130,15 @@ export default function PremiumDashboardPage() {
                             onClick={() =>
                               setFavIds(toggleFavoriteId(lot.id))
                             }
-                            className={`p-1.5 rounded-md border transition-colors cursor-pointer ${
-                              isFav
+                            className={`p-1.5 rounded-md border transition-colors cursor-pointer ${isFav
                                 ? "bg-[#F1F5F9] border-[#0F2744] text-[#0F2744]"
                                 : "bg-white border-[#E2E8F0] text-[#94A3B8] hover:text-[#0F172A]"
-                            }`}
+                              }`}
                             title="Salvar lote"
                           >
                             <Bookmark
-                              className={`w-3.5 h-3.5 ${
-                                isFav ? "fill-[#0F2744]" : ""
-                              }`}
+                              className={`w-3.5 h-3.5 ${isFav ? "fill-[#0F2744]" : ""
+                                }`}
                             />
                           </button>
                           <Link
