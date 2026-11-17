@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { loadDailySnapshot } from "@/lib/leiloes-service";
+import {
+  loadDailySnapshot,
+  runDailyScrape,
+  saveDailySnapshot,
+} from "@/lib/leiloes-service";
 import { ScrapedAuctionLot } from "@/lib/leiloes-utils";
 import {
   buildDefaultLegalMatrix,
@@ -374,6 +378,30 @@ Retorne APENAS um JSON válido (sem markdown extra) no formato:
   }
 }
 
+async function findLotInSpSnapshot(
+  rawLotId: string
+): Promise<ScrapedAuctionLot | undefined> {
+  const norm = decodeURIComponent(rawLotId || "").trim().toLowerCase();
+  if (!norm) return undefined;
+
+  let snapshot = await loadDailySnapshot("sp");
+  if (!snapshot || snapshot.lots.length === 0) {
+    const scraped = await runDailyScrape("sp");
+    snapshot = await saveDailySnapshot("sp", scraped);
+  }
+
+  return snapshot.lots.find((l) => {
+    const idLower = (l.id || "").toLowerCase();
+    const codeLower = (l.code || "").toLowerCase();
+    return (
+      idLower === norm ||
+      codeLower === norm ||
+      idLower.endsWith(`-${norm}`) ||
+      codeLower.endsWith(`-${norm}`)
+    );
+  });
+}
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const lotId = searchParams.get("lotId");
@@ -390,10 +418,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ ...cached, cached: true, usedCredit: false });
   }
 
-  const snapshot = await loadDailySnapshot("sp");
-  const foundLot = snapshot?.lots.find(
-    (l) => l.id === lotId || l.code === lotId
-  );
+  const foundLot = await findLotInSpSnapshot(lotId);
 
   if (!foundLot) {
     return NextResponse.json({ error: "Lote não encontrado" }, { status: 404 });
@@ -440,10 +465,8 @@ export async function POST(req: Request) {
       lot?: ScrapedAuctionLot;
     };
 
-    const snapshot = await loadDailySnapshot("sp");
     const resolvedLot =
-      snapshot?.lots.find((l) => l.id === lotId || l.code === lotId) ||
-      clientLot;
+      (lotId ? await findLotInSpSnapshot(lotId) : undefined) || clientLot;
 
     if (!resolvedLot) {
       return NextResponse.json(
