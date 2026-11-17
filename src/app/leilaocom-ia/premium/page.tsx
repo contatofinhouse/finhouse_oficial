@@ -206,7 +206,9 @@ export default function PremiumDashboardPage() {
       const c = r.lot.city || "São Paulo";
       counts.set(c, (counts.get(c) || 0) + 1);
     }
-    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+    return Array.from(counts.entries()).sort((a, b) =>
+      a[0].localeCompare(b[0], "pt-BR", { sensitivity: "base" })
+    );
   }, [enrichedRows]);
 
   const availableSources = useMemo(() => {
@@ -214,7 +216,9 @@ export default function PremiumDashboardPage() {
     for (const r of enrichedRows) {
       counts.set(r.lot.source, (counts.get(r.lot.source) || 0) + 1);
     }
-    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+    return Array.from(counts.entries()).sort((a, b) =>
+      a[0].localeCompare(b[0], "pt-BR", { sensitivity: "base" })
+    );
   }, [enrichedRows]);
 
   const filteredRows = useMemo(() => {
