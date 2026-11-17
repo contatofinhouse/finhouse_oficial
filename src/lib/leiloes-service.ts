@@ -1,4 +1,4 @@
-import { put, list } from "@vercel/blob";
+import { put, get } from "@vercel/blob";
 import fs from "fs/promises";
 import path from "path";
 
@@ -598,8 +598,10 @@ export async function saveDailySnapshot(
   if (process.env.BLOB_READ_WRITE_TOKEN) {
     try {
       await put(`leiloes/${uf.toLowerCase()}_latest.json`, JSON.stringify(snapshot), {
-        access: "public",
+        access: "private",
         addRandomSuffix: false,
+        allowOverwrite: true,
+        contentType: "application/json",
       });
       console.log(`[Storage] Snapshot salvo com sucesso no Vercel Blob (${lots.length} lotes).`);
     } catch (err) {
@@ -637,15 +639,16 @@ export async function loadDailySnapshot(uf = "sp"): Promise<DailySnapshot | null
   // 2. Tenta ler do Vercel Blob
   if (process.env.BLOB_READ_WRITE_TOKEN) {
     try {
-      const { blobs } = await list({ prefix: `leiloes/${uf.toLowerCase()}_latest.json` });
-      if (blobs.length > 0 && blobs[0].downloadUrl) {
-        const res = await fetch(blobs[0].downloadUrl, { cache: "no-store" });
-        if (res.ok) {
-          const data: DailySnapshot = await res.json();
-          if (data && now - data.timestamp < DAILY_TTL_MS) {
-            inMemorySnapshot = data;
-            return data;
-          }
+      const result = await get(`leiloes/${uf.toLowerCase()}_latest.json`, {
+        access: "private",
+        useCache: false,
+      });
+      if (result && result.statusCode === 200 && result.stream) {
+        const text = await new Response(result.stream).text();
+        const data: DailySnapshot = JSON.parse(text);
+        if (data && now - data.timestamp < DAILY_TTL_MS) {
+          inMemorySnapshot = data;
+          return data;
         }
       }
     } catch (err) {
