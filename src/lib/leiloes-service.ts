@@ -1,4 +1,4 @@
-import { put, get } from "@vercel/blob";
+import { put, list } from "@vercel/blob";
 import fs from "fs/promises";
 import path from "path";
 
@@ -1134,16 +1134,22 @@ export async function loadDailySnapshot(uf = "sp"): Promise<DailySnapshot | null
   // 2. Tenta ler do Vercel Blob
   if (process.env.BLOB_READ_WRITE_TOKEN) {
     try {
-      const result = await get(`leiloes/${uf.toLowerCase()}_latest.json`, {
-        access: "private",
-        useCache: false,
-      });
-      if (result && result.statusCode === 200 && result.stream) {
-        const text = await new Response(result.stream).text();
-        const data: DailySnapshot = JSON.parse(text);
-        if (data && data.version === SNAPSHOT_VERSION && now - data.timestamp < DAILY_TTL_MS) {
-          inMemorySnapshot = pruneExpiredLots(data);
-          return inMemorySnapshot;
+      const { blobs } = await list({ prefix: `leiloes/${uf.toLowerCase()}_latest.json` });
+      const targetBlob = blobs[0];
+      const blobUrl = targetBlob?.downloadUrl || targetBlob?.url;
+      if (blobUrl) {
+        const res = await fetch(blobUrl, {
+          cache: "no-store",
+          headers: {
+            Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`,
+          },
+        });
+        if (res.ok) {
+          const data: DailySnapshot = await res.json();
+          if (data && data.version === SNAPSHOT_VERSION && now - data.timestamp < DAILY_TTL_MS) {
+            inMemorySnapshot = pruneExpiredLots(data);
+            return inMemorySnapshot;
+          }
         }
       }
     } catch (err) {
