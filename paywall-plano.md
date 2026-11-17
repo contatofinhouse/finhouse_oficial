@@ -4,6 +4,7 @@
 > 1. Substituir o desbloqueio manual (auto-declaratório) por um **Paywall PIX Dinâmico com confirmação real de pagamento** (via Webhook + Polling em tempo real + envio por e-mail).
 > 2. Transformar o PDF atual (que hoje é apenas um resumo financeiro simples) em um **Laudo Institucional de Viabilidade Jurídica, Documental e Financeira de 4 a 5 páginas**, lendo e destrinchando os documentos reais do leilão (Edital, Matrícula e Laudo).
 > 3. Precificar o imóvel com **Valores de Venda Reais via Raspagem na OLX Imóveis** (buscando primeiro o nome exato do condomínio e, em fallback, por bairro, tipologia Apto/Casa e padrão AAA/Médio/Econômico) e **Custo de Reforma Parametrizado para o Estado de SP** (base CUB SindusCon-SP / SINAPI-SP).
+> 4. Armazenar **toda a base de dados raspada de forma persistente** e disponibilizá-la via **API autenticada por usuário (`/api/leiloes/database` em CSV/JSON)**, permitindo que **cada usuário (com sua própria credencial/`API Key`) alimente automaticamente sua própria planilha no Google Sheets ou Excel**, junto com um **Template Oficial de Planilha (Filtro & Comparativo)** pronto para copiar/baixar.
 
 ---
 
@@ -127,16 +128,66 @@ Tabela comparativa de sensibilidade financeira (já alimentada pelo **Valor de V
 
 ---
 
-## Parte 3: Roteiro de Execução Técnica (Quando Formos Codar)
+## Parte 3: Base de Dados Persistente, API com Credenciais por Usuário & Template Google Sheets / Excel
 
-1. **Etapa 1 — Banco & API de Pagamento PIX**:
-   - Criar tabela `dossie_orders` no Supabase.
-   - Criar rotas `/api/leiloes/checkout/create`, `/api/leiloes/checkout/status` e `/api/leiloes/checkout/webhook`.
-2. **Etapa 2 — Scraper OLX (Condomínio Exato + Fallback) & Matriz de Reforma SP**:
+Para que cada investidor ou parceiro possa consumir a base de leilões raspada diretamente na sua própria planilha (**Google Sheets** ou **Microsoft Excel**) usando sua credencial exclusiva:
+
+### 3.1. Armazenamento Persistente de Toda a Base Raspada (`auction_lots_catalog` no Supabase)
+Sempre que o scraper diário (`/api/leiloes/cron`) ou uma auditoria individual de lote rodar, os lotes são gravados via `UPSERT` (`lot_id` único) na tabela `auction_lots_catalog` do Supabase:
+- **Dados Brutos e Normalizados do Leilão**: `lot_id`, `code` (ex: `X130996`), `source` (Mega Leilões, Zuk, Superbid, Sold, Caixa, BB, Sodré), `source_url`, `title`, `condominium_name`, `property_type` (`Apartamento | Casa | Cobertura | Comercial`), `standard_tier` (`AAA | Médio | Standard`), `address`, `neighborhood`, `city`, `state`, `area_m2`, `min_bid`, `appraisal_value`, `discount_pct`, `modality`, `seller`, `auction_date`, `accepts_financing`, `occupancy`, `status` (`active | closed`).
+- **Dados Enriquecidos (Mercado OLX, Reforma SP e Matrícula)**: `olx_market_value`, `olx_price_m2`, `real_discount_vs_olx_pct`, `reforma_sp_level`, `reforma_sp_cost`, `itbi_registry_cost`, `total_investment_est`, `net_profit_est`, `roi_pct_est`, `max_recommended_bid` (Lance Teto finHouse), `matricula_number`, `pdf_links` (JSONB) e `last_scraped_at` / `audited_at`.
+
+### 3.2. Sistema de Credenciais por Usuário (`user_api_keys` no Supabase)
+Cada usuário habilitado (comprador / assinante da base) recebe uma **Credencial de API única (`api_key`, ex: `fh_live_9f8a7b...`)**:
+- **Tabela `user_api_keys`**:
+  - `id` (UUID, PK)
+  - `user_email` (TEXT) / `user_name` (TEXT)
+  - `api_key` (TEXT, Unique, indexado) — Chave secreta individual do usuário
+  - `plan_scope` (TEXT) — `'dossie_buyer' | 'pro_api' | 'partner'` (define se retorna a base geral + lotes desbloqueados pelo usuário ou toda a base enriquecida)
+  - `is_active` (BOOLEAN) / `expires_at` (TIMESTAMPTZ)
+  - `last_used_at` (TIMESTAMPTZ) / `request_count` (INTEGER) — Controle de uso e rate-limit por credencial
+
+### 3.3. Endpoint da API para Google Sheets & Excel (`GET /api/leiloes/database`)
+A rota autentica a credencial do usuário (via Query Parameter `?apiKey=fh_live_...`, compatível nativamente com fórmulas de planilha, ou Header `x-api-key`) e devolve os dados prontos para alimentar a tabela do usuário:
+- **Conexão Direta no Google Sheets (Fórmula Nativa)**:
+  ```excel
+  =IMPORTDATA("https://www.finhouse.com.br/api/leiloes/database?format=csv&apiKey=" & Config!B2)
+  ```
+- **Conexão Direta no Microsoft Excel (Power Query / Dados > Da Web)**:
+  - O usuário insere a URL `https://www.finhouse.com.br/api/leiloes/database?format=csv&apiKey=fh_live_...` em **Dados > Obter Dados > Da Web** e clica em *"Atualizar Tudo"* quando quiser sincronizar novos lotes.
+- **Conexão via JSON (`?format=json&apiKey=fh_live_...`)**:
+  - Para usuários avançados que queiram conectar via Google Apps Script, Python, n8n ou Power BI.
+- **Parâmetros Opcionais de Pré-Filtro na URL da API**:
+  - `&uf=sp&city=Sao+Paulo&neighborhood=Vila+Clementino`
+  - `&type=Apartamento&tier=AAA&minDiscount=25&acceptsFinancing=true`
+
+### 3.4. Template Oficial de Planilha para o Usuário (Google Sheets & Excel `.xlsx`)
+Disponibilizaremos no painel do usuário (e no e-mail pós-compra) o botão **"Copiar Planilha Modelo Google Sheets"** (`/copy`) e **"Baixar Planilha Modelo Excel (`.xlsx`)"**, já configurados com **4 Abas Prontas**:
+1. **Aba 0 — `Credencial_e_Config`**:
+   - Campo único onde o usuário cola sua **`API Key` (`fh_live_...`)** na célula `B2` (e escolhe filtros opcionais de UF/Cidade).
+   - A planilha monta a URL autenticada automaticamente e puxa os dados da API sem o usuário precisar programar nada.
+2. **Aba 1 — `Base_API` (Dados Brutos Sincronizados)**:
+   - Alimentada automaticamente pela API com todas as colunas: Código, Leiloeiro, Link Oficial, Condomínio, Tipo (`Apto`/`Casa`), Padrão (`AAA`/`Médio`/`Standard`), Bairro, Cidade, Área (m²), Lance Mínimo, Avaliação Edital, **Valor Venda Real OLX**, **R$/m² Leilão vs. R$/m² OLX**, **Deságio Real (%)**, **Custo Reforma SP**, **Investimento Total**, **Lucro Líquido**, **ROI (%)**, **Lance Teto finHouse**, Financiamento, Ocupação, Risco e Data do Pregão.
+3. **Aba 2 — `Filtro_Inteligente` (Screener do Usuário)**:
+   - Painel dinâmico onde o usuário filtra sua tabela por Bairro, Cidade, Apartamento vs. Casa, Padrão AAA, Valor Máximo de Lance, Aceita Financiamento e ordena por **Maior ROI Líquido** ou **Maior Deságio Real frente à OLX**.
+4. **Aba 3 — `Comparativo_de_Lotes` (Lado a Lado)**:
+   - O usuário seleciona de **2 a 4 códigos de lotes** (ex: `X130996` vs. outros imóveis da tabela dele) em listas suspensas (`PROCV` / `XLOOKUP`) para comparar lado a lado todos os indicadores financeiros, reforma SP, fluxo de caixa e risco jurídico antes de decidir em qual dar lance.
+
+---
+
+## Parte 4: Roteiro de Execução Técnica (Quando Formos Codar)
+
+1. **Etapa 1 — Banco Persistente (`auction_lots_catalog`), Credenciais (`user_api_keys`) & PIX (`dossie_orders`)**:
+   - Criar tabelas `auction_lots_catalog`, `user_api_keys` e `dossie_orders` no Supabase.
+   - Criar rotas `/api/leiloes/checkout/create`, `/api/leiloes/checkout/status` e `/api/leiloes/checkout/webhook` (gerando também a `api_key` do usuário após a confirmação).
+2. **Etapa 2 — API Autenticada para Planilhas (`GET /api/leiloes/database`) & Template Google Sheets / Excel**:
+   - Criar a rota `GET /api/leiloes/database` validando `apiKey`, com suporte a filtros e retorno em `CSV` (compatível com `=IMPORTDATA` do Google Sheets e Power Query do Excel) e `JSON`.
+   - Gerar o arquivo de **Planilha Modelo (`.xlsx` / Template Google Sheets)** com as 4 abas (`Credencial_e_Config`, `Base_API`, `Filtro_Inteligente` e `Comparativo_de_Lotes`) para o usuário baixar/copiar.
+3. **Etapa 3 — Scraper OLX (Condomínio Exato + Fallback) & Matriz de Reforma SP**:
    - Criar módulo `src/lib/leiloes/market-valuation-olx.ts` para raspar anúncios reais de venda na OLX (tentando primeiro o nome exato do condomínio e, em fallback, por bairro + tipo `Apto`/`Casa` + padrão `AAA`/`Médio`/`Econômico`).
    - Criar módulo `src/lib/leiloes/reforma-sp-calculator.ts` com a tabela atualizada do Estado de SP (CUB SindusCon-SP / SINAPI-SP) ajustada por m², padrão do imóvel e fator casa vs. apartamento.
-3. **Etapa 3 — Extrator de PDF & Motor de Dossiê Completo**:
-   - Atualizar `src/app/api/leiloes/analyze/route.ts` para ler o conteúdo dos PDFs de Edital/Matrícula/Laudo, extrair o nome do condomínio e estruturar os 8 itens jurídicos + comparáveis da OLX + custo de reforma SP.
-4. **Etapa 4 — Gerador de PDF Multi-Página Profissional**:
+4. **Etapa 4 — Extrator de PDF & Motor de Dossiê Completo**:
+   - Atualizar `src/app/api/leiloes/analyze/route.ts` para ler o conteúdo dos PDFs de Edital/Matrícula/Laudo, extrair o nome do condomínio, estruturar os 8 itens jurídicos + comparáveis da OLX + custo de reforma SP e salvar tudo na base persistente (`auction_lots_catalog`).
+5. **Etapa 5 — Gerador de PDF Multi-Página Profissional**:
    - Construir o novo template A4 multi-página com capa, matriz documental, tabela de comparáveis reais da OLX, orçamento de reforma SP, 3 cenários de lance, DRE de 12 meses e envio por e-mail via `Resend`.
 
