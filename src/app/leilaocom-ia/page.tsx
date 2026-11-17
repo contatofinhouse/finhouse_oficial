@@ -286,6 +286,15 @@ function computeLotViability(lot: ScrapedAuctionLot) {
   };
 }
 
+function isLotSecondStage(lot: ScrapedAuctionLot): boolean {
+  return (
+    lot.discountPct > 0 ||
+    /2[ªa]\s*praça|segunda\s*praça|2[ºo]\s*leilão|segundo\s*leilão/i.test(
+      `${lot.title} ${lot.aiSummary || ""} ${lot.modality || ""}`
+    )
+  );
+}
+
 export default function LeilaoComIaPage() {
   const [lots, setLots] = useState<ScrapedAuctionLot[]>([]);
   const [loadingLots, setLoadingLots] = useState(true);
@@ -537,12 +546,7 @@ export default function LeilaoComIaPage() {
     const baseLots = lots.filter((lot) => {
       const matchesFinancing = !filterFinancing || lot.acceptsFinancing;
       const matchesDiscount = !filterHighDiscount || lot.discountPct >= 35;
-      const isSecondStage =
-        lot.discountPct > 0 ||
-        /2[ªa]\s*praça|segunda\s*praça|2[ºo]\s*leilão|segundo\s*leilão/i.test(
-          `${lot.title} ${lot.aiSummary || ""} ${lot.modality || ""}`
-        );
-      const matchesSecondStage = !filterSecondStageOnly || isSecondStage;
+      const matchesSecondStage = !filterSecondStageOnly || isLotSecondStage(lot);
       const matchesCity = !filterCity || (lot.city || "").trim() === filterCity;
       const matchesFavorite = !filterFavoritesOnly || Boolean(favorites[lot.id]);
       const matchesMin = isNaN(minNum) || minNum === 0 || lot.minBid >= minNum;
@@ -1855,9 +1859,13 @@ export default function LeilaoComIaPage() {
                     </div>
 
                     <div className="border-l border-[#E2E8F0] pl-3">
-                      <div className="text-[11px] text-[#64748B]">Desconto</div>
-                      <div className="text-sm sm:text-base font-bold text-emerald-700 mt-0.5">
-                        {selectedLot.discountPct > 0 ? `-${selectedLot.discountPct}%` : "Praça Única"}
+                      <div className="text-[11px] text-[#64748B]">Praça Atual</div>
+                      <div className="text-sm sm:text-base font-bold text-[#0F2744] mt-0.5">
+                        {isLotSecondStage(selectedLot)
+                          ? selectedLot.discountPct > 0
+                            ? `2ª Praça (-${selectedLot.discountPct}%)`
+                            : "2ª Praça"
+                          : "1ª Praça"}
                       </div>
                       <div className="text-[11px] text-[#64748B] mt-0.5">
                         {selectedLot.acceptsFinancing ? "Financiável" : "Recursos próprios"}
