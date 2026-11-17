@@ -52,7 +52,7 @@ export interface DailySnapshot {
   lots: ScrapedAuctionLot[];
 }
 
-const SNAPSHOT_VERSION = 2;
+const SNAPSHOT_VERSION = 3;
 const DAILY_TTL_MS = 24 * 60 * 60 * 1000;
 
 // Cache volátil em memória (Node.js process level)
@@ -531,23 +531,26 @@ function toTitleCase(str: string): string {
     .join(" ");
 }
 
-function isAuctionUpcoming(rawDate?: string | null): boolean {
-  if (!rawDate) return true;
-  const s = rawDate.toLowerCase();
+export function isAuctionUpcoming(rawDate?: string | null): boolean {
+  if (!rawDate || !rawDate.trim()) return false;
+  const s = rawDate.toLowerCase().trim();
+  if (s.includes("encerrado") || s.includes("finalizado") || s.includes("vendido")) {
+    return false;
+  }
   if (s.includes("proposta imediata") || s.includes("aberto") || s.includes("consultar")) {
     return true;
   }
-  const m = rawDate.match(/(\d{2})\/(\d{2})\/(\d{4})(?:\s*às\s*(\d{2}):(\d{2}))?/);
-  if (!m) return true;
-  const [, dd, mm, yyyy, hh, min] = m;
-  const lotDate = new Date(
-    parseInt(yyyy, 10),
-    parseInt(mm, 10) - 1,
-    parseInt(dd, 10),
-    hh ? parseInt(hh, 10) : 23,
-    min ? parseInt(min, 10) : 59
+  const m = rawDate.match(
+    /(\d{2})\/(\d{2})\/(\d{2,4})(?:\s*(?:às|-)?\s*(\d{2}):(\d{2}))?/
   );
-  return lotDate.getTime() >= Date.now();
+  if (!m) return true;
+  const [, dd, mm, rawYear, hh, min] = m;
+  const yyyy = rawYear.length === 2 ? `20${rawYear}` : rawYear;
+  const hour = hh || "23";
+  const minute = min || "59";
+  const lotMs = Date.parse(`${yyyy}-${mm}-${dd}T${hour}:${minute}:00-03:00`);
+  if (!Number.isFinite(lotMs)) return true;
+  return lotMs >= Date.now();
 }
 
 export async function scrapeMegaLeiloes(uf: string): Promise<ScrapedAuctionLot[]> {
@@ -1103,6 +1106,16 @@ export async function saveDailySnapshot(
   return snapshot;
 }
 
+function pruneExpiredLots(snapshot: DailySnapshot): DailySnapshot {
+  const activeLots = snapshot.lots.filter((l) => isAuctionUpcoming(l.auctionDate));
+  if (activeLots.length === snapshot.lots.length) return snapshot;
+  return {
+    ...snapshot,
+    count: activeLots.length,
+    lots: activeLots,
+  };
+}
+
 /**
  * Carrega o snapshot diário pré-processado (sem raspar portais externos)
  */
@@ -1115,7 +1128,7 @@ export async function loadDailySnapshot(uf = "sp"): Promise<DailySnapshot | null
     inMemorySnapshot.version === SNAPSHOT_VERSION &&
     now - inMemorySnapshot.timestamp < DAILY_TTL_MS
   ) {
-    return inMemorySnapshot;
+    return pruneExpiredLots(inMemorySnapshot);
   }
 
   // 2. Tenta ler do Vercel Blob
@@ -1129,8 +1142,8 @@ export async function loadDailySnapshot(uf = "sp"): Promise<DailySnapshot | null
         const text = await new Response(result.stream).text();
         const data: DailySnapshot = JSON.parse(text);
         if (data && data.version === SNAPSHOT_VERSION && now - data.timestamp < DAILY_TTL_MS) {
-          inMemorySnapshot = data;
-          return data;
+          inMemorySnapshot = pruneExpiredLots(data);
+          return inMemorySnapshot;
         }
       }
     } catch (err) {
@@ -1144,8 +1157,8 @@ export async function loadDailySnapshot(uf = "sp"): Promise<DailySnapshot | null
     const fileContent = await fs.readFile(filePath, "utf-8");
     const data: DailySnapshot = JSON.parse(fileContent);
     if (data && data.version === SNAPSHOT_VERSION && now - data.timestamp < DAILY_TTL_MS) {
-      inMemorySnapshot = data;
-      return data;
+      inMemorySnapshot = pruneExpiredLots(data);
+      return inMemorySnapshot;
     }
   } catch {}
 
@@ -1155,8 +1168,8 @@ export async function loadDailySnapshot(uf = "sp"): Promise<DailySnapshot | null
     const fileContent = await fs.readFile(tmpPath, "utf-8");
     const data: DailySnapshot = JSON.parse(fileContent);
     if (data && data.version === SNAPSHOT_VERSION && now - data.timestamp < DAILY_TTL_MS) {
-      inMemorySnapshot = data;
-      return data;
+      inMemorySnapshot = pruneExpiredLots(data);
+      return inMemorySnapshot;
     }
   } catch {}
 
