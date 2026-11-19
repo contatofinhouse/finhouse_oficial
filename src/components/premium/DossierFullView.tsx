@@ -107,6 +107,8 @@ export default function DossierFullView({
   );
 
   const [simulatedBid, setSimulatedBid] = useState<number>(lot.minBid);
+  const [imgError, setImgError] = useState(false);
+  const showLotImage = Boolean(lot.imageUrl) && !imgError;
   const [reformaLevel, setReformaLevel] = useState<ReformaLevel>(
     initialSim.propertyCategory === "Terreno"
       ? 0
@@ -347,8 +349,22 @@ export default function DossierFullView({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-              <div className="lg:col-span-8 space-y-2">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+              {showLotImage && (
+                <div className="lg:col-span-3">
+                  <div className="relative aspect-[16/10] sm:aspect-[16/9] lg:aspect-[4/3] w-full rounded-lg overflow-hidden border border-[#E2E8F0] bg-[#F1F5F9]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={lot.imageUrl}
+                      alt={lot.title}
+                      onError={() => setImgError(true)}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className={`${showLotImage ? "lg:col-span-5" : "lg:col-span-8"} space-y-2`}>
                 <h1 className="text-lg sm:text-xl font-semibold tracking-[-0.02em] text-[#0F172A] leading-snug">
                   {lot.title}
                 </h1>
