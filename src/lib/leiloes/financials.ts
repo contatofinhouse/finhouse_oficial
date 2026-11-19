@@ -114,6 +114,13 @@ export interface DealFinancialSimulation {
   benchmarkM2: number;
   benchmarkTotalValue: number;
   benchmarkLabel: string;
+  benchmarkP25M2: number;
+  benchmarkP75M2: number;
+  benchmarkP25Total: number;
+  benchmarkP75Total: number;
+  benchmarkConfidence: "alta" | "media" | "estimada";
+  benchmarkRefDate: string;
+  benchmarkBreakdown: string[];
   editalVsBenchmarkPct: number;
   liquidityHaircutPct: number;
   realisticSalePrice: number;
@@ -181,9 +188,8 @@ export function resolveEffectiveOccupancy(
   if (lot.occupancy === "Desocupado") return "Desocupado";
   if (lot.occupancy === "Ocupado") return "Ocupado";
 
-  const fullText = `${lot.title || ""} ${lot.aiSummary || ""} ${
-    lot.aiChecklist?.lawyerAlert || ""
-  }`.toLowerCase();
+  const fullText = `${lot.title || ""} ${lot.aiSummary || ""} ${lot.aiChecklist?.lawyerAlert || ""
+    }`.toLowerCase();
 
   if (
     /\bdesocupad[oa]s?\b/i.test(fullText) ||
@@ -361,8 +367,8 @@ export function evaluateLotPreliminary(
     lot.discountPct > 0
       ? lot.discountPct
       : effectiveMv > lot.minBid
-      ? Math.round((1 - lot.minBid / effectiveMv) * 100)
-      : 0;
+        ? Math.round((1 - lot.minBid / effectiveMv) * 100)
+        : 0;
 
   if (discount >= 50) score += 28;
   else if (discount >= 40) score += 23;
@@ -382,9 +388,8 @@ export function evaluateLotPreliminary(
 
   if (lot.acceptsFinancing) score += 5;
 
-  const summaryLower = `${lot.aiSummary || ""} ${
-    lot.aiChecklist?.lawyerAlert || ""
-  }`.toLowerCase();
+  const summaryLower = `${lot.aiSummary || ""} ${lot.aiChecklist?.lawyerAlert || ""
+    }`.toLowerCase();
   if (summaryLower.includes("usufruto")) score -= 22;
   if (summaryLower.includes("indisponibilidade")) score -= 8;
 
@@ -414,8 +419,8 @@ export function evaluateLotPreliminary(
     verdictStatus === "green"
       ? "Recomendado até o Lance Teto"
       : verdictStatus === "yellow"
-      ? "Viável com Reserva Jurídica/Reforma"
-      : "Alto Risco · Exige Diligência Estrita";
+        ? "Viável com Reserva Jurídica/Reforma"
+        : "Alto Risco · Exige Diligência Estrita";
 
   const suggestedReformaLevel: ReformaLevel =
     category === "Terreno" ? 0 : effectiveOccupancy === "Desocupado" ? 1 : 2;
@@ -491,30 +496,44 @@ export function estimateSpMarketBenchmark(
   benchmarkM2: number;
   benchmarkTotalValue: number;
   benchmarkLabel: string;
+  benchmarkP25M2: number;
+  benchmarkP75M2: number;
+  benchmarkP25Total: number;
+  benchmarkP75Total: number;
+  benchmarkConfidence: "alta" | "media" | "estimada";
+  benchmarkRefDate: string;
+  benchmarkBreakdown: string[];
 } {
-  const text = `${lot.neighborhood || ""} ${lot.city || ""} ${lot.address || ""} ${
-    lot.title || ""
-  }`.toLowerCase();
+  const text = `${lot.neighborhood || ""} ${lot.city || ""} ${lot.address || ""} ${lot.title || ""
+    }`.toLowerCase();
 
   let baseM2 = 0;
   let label = "";
+  let matchedRegion = false;
 
   for (const entry of SP_MARKET_M2_BENCHMARKS) {
     if (entry.keywords.some((kw) => text.includes(kw))) {
       baseM2 = entry.m2;
       label = `Ref. FipeZAP/Mercado — ${entry.label}`;
+      matchedRegion = true;
       break;
     }
   }
+
+  let benchmarkConfidence: "alta" | "media" | "estimada" = matchedRegion
+    ? "alta"
+    : "estimada";
 
   if (!baseM2) {
     const isCapital = text.includes("são paulo") || text.includes("sao paulo");
     if (isCapital) {
       baseM2 = tier === "AAA" ? 13200 : tier === "Médio" ? 9400 : 6500;
       label = `Média SP Capital (Padrão ${tier})`;
+      benchmarkConfidence = "media";
     } else {
       baseM2 = tier === "AAA" ? 8900 : tier === "Médio" ? 6400 : 4500;
       label = `Média ${lot.city || "Interior/RMSP"} (Padrão ${tier})`;
+      benchmarkConfidence = lot.city ? "media" : "estimada";
     }
   }
 
@@ -522,10 +541,10 @@ export function estimateSpMarketBenchmark(
     category === "Terreno"
       ? 0.48
       : category === "Casa"
-      ? 0.92
-      : category === "Comercial"
-      ? 0.95
-      : 1.0;
+        ? 0.92
+        : category === "Comercial"
+          ? 0.95
+          : 1.0;
 
   // Curva de R$/m² por faixa de metragem (compactos têm R$/m² maior que unidades grandes no mesmo bairro)
   let areaFactor = 1.0;
@@ -562,12 +581,46 @@ export function estimateSpMarketBenchmark(
   }
 
   const benchmarkM2 = Math.round(baseM2 * catFactor * areaFactor * parkingFactor);
-  const benchmarkTotalValue = Math.round(benchmarkM2 * Math.max(1, areaM2));
+  const effectiveArea = Math.max(1, areaM2);
+  const benchmarkTotalValue = Math.round(benchmarkM2 * effectiveArea);
+
+  // Quartis de mercado do bairro (P25 = unidade original/conservadora; P75 = reformada/alto padrão)
+  const spreadDown = category === "Terreno" ? 0.82 : 0.86;
+  const spreadUp = category === "Terreno" ? 1.2 : 1.16;
+  const benchmarkP25M2 = Math.round(benchmarkM2 * spreadDown);
+  const benchmarkP75M2 = Math.round(benchmarkM2 * spreadUp);
+  const benchmarkP25Total = Math.round(benchmarkP25M2 * effectiveArea);
+  const benchmarkP75Total = Math.round(benchmarkP75M2 * effectiveArea);
+
+  const benchmarkBreakdown: string[] = [
+    `Base regional (${label}): R$ ${baseM2.toLocaleString("pt-BR")}/m²`,
+    `Tipologia (${category}): ${
+      catFactor === 1 ? "fator padrão (1,00x)" : `${catFactor.toFixed(2).replace(".", ",")}x`
+    }`,
+  ];
+  if (areaNote) {
+    benchmarkBreakdown.push(`Curva de metragem (${effectiveArea} m²): ${areaNote.replace(/^\s*·\s*/, "")}`);
+  } else {
+    benchmarkBreakdown.push(`Área considerada: ${effectiveArea} m²`);
+  }
+  if (parkingNote) {
+    benchmarkBreakdown.push(`Vagas de garagem: ${parkingNote.replace(/^\s*·\s*/, "")}`);
+  }
+  benchmarkBreakdown.push(
+    `Faixa do bairro: P25 R$ ${benchmarkP25M2.toLocaleString("pt-BR")}/m² · Mediana R$ ${benchmarkM2.toLocaleString("pt-BR")}/m² · P75 R$ ${benchmarkP75M2.toLocaleString("pt-BR")}/m²`
+  );
 
   return {
     benchmarkM2,
     benchmarkTotalValue,
     benchmarkLabel: `${label}${areaNote}${parkingNote}`,
+    benchmarkP25M2,
+    benchmarkP75M2,
+    benchmarkP25Total,
+    benchmarkP75Total,
+    benchmarkConfidence,
+    benchmarkRefDate: "Nov/2026",
+    benchmarkBreakdown,
   };
 }
 
@@ -591,8 +644,18 @@ export function simulateAuctionDeal(
   const targetMarginPct = params?.targetMarginPct ?? 18;
 
   const editalMarketValue = resolveEffectiveMarketValue(lot);
-  const { benchmarkM2, benchmarkTotalValue, benchmarkLabel } =
-    estimateSpMarketBenchmark(lot, areaM2, category, tier);
+  const {
+    benchmarkM2,
+    benchmarkTotalValue,
+    benchmarkLabel,
+    benchmarkP25M2,
+    benchmarkP75M2,
+    benchmarkP25Total,
+    benchmarkP75Total,
+    benchmarkConfidence,
+    benchmarkRefDate,
+    benchmarkBreakdown,
+  } = estimateSpMarketBenchmark(lot, areaM2, category, tier);
 
   const marketValueEffective =
     params?.customMarketValue && params.customMarketValue > 0
@@ -602,8 +665,8 @@ export function simulateAuctionDeal(
   const editalVsBenchmarkPct =
     benchmarkTotalValue > 0
       ? Math.round(
-          ((editalMarketValue - benchmarkTotalValue) / benchmarkTotalValue) * 100
-        )
+        ((editalMarketValue - benchmarkTotalValue) / benchmarkTotalValue) * 100
+      )
       : 0;
 
   const liquidityHaircutPct = 6;
@@ -624,8 +687,8 @@ export function simulateAuctionDeal(
     effectiveOccupancy === "Desocupado"
       ? 1800
       : category === "Casa"
-      ? 8500
-      : 6800;
+        ? 8500
+        : 6800;
 
   // 2. Reserva de Contingência Jurídica & Passivos Editalícios (defesa em eventual embargos/impugnação Art. 903 CPC,
   // certidões cartorárias e eventuais resíduos propter rem)
@@ -680,12 +743,12 @@ export function simulateAuctionDeal(
     const monthlyIrrPct =
       roiPct > -90 && holdingMonths > 0
         ? Number(
-            (
-              (Math.pow(1 + Math.max(-0.8, roiPct / 100), 1 / holdingMonths) -
-                1) *
-              100
-            ).toFixed(2)
-          )
+          (
+            (Math.pow(1 + Math.max(-0.8, roiPct / 100), 1 / holdingMonths) -
+              1) *
+            100
+          ).toFixed(2)
+        )
         : 0;
 
     return {
@@ -751,19 +814,19 @@ export function simulateAuctionDeal(
   const annualRentalYieldPct =
     currentScenario.totalInvestment > 0
       ? Number(
-          (
-            ((estimatedMonthlyRent * 12) / currentScenario.totalInvestment) *
-            100
-          ).toFixed(1)
-        )
+        (
+          ((estimatedMonthlyRent * 12) / currentScenario.totalInvestment) *
+          100
+        ).toFixed(1)
+      )
       : 0;
 
   const maxBidBufferAmount = maxRecommendedBid - lot.minBid;
   const headroomToMaxBidPct =
     lot.minBid > 0
       ? Number(
-          (((maxRecommendedBid - lot.minBid) / lot.minBid) * 100).toFixed(1)
-        )
+        (((maxRecommendedBid - lot.minBid) / lot.minBid) * 100).toFixed(1)
+      )
       : 0;
 
   return {
@@ -773,6 +836,13 @@ export function simulateAuctionDeal(
     benchmarkM2,
     benchmarkTotalValue,
     benchmarkLabel,
+    benchmarkP25M2,
+    benchmarkP75M2,
+    benchmarkP25Total,
+    benchmarkP75Total,
+    benchmarkConfidence,
+    benchmarkRefDate,
+    benchmarkBreakdown,
     editalVsBenchmarkPct,
     liquidityHaircutPct,
     realisticSalePrice,
@@ -821,9 +891,8 @@ export function buildDefaultLegalMatrix(
     modLower.includes("extrajudicial") ||
     lot.source === "Caixa" ||
     lot.source === "Banco do Brasil";
-  const summaryLower = `${lot.aiSummary || ""} ${
-    lot.aiChecklist?.debts || ""
-  } ${lot.aiChecklist?.matriculaStatus || ""}`.toLowerCase();
+  const summaryLower = `${lot.aiSummary || ""} ${lot.aiChecklist?.debts || ""
+    } ${lot.aiChecklist?.matriculaStatus || ""}`.toLowerCase();
 
   const debtsSubrogated =
     summaryLower.includes("sub-roga") ||
@@ -860,13 +929,13 @@ export function buildDefaultLegalMatrix(
           : "Prazo médio de 60 a 120 dias para expedição da Carta de Arrematação e mandado de imissão. A DRE já provisiona reserva de contingência jurídica para eventual manifestação nos autos.",
         practicalChecklist: isExtrajudicial
           ? [
-              "Verificar na matrícula a averbação da consolidação da propriedade e das intimações do devedor fiduciante.",
-              "Confirmar ausência de liminar ativa suspendendo o leilão no TJSP.",
-            ]
+            "Verificar na matrícula a averbação da consolidação da propriedade e das intimações do devedor fiduciante.",
+            "Confirmar ausência de liminar ativa suspendendo o leilão no TJSP.",
+          ]
           : [
-              "Conferir nos autos do processo se o executado e eventuais coproprietários/cônjuges foram regularmente intimados da praça (Art. 889 CPC).",
-              "Peticionar imediatamente após o Auto de Arrematação requerendo a expedição prioritária da Carta e do mandado de imissão (Art. 901 §1º CPC).",
-            ],
+            "Conferir nos autos do processo se o executado e eventuais coproprietários/cônjuges foram regularmente intimados da praça (Art. 889 CPC).",
+            "Peticionar imediatamente após o Auto de Arrematação requerendo a expedição prioritária da Carta e do mandado de imissão (Art. 901 §1º CPC).",
+          ],
       },
     },
     {
@@ -880,7 +949,7 @@ export function buildDefaultLegalMatrix(
       finding: debtsSubrogated
         ? "Indicação de sub-rogação dos créditos tributários anteriores no preço da arrematação (Art. 130, parágrafo único do CTN)."
         : lot.aiChecklist?.debts ||
-          "Recomendado provisionar certidão negativa municipal antes do pregão para confirmar ausência de repasse ao comprador.",
+        "Recomendado provisionar certidão negativa municipal antes do pregão para confirmar ausência de repasse ao comprador.",
       citation:
         lot.aiChecklist?.debts ||
         "Disposição sobre tributos municipais conforme regras gerais do edital.",
@@ -991,14 +1060,13 @@ export function buildDefaultLegalMatrix(
       statusLabel: hasUsufruto
         ? "Crítico: Menção a Usufruto"
         : hasIndisponibilidade
-        ? "Baixa de Penhora/Indisponibilidade"
-        : "Penhora/AF Extingue com Arrematação",
+          ? "Baixa de Penhora/Indisponibilidade"
+          : "Penhora/AF Extingue com Arrematação",
       finding:
         lot.aiChecklist?.matriculaStatus ||
         "Matrícula vinculada ao edital sem restrições impeditivas de transferência após baixa regular do gravame exequendo.",
-      citation: `${lot.aiChecklist?.matriculaStatus || ""} ${
-        lot.aiChecklist?.lawyerAlert || ""
-      }`.trim(),
+      citation: `${lot.aiChecklist?.matriculaStatus || ""} ${lot.aiChecklist?.lawyerAlert || ""
+        }`.trim(),
       documentName:
         lot.documentsRead?.find((d) =>
           d.label.toLowerCase().includes("matr")
@@ -1043,9 +1111,8 @@ export function buildDefaultLegalMatrix(
       number: 8,
       title: "Acervo Documental Auditado",
       level: (lot.documentsRead?.length || 0) > 0 ? "green" : "yellow",
-      statusLabel: `${
-        lot.documentsRead?.length || 1
-      } documento(s) oficial(is) vinculado(s)`,
+      statusLabel: `${lot.documentsRead?.length || 1
+        } documento(s) oficial(is) vinculado(s)`,
       finding:
         "Links diretos do leiloeiro disponíveis abaixo para download e conferência integral de Edital, Matrícula e Laudo.",
       citation:

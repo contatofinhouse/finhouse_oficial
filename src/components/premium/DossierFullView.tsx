@@ -634,31 +634,70 @@ export default function DossierFullView({
                   </div>
                 </button>
 
+                {/* Selo de Confiança + Faixa P25 / Mediana / P75 */}
+                <div className="mt-2 pt-2 border-t border-[#E2E8F0] space-y-1.5">
+                  <div className="flex items-center justify-between gap-2 text-[10px]">
+                    <span
+                      className={`inline-flex items-center gap-1 font-semibold px-1.5 py-0.5 rounded ${
+                        sim.benchmarkConfidence === "alta"
+                          ? "bg-emerald-50 text-emerald-700"
+                          : sim.benchmarkConfidence === "media"
+                          ? "bg-amber-50 text-amber-700"
+                          : "bg-slate-100 text-slate-600"
+                      }`}
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          sim.benchmarkConfidence === "alta"
+                            ? "bg-emerald-600"
+                            : sim.benchmarkConfidence === "media"
+                            ? "bg-amber-500"
+                            : "bg-slate-400"
+                        }`}
+                      />
+                      {sim.benchmarkConfidence === "alta"
+                        ? "Alta precisão (Bairro)"
+                        : sim.benchmarkConfidence === "media"
+                        ? "Ref. Municipal"
+                        : "Estimativa Regional"}
+                    </span>
+                    <span className="text-[#64748B]">Ref. {sim.benchmarkRefDate}</span>
+                  </div>
+
+                  {/* Régua Visual P25 — Mediana — P75 */}
+                  <div className="space-y-1">
+                    <div className="h-1.5 w-full rounded-full bg-gradient-to-r from-slate-200 via-[#0F2744]/40 to-emerald-500/60 relative overflow-hidden" />
+                    <div className="grid grid-cols-3 text-[10px] tabular-nums">
+                      <div>
+                        <span className="text-[#64748B] block">P25 (Conserv.)</span>
+                        <span className="font-semibold text-[#334155]">
+                          {formatBRL(sim.benchmarkP25M2)}/m²
+                        </span>
+                      </div>
+                      <div className="text-center">
+                        <span className="text-[#64748B] block">Mediana</span>
+                        <span className="font-semibold text-[#0F2744]">
+                          {formatBRL(sim.benchmarkM2)}/m²
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[#64748B] block">P75 (Reform.)</span>
+                        <span className="font-semibold text-emerald-700">
+                          {formatBRL(sim.benchmarkP75M2)}/m²
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {showBenchmarkCriteria && (
                   <div className="mt-2.5 pt-2 border-t border-[#E2E8F0] text-[11px] text-[#475569] space-y-1 leading-relaxed">
                     <div className="font-semibold text-[#0F172A]">
-                      Critério de cálculo aplicado:
+                      Memória de cálculo aplicada:
                     </div>
-                    <div>
-                      • Base regional FipeZAP/SP:{" "}
-                      <span className="font-medium text-[#0F172A]">
-                        {sim.benchmarkLabel}
-                      </span>
-                    </div>
-                    <div>
-                      • Curva de metragem (unidades menores têm R$/m² maior que
-                      unidades amplas):{" "}
-                      <span className="font-medium text-[#0F172A]">
-                        ≤42 m² (+18%) · 43–65 m² (+5%) · 66–105 m² (base) ·
-                        106–150 m² (-8%) · &gt;150 m² (-15%)
-                      </span>
-                    </div>
-                    <div>
-                      • Vagas (apartamentos):{" "}
-                      <span className="font-medium text-[#0F172A]">
-                        2 vagas (+6%) · 3+ vagas (+12%)
-                      </span>
-                    </div>
+                    {sim.benchmarkBreakdown.map((line, i) => (
+                      <div key={i}>• {line}</div>
+                    ))}
                     <div>
                       • Conta final:{" "}
                       <span className="font-medium text-[#0F172A]">
@@ -670,7 +709,7 @@ export default function DossierFullView({
                 )}
               </div>
 
-              {/* Fonte 3: Comparáveis Web OU Ajuste Manual */}
+              {/* Fonte 3: Comparáveis Web OU Ajuste Manual Valor Venda */}
               <div
                 className={`rounded-lg p-3 border ${
                   marketSourceMode === "web" || marketSourceMode === "manual"
@@ -681,8 +720,8 @@ export default function DossierFullView({
                 <div className="flex items-center justify-between text-[11px] text-[#64748B]">
                   <span>
                     {hasWebComparables
-                      ? "Comparáveis Web / Valor Manual"
-                      : "Ajuste Manual (OLX / ZAP / Portais)"}
+                      ? "Comparáveis Web / Ajuste Manual Valor Venda"
+                      : "Ajuste Manual Valor Venda"}
                   </span>
                   {(marketSourceMode === "web" ||
                     marketSourceMode === "manual") && (
@@ -735,8 +774,41 @@ export default function DossierFullView({
                       }}
                       placeholder="Ex: 650.000"
                       className="w-full px-2 py-1 text-xs font-semibold tabular-nums bg-white border border-[#CBD5E1] rounded text-[#0F172A] focus:outline-none focus:border-[#0F2744]"
-                      aria-label="Valor de Mercado Base para Revenda"
+                      aria-label="Ajuste Manual Valor Venda"
                     />
+                  </div>
+                )}
+
+                {!readOnlyShare && (
+                  <div className="mt-2 pt-2 border-t border-[#E2E8F0] flex items-center justify-between gap-2 text-[10px] text-[#64748B]">
+                    <span>Validar similares:</span>
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={`https://www.zapimoveis.com.br/venda/imoveis/sp+${encodeURIComponent(
+                          (lot.city || "sao-paulo").toLowerCase().replace(/\s+/g, "-")
+                        )}/?onde=,S%C3%A3o%20Paulo,${encodeURIComponent(
+                          lot.city || "São Paulo"
+                        )},${encodeURIComponent(lot.neighborhood || "")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-0.5 font-semibold text-[#0F2744] hover:underline"
+                      >
+                        ZAP <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                      <span className="text-[#CBD5E1]">·</span>
+                      <a
+                        href={`https://www.vivareal.com.br/venda/sp/${encodeURIComponent(
+                          (lot.city || "sao-paulo").toLowerCase().replace(/\s+/g, "-")
+                        )}/?onde=,S%C3%A3o%20Paulo,${encodeURIComponent(
+                          lot.city || "São Paulo"
+                        )},${encodeURIComponent(lot.neighborhood || "")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-0.5 font-semibold text-[#0F2744] hover:underline"
+                      >
+                        VivaReal <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    </div>
                   </div>
                 )}
               </div>
