@@ -59,6 +59,9 @@ type SortField =
 
 type SortDir = "asc" | "desc";
 
+import PremiumAccessGate from "@/components/premium/PremiumAccessGate";
+import { useAuth } from "@/contexts/AuthContext";
+
 function formatBRL(v: number) {
   return v.toLocaleString("pt-BR", {
     style: "currency",
@@ -67,8 +70,9 @@ function formatBRL(v: number) {
   });
 }
 
-export default function PremiumDashboardPage() {
+function PremiumDashboardContent() {
   const router = useRouter();
+  const { access, accessToken } = useAuth();
 
   const [rawLots, setRawLots] = useState<ScrapedAuctionLot[]>([]);
   const [cachedIds, setCachedIds] = useState<string[]>([]);
@@ -104,6 +108,21 @@ export default function PremiumDashboardPage() {
   // Sorting (Field + Direction)
   const [sortField, setSortField] = useState<SortField>("score");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  useEffect(() => {
+    if (!access) return;
+    setQuota((prev) => ({
+      ...prev,
+      daysLeft: access.daysLeft,
+      isTrialExpired: !access.isActive,
+      dailyLimit: access.dailyLimit,
+      usedToday: access.usedToday,
+      creditsLeftToday: access.creditsLeftToday,
+      analyzedLotIds: Array.from(
+        new Set([...prev.analyzedLotIds, ...access.analyzedLotIds])
+      ),
+    }));
+  }, [access]);
 
   useEffect(() => {
     setQuota(getTrialQuotaStatus());
@@ -1260,7 +1279,22 @@ export default function PremiumDashboardPage() {
                   className="w-full px-3 py-2 text-xs rounded-lg border border-[#CBD5E1] focus:outline-none focus:border-[#0F2744]"
                 />
                 <button
-                  onClick={() => setLeadSubmitted(true)}
+                  onClick={async () => {
+                    if (accessToken) {
+                      await fetch("/api/me/upgrade-interest", {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json",
+                          Authorization: `Bearer ${accessToken}`,
+                        },
+                        body: JSON.stringify({
+                          reason: "voluntary_cta",
+                          whatsapp: leadWhatsapp,
+                        }),
+                      }).catch(() => {});
+                    }
+                    setLeadSubmitted(true);
+                  }}
                   className="w-full py-2.5 rounded-lg bg-[#0F2744] hover:bg-[#0A1B30] text-white font-semibold text-xs cursor-pointer"
                 >
                   Solicitar adesão semestral ({PLAN_PRICE_DISPLAY})
@@ -1271,5 +1305,13 @@ export default function PremiumDashboardPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function PremiumDashboardPage() {
+  return (
+    <PremiumAccessGate>
+      <PremiumDashboardContent />
+    </PremiumAccessGate>
   );
 }

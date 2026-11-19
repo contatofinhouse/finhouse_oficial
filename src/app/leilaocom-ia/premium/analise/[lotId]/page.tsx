@@ -5,12 +5,15 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Loader2, Check, ArrowLeft } from "lucide-react";
 import DossierFullView from "@/components/premium/DossierFullView";
+import PremiumAccessGate from "@/components/premium/PremiumAccessGate";
 import type { DeepDossierReport } from "@/app/api/leiloes/dossie/route";
 import { recordLotAnalysisUsage } from "@/lib/leiloes/trial-storage";
+import { useAuth } from "@/contexts/AuthContext";
 
-export default function PremiumAnaliseLotPage() {
+function PremiumAnaliseLotContent() {
   const params = useParams<{ lotId: string }>();
   const lotId = decodeURIComponent(params?.lotId || "");
+  const { accessToken, refreshAccess } = useAuth();
 
   const [report, setReport] = useState<DeepDossierReport | null>(null);
   const [loading, setLoading] = useState(true);
@@ -34,9 +37,15 @@ export default function PremiumAnaliseLotPage() {
       try {
         setLoading(true);
         setError(null);
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+        if (accessToken) {
+          headers.Authorization = `Bearer ${accessToken}`;
+        }
         const res = await fetch("/api/leiloes/dossie", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({ lotId }),
         });
 
@@ -53,6 +62,7 @@ export default function PremiumAnaliseLotPage() {
           data.lot.id,
           Boolean(data.usedCredit && !data.cached)
         );
+        refreshAccess();
         setReport(data);
       } catch (err: unknown) {
         setError(
@@ -147,5 +157,13 @@ export default function PremiumAnaliseLotPage() {
       usedAiModel={report.usedAiModel}
       cached={report.cached}
     />
+  );
+}
+
+export default function PremiumAnaliseLotPage() {
+  return (
+    <PremiumAccessGate>
+      <PremiumAnaliseLotContent />
+    </PremiumAccessGate>
   );
 }

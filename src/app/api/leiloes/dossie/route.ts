@@ -4,6 +4,7 @@ import {
   runDailyScrape,
   saveDailySnapshot,
 } from "@/lib/leiloes-service";
+import { getServerUser, reserveOrLinkLotReport } from "@/lib/auth-server";
 import { ScrapedAuctionLot } from "@/lib/leiloes-utils";
 import {
   buildDefaultLegalMatrix,
@@ -475,13 +476,49 @@ export async function POST(req: Request) {
       );
     }
 
+    const serverUser = await getServerUser(req);
     const existing = globalDossierCache.get(resolvedLot.id);
     if (existing) {
+      if (serverUser) {
+        const check = await reserveOrLinkLotReport(serverUser, resolvedLot.id, true);
+        if (!check.ok) {
+          return NextResponse.json(
+            {
+              error: "Seu período de 15 dias de teste expirou.",
+              code: "TRIAL_EXPIRED",
+            },
+            { status: 403 }
+          );
+        }
+      }
       return NextResponse.json({
         ...existing,
         cached: true,
         usedCredit: false,
       });
+    }
+
+    if (serverUser) {
+      const check = await reserveOrLinkLotReport(serverUser, resolvedLot.id, false);
+      if (!check.ok) {
+        if (check.code === "expired") {
+          return NextResponse.json(
+            {
+              error: "Seu período de 15 dias de teste expirou.",
+              code: "TRIAL_EXPIRED",
+            },
+            { status: 403 }
+          );
+        }
+        return NextResponse.json(
+          {
+            error:
+              "Você atingiu o limite de 3 análises inéditas hoje. Lotes já em cache continuam liberados.",
+            code: "DAILY_LIMIT_REACHED",
+          },
+          { status: 429 }
+        );
+      }
     }
 
     const prelim = evaluateLotPreliminary(resolvedLot, true);

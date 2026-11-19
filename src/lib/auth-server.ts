@@ -1,0 +1,244 @@
+import { createClient } from "@supabase/supabase-js";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
+
+export const ADMIN_EMAILS = [
+  "contato@finhouse.com.br",
+  "admin@finhouse.com.br",
+  "contatofinhouse@gmail.com",
+];
+
+export interface ServerUser {
+  id: string;
+  email: string;
+  fullName: string;
+  isAdmin: boolean;
+}
+
+export interface UserAccessState {
+  plan: "trial" | "premium" | "admin";
+  startedAt: string;
+  expiresAt: string;
+  daysLeft: number;
+  isActive: boolean;
+  dailyLimit: number;
+  usedToday: number;
+  creditsLeftToday: number;
+  analyzedLotIds: string[];
+  whatsapp: string | null;
+  whatsappAlertsOptIn: boolean;
+  onboardingCompleted: boolean;
+}
+
+const TRIAL_DAYS = Number(process.env.TRIAL_DAYS || "15");
+const DEFAULT_DAILY_LIMIT = Number(process.env.REPORTS_DAILY_PER_USER || "3");
+
+/**
+ * Valida o token Bearer enviado no cabeçalho Authorization usando Supabase Auth.
+ */
+export async function getServerUser(req: Request): Promise<ServerUser | null> {
+  const authHeader = req.headers.get("authorization") || "";
+  const token = authHeader.startsWith("Bearer ")
+    ? authHeader.slice(7).trim()
+    : "";
+  if (!token) return null;
+
+  const supabaseUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    "https://ovwlviiojtktuhmvqahi.supabase.co";
+  const supabaseKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    "";
+
+  if (!supabaseUrl || !supabaseKey) return null;
+
+  const client = createClient(supabaseUrl, supabaseKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  const { data, error } = await client.auth.getUser(token);
+  if (error || !data?.user) return null;
+
+  const email = (data.user.email || "").toLowerCase();
+  const fullName =
+    (data.user.user_metadata?.full_name as string) ||
+    (data.user.user_metadata?.name as string) ||
+    email.split("@")[0] ||
+    "Investidor";
+
+  return {
+    id: data.user.id,
+    email,
+    fullName,
+    isAdmin: ADMIN_EMAILS.includes(email),
+  };
+}
+
+/**
+ * Retorna início do dia atual no fuso de Brasília (America/Sao_Paulo) em ISO UTC.
+ */
+function getTodayStartBRTIso(): string {
+  const now = new Date();
+  const brtStr = now.toLocaleDateString("en-CA", {
+    timeZone: "America/Sao_Paulo",
+  }); // YYYY-MM-DD
+  return new Date(`${brtStr}T00:00:00-03:00`).toISOString();
+}
+
+/**
+ * Carrega (ou cria no 1º acesso) o estado de acesso do usuário no Supabase.
+ */
+export async function getUserAccessState(
+  user: ServerUser
+): Promise<UserAccessState> {
+  const admin = getSupabaseAdmin();
+  const now = Date.now();
+
+  // Fallback seguro se SUPABASE_SERVICE_ROLE_KEY não estiver configurada ainda
+  if (!admin) {
+    const expiresAt = new Date(
+      now + TRIAL_DAYS * 24 * 60 * 60 * 1000
+    ).toISOString();
+    return {
+      plan: user.isAdmin ? "admin" : "trial",
+      startedAt: new Date(now).toISOString(),
+      expiresAt,
+      daysLeft: user.isAdmin ? 999 : TRIAL_DAYS,
+      isActive: true,
+      dailyLimit: user.isAdmin ? 999 : DEFAULT_DAILY_LIMIT,
+      usedToday: 0,
+      creditsLeftToday: user.isAdmin ? 999 : DEFAULT_DAILY_LIMIT,
+      analyzedLotIds: [],
+      whatsapp: null,
+      whatsappAlertsOptIn: false,
+      onboardingCompleted: user.isAdmin,
+    };
+  }
+
+  let { data: acc } = await admin
+    .from("user_access")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!acc) {
+    const expiresIso = new Date(
+      now + TRIAL_DAYS * 24 * 60 * 60 * 1000
+    ).toISOString();
+    const { data: inserted } = await admin
+      .from("user_access")
+      .upsert(
+        {
+          user_id: user.id,
+          email: user.email,
+          full_name: user.fullName,
+          plan: user.isAdmin ? "admin" : "trial",
+          expires_at: expiresIso,
+          daily_limit: DEFAULT_DAILY_LIMIT,
+          onboarding_completed: user.isAdmin,
+        },
+        { onConflict: "user_id" }
+      )
+      .select("*")
+      .single();
+    acc = inserted;
+  }
+
+  const plan: "trial" | "premium" | "admin" = user.isAdmin
+    ? "admin"
+    : (acc?.plan as "trial" | "premium" | "admin") || "trial";
+
+  const expiresAt =
+    acc?.expires_at ||
+    new Date(now + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const msLeft = new Date(expiresAt).getTime() - now;
+  const daysLeft =
+    plan === "admin" ? 999 : Math.max(0, Math.ceil(msLeft / (24 * 60 * 60 * 1000)));
+  const isActive = plan === "admin" || msLeft > 0;
+  const dailyLimit = plan === "admin" ? 999 : acc?.daily_limit ?? DEFAULT_DAILY_LIMIT;
+
+  const todayStartIso = getTodayStartBRTIso();
+
+  const [{ data: allReqs }, { count: usedTodayCount }] = await Promise.all([
+    admin
+      .from("report_requests")
+      .select("lot_id")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(200),
+    admin
+      .from("report_requests")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("used_credit", true)
+      .gte("created_at", todayStartIso),
+  ]);
+
+  const usedToday = usedTodayCount || 0;
+  const creditsLeftToday =
+    plan === "admin" ? 999 : Math.max(0, dailyLimit - usedToday);
+
+  return {
+    plan,
+    startedAt: acc?.started_at || new Date(now).toISOString(),
+    expiresAt,
+    daysLeft,
+    isActive,
+    dailyLimit,
+    usedToday,
+    creditsLeftToday,
+    analyzedLotIds: (allReqs || []).map((r) => r.lot_id),
+    whatsapp: acc?.whatsapp || null,
+    whatsappAlertsOptIn: Boolean(acc?.whatsapp_alerts_opt_in),
+    onboardingCompleted: Boolean(acc?.onboarding_completed || user.isAdmin),
+  };
+}
+
+/**
+ * Reserva crédito (via RPC atômica reserve_credit) ou vincula lote em cache (0 crédito).
+ */
+export async function reserveOrLinkLotReport(
+  user: ServerUser,
+  lotId: string,
+  fromCache: boolean
+): Promise<{ ok: true } | { ok: false; code: "expired" | "limit" }> {
+  const admin = getSupabaseAdmin();
+  if (!admin) return { ok: true };
+
+  if (user.isAdmin) {
+    await admin
+      .from("report_requests")
+      .upsert(
+        { user_id: user.id, lot_id: lotId, used_credit: false },
+        { onConflict: "user_id,lot_id" }
+      );
+    return { ok: true };
+  }
+
+  // Se veio do cache global, não consome crédito diário (mas exige acesso ativo)
+  if (fromCache) {
+    const access = await getUserAccessState(user);
+    if (!access.isActive) return { ok: false, code: "expired" };
+    await admin
+      .from("report_requests")
+      .upsert(
+        { user_id: user.id, lot_id: lotId, used_credit: false },
+        { onConflict: "user_id,lot_id" }
+      );
+    return { ok: true };
+  }
+
+  const { data: status, error } = await admin.rpc("reserve_credit", {
+    p_user: user.id,
+    p_lot: lotId,
+  });
+
+  if (error) {
+    console.warn("[AuthServer] Aviso em reserve_credit:", error.message);
+    return { ok: true };
+  }
+
+  if (status === "expired") return { ok: false, code: "expired" };
+  if (status === "limit") return { ok: false, code: "limit" };
+  return { ok: true };
+}

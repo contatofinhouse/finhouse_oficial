@@ -53,26 +53,37 @@ flowchart LR
 ## 3. Banco de Dados no Supabase (SQL Completo)
 
 ```sql
--- 1. Acesso do usuário (15 dias de teste + 3 análises novas/dia)
-create table user_access (
+-- 1. Acesso do usuário (15 dias de teste + 3 análises novas/dia + WhatsApp opcional + operação manual)
+create table if not exists user_access (
   user_id uuid primary key references auth.users on delete cascade,
   email text,
+  full_name text,
+  whatsapp text,                             -- apenas dígitos (ex: 5511999999999), opcional
+  whatsapp_alerts_opt_in boolean not null default false,
+  onboarding_completed boolean not null default false,
   plan text not null default 'trial',        -- trial | premium | admin
   started_at timestamptz not null default now(),
   expires_at timestamptz not null default now() + interval '15 days',
   daily_limit int not null default 3,
+  payment_link_sent_at timestamptz,          -- controle manual do envio do link por e-mail
+  notes text,
   referred_by_token text
 );
 
 -- Cria o trial de 15 dias automaticamente no 1º login com Google
 create or replace function handle_new_user() returns trigger as $$
 begin
-  insert into user_access (user_id, email)
-  values (new.id, new.email)
-  on conflict do nothing;
+  insert into user_access (user_id, email, full_name)
+  values (
+    new.id,
+    new.email,
+    coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', split_part(new.email, '@', 1))
+  )
+  on conflict (user_id) do nothing;
   return new;
 end $$ language plpgsql security definer;
 
+drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function handle_new_user();

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { Suspense, useEffect, useMemo, useState } from "react";
+import PremiumAccessGate from "@/components/premium/PremiumAccessGate";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -550,7 +551,9 @@ export default function CompararPage() {
         </div>
       }
     >
-      <CompararContent />
+      <PremiumAccessGate>
+        <CompararContent />
+      </PremiumAccessGate>
     </Suspense>
   );
 }
