@@ -713,18 +713,28 @@ export default function DossierFullView({
                   <div className="mt-1.5 flex items-center gap-1.5">
                     <span className="text-[11px] text-[#64748B]">R$</span>
                     <input
-                      type="number"
-                      min={50000}
-                      step={10000}
-                      value={customMarketValue}
+                      type="text"
+                      inputMode="numeric"
+                      value={
+                        customMarketValue > 0
+                          ? Math.round(customMarketValue).toLocaleString("pt-BR")
+                          : ""
+                      }
                       onChange={(e) => {
-                        const val = Number(e.target.value);
-                        if (!Number.isNaN(val) && val > 0) {
+                        const digits = e.target.value.replace(/\D/g, "");
+                        if (!digits) {
+                          setCustomMarketValue(0);
+                          setMarketSourceMode("manual");
+                          return;
+                        }
+                        const val = parseInt(digits, 10);
+                        if (!Number.isNaN(val)) {
                           setCustomMarketValue(val);
                           setMarketSourceMode("manual");
                         }
                       }}
-                      className="w-full px-2 py-1 text-xs font-semibold bg-white border border-[#CBD5E1] rounded text-[#0F172A] focus:outline-none focus:border-[#0F2744]"
+                      placeholder="Ex: 650.000"
+                      className="w-full px-2 py-1 text-xs font-semibold tabular-nums bg-white border border-[#CBD5E1] rounded text-[#0F172A] focus:outline-none focus:border-[#0F2744]"
                       aria-label="Valor de Mercado Base para Revenda"
                     />
                   </div>
