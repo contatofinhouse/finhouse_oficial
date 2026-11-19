@@ -376,7 +376,6 @@ export default function DossierFullView({
                 <div className="pt-2">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">
                     Resumo da Análise
-                    {usedAiModel ? ` · ${usedAiModel}` : ""}
                   </p>
                   <p className="text-xs sm:text-sm text-[#334155] mt-1 leading-relaxed">
                     {verdict.executiveSummary || lot.aiSummary}
