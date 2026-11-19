@@ -2936,6 +2936,110 @@ export default function LeilaoComIaPage() {
         </div>
       )}
 
+      {/* ─── SEÇÃO SEO MINIMALISTA (CIDADES SP + FAQ EM ACCORDION + CTA CONTEXTUAL) ─── */}
+      <section className="bg-white border-t border-[#E2E8F0] py-8 px-4 sm:px-6">
+        <div className="max-w-6xl mx-auto space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#F1F5F9]">
+            <div>
+              <h2 className="text-sm font-bold text-[#0F172A]">
+                Leilão de Imóveis no Estado de São Paulo com Análise por IA
+              </h2>
+              <p className="text-xs text-[#64748B] mt-0.5">
+                Monitoramento diário de leilões judiciais e extrajudiciais (Mega Leilões, Portal Zuk, Superbid e Sold) com cálculo de Lance Teto e auditoria de edital.
+              </p>
+            </div>
+            <Link
+              href="/leilaocom-ia/premium"
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-[#0F2744] hover:bg-[#0A1B30] text-white text-xs font-semibold transition-colors whitespace-nowrap shrink-0"
+            >
+              <span>Módulo Premium · 15 dias grátis</span>
+            </Link>
+          </div>
+
+          {/* Filtro rápido por principais cidades (Links internos SEO) */}
+          <div className="space-y-2">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">
+              Principais cidades em SP
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                "São Paulo",
+                "Campinas",
+                "Santos",
+                "Guarujá",
+                "Santo André",
+                "São Bernardo do Campo",
+                "Sorocaba",
+                "Ribeirão Preto",
+                "São José dos Campos",
+                "Piracicaba",
+                "Jundiaí",
+                "Osasco",
+              ].map((cityName) => (
+                <button
+                  key={cityName}
+                  type="button"
+                  onClick={() => {
+                    setFilterCity(cityName);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  className={`px-2.5 py-1 rounded-md text-xs border transition-colors cursor-pointer ${
+                    filterCity === cityName
+                      ? "bg-[#0F2744] text-white border-[#0F2744]"
+                      : "bg-[#F8FAFC] text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1] hover:text-[#0F172A]"
+                  }`}
+                >
+                  {cityName}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* FAQ Minimalista em Accordion (recolhido por padrão, 100% indexável) */}
+          <div className="space-y-2">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">
+              Perguntas Frequentes sobre Leilão de Imóveis
+            </div>
+            <div className="divide-y divide-[#E2E8F0] border border-[#E2E8F0] rounded-xl bg-[#F8FAFC]/50">
+              {[
+                {
+                  q: "Como comprar imóvel em leilão em São Paulo com segurança?",
+                  a: "Analise sempre a matrícula atualizada, o edital (IPTU, condomínio e ocupação) e defina seu Lance Teto antes do pregão considerando comissão de 5%, ITBI, registro, reforma e margem líquida.",
+                },
+                {
+                  q: "Qual a diferença entre 1ª praça e 2ª praça?",
+                  a: "Na 1ª praça o lance mínimo parte do valor de avaliação. Sem arrematante, o imóvel vai à 2ª praça com descontos que costumam chegar a 40% ou 50%.",
+                },
+                {
+                  q: "É possível financiar um imóvel comprado em leilão?",
+                  a: "Sim, diversos leilões extrajudiciais de bancos aceitam financiamento. Nos leilões judiciais, o pagamento é à vista ou parcelado pelo Art. 895 do CPC (25% de entrada + até 30 parcelas).",
+                },
+                {
+                  q: "Quem paga dívidas de IPTU e condomínio no leilão judicial?",
+                  a: "Em regra, débitos de IPTU sub-rogam no preço da arrematação (Art. 130, parágrafo único, do CTN), enquanto débitos condominiais dependem do edital e dos autos.",
+                },
+                {
+                  q: "Como funciona o teste grátis de 15 dias do Módulo Premium?",
+                  a: "Entre com sua conta Google sem cartão de crédito e tenha 15 dias grátis com até 3 dossiês completos por dia, Semáforo Jurídico, Lance Teto, Comparador e Exportação CSV/PDF. Depois, apenas R$ 59,90 por 6 meses.",
+                },
+              ].map((item) => (
+                <details key={item.q} className="group px-4 py-3 text-xs">
+                  <summary className="font-semibold text-[#0F172A] cursor-pointer list-none flex items-center justify-between gap-2">
+                    <span>{item.q}</span>
+                    <span className="text-[#64748B] group-open:rotate-45 transition-transform text-base leading-none">
+                      +
+                    </span>
+                  </summary>
+                  <p className="text-[#475569] mt-2 leading-relaxed">
+                    {item.a}
+                  </p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ─── FOOTER OFICIAL FINHOUSE (RESPALDO INSTITUCIONAL) ─── */}
       <Footer />
     </div>
