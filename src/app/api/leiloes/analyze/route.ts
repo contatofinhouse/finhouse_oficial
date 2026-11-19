@@ -368,6 +368,48 @@ async function analyzeWithGemini(apiKey: string, prompt: string) {
   };
 }
 
+async function analyzeWithOpenRouter(apiKey: string, prompt: string) {
+  const model =
+    process.env.OPENROUTER_MODEL?.trim() || "deepseek/deepseek-chat";
+
+  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+      "HTTP-Referer": "https://www.finhouse.com.br",
+      "X-Title": "finHouse Leilao com IA",
+    },
+    body: JSON.stringify({
+      model,
+      temperature: 0.15,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content:
+            "Você é um advogado especialista em leilões de imóveis no Brasil. Responda estritamente em JSON válido, sem blocos markdown.",
+        },
+        { role: "user", content: prompt },
+      ],
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Erro OpenRouter API (${res.status}): ${errText.slice(0, 200)}`);
+  }
+
+  const data = await res.json();
+  const rawContent = data?.choices?.[0]?.message?.content || "";
+  const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error("Resposta sem JSON válido do OpenRouter");
+  return {
+    ...JSON.parse(jsonMatch[0]),
+    usedAiModel: `OpenRouter (${model})`,
+  };
+}
+
 async function analyzeWithOpenAI(apiKey: string, prompt: string) {
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -432,10 +474,13 @@ export async function POST(req: Request) {
       });
     }
 
-    const apiKey =
-      process.env.GEMINI_API_KEY?.trim() ||
-      process.env.OPENAI_API_KEY?.trim() ||
-      "";
+    const openRouterKey = process.env.OPENROUTER_API_KEY?.trim() || "";
+    const geminiKey = process.env.GEMINI_API_KEY?.trim() || "";
+    const openAiKey =
+      process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.trim().length > 10
+        ? process.env.OPENAI_API_KEY.trim()
+        : "";
+    const apiKey = openRouterKey || geminiKey || openAiKey;
 
     // 1. Raspa o texto oficial da matrícula/edital, data oficial, foto e os PDFs na página do leiloeiro
     const {
@@ -474,9 +519,12 @@ Lote: ${title || ""} | Modalidade: ${modality || ""} | Lance: R$ ${minBid || 0}
 Texto do Edital: """${compactText}"""`;
 
       try {
-        const aiResult = apiKey.startsWith("sk-")
-          ? await analyzeWithOpenAI(apiKey, prompt)
-          : await analyzeWithGemini(apiKey, prompt);
+        const aiResult =
+          openRouterKey || apiKey.startsWith("sk-or-")
+            ? await analyzeWithOpenRouter(openRouterKey || apiKey, prompt)
+            : apiKey.startsWith("sk-")
+            ? await analyzeWithOpenAI(apiKey, prompt)
+            : await analyzeWithGemini(apiKey, prompt);
 
         const finalPayload = {
           ...factualBase,

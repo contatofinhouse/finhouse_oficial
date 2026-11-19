@@ -148,8 +148,12 @@ async function scrapePageAndDocs(sourceUrl: string) {
   }
 }
 
-async function generateMatrixWithGemini(
-  apiKey: string,
+async function generateMatrixWithAI(
+  options: {
+    geminiKey?: string;
+    openRouterKey?: string;
+    openRouterModel?: string;
+  },
   lot: ScrapedAuctionLot,
   legalText: string,
   pdfBase64: string | null,
@@ -159,6 +163,7 @@ async function generateMatrixWithGemini(
   executiveSummary: string;
   headline: string;
   occupancyStatus: "Desocupado" | "Ocupado" | "Ver no Edital";
+  modelLabel: string;
 } | null> {
   try {
     const prompt = `Você é um auditor jurídico-imobiliário especialista em leilões no Estado de São Paulo.
@@ -181,39 +186,81 @@ Analise os dados e o documento oficial deste lote e devolva um JSON estrito com:
 Regra para occupancyStatus: retorne "Desocupado" apenas se o texto/PDF afirmar que o imóvel está desocupado/vago/livre; retorne "Ocupado" se afirmar que está ocupado, locado ou na posse de terceiros/executados; retorne "Ver no Edital" somente se o documento realmente não informar o estado de ocupação.
 Lote: ${lot.title} | Leiloeiro: ${lot.source} | Modalidade: ${lot.modality}
 Lance Mínimo: R$ ${lot.minBid} | Avaliação: R$ ${lot.marketValue} | Deságio: ${lot.discountPct}%
-Texto extraído da página/edital: """${legalText.slice(0, 4200)}"""`;
+Texto extraído da página/edital: """${legalText.slice(0, 4800)}"""`;
 
-    const parts: Record<string, unknown>[] = [{ text: prompt }];
-    if (pdfBase64) {
-      parts.push({
-        inline_data: {
-          mime_type: "application/pdf",
-          data: pdfBase64,
+    let raw = "";
+    let modelLabel = "Leitura da página e regras do Edital";
+
+    if (options.openRouterKey) {
+      const model = options.openRouterModel || "deepseek/deepseek-chat";
+      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${options.openRouterKey}`,
+          "HTTP-Referer": "https://www.finhouse.com.br",
+          "X-Title": "finHouse Leilao com IA",
         },
+        body: JSON.stringify({
+          model,
+          temperature: 0.15,
+          response_format: { type: "json_object" },
+          messages: [
+            {
+              role: "system",
+              content:
+                "Você é um auditor jurídico-imobiliário especialista em leilões no Estado de São Paulo. Responda estritamente em JSON válido, sem markdown.",
+            },
+            { role: "user", content: prompt },
+          ],
+        }),
       });
+      if (res.ok) {
+        const data = await res.json();
+        raw = data?.choices?.[0]?.message?.content || "";
+        modelLabel = `Análise Jurídica IA (${model})`;
+      }
     }
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(
-      apiKey
-    )}`;
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts }],
-        generationConfig: {
-          temperature: 0.15,
-          responseMimeType: "application/json",
-        },
-      }),
-    });
+    if (!raw && options.geminiKey) {
+      const parts: Record<string, unknown>[] = [{ text: prompt }];
+      if (pdfBase64) {
+        parts.push({
+          inline_data: {
+            mime_type: "application/pdf",
+            data: pdfBase64,
+          },
+        });
+      }
 
-    if (!res.ok) return null;
-    const data = await res.json();
-    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!raw) return null;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(
+        options.geminiKey
+      )}`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts }],
+          generationConfig: {
+            temperature: 0.15,
+            responseMimeType: "application/json",
+          },
+        }),
+      });
 
-    const parsed = JSON.parse(raw);
+      if (res.ok) {
+        const data = await res.json();
+        raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        modelLabel = pdfBase64
+          ? "Leitura completa de PDF e Edital (Gemini 2.5 Flash)"
+          : "Leitura da página e regras do Edital (Gemini 2.5 Flash)";
+      }
+    }
+
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return null;
+
+    const parsed = JSON.parse(jsonMatch[0]);
     const aiItems: Record<string, Partial<LegalMatrixItem>> = {};
     if (Array.isArray(parsed.items)) {
       for (const it of parsed.items) {
@@ -272,6 +319,7 @@ Texto extraído da página/edital: """${legalText.slice(0, 4200)}"""`;
         parsed.headline ||
         `Oportunidade com ${lot.discountPct}% de deságio em ${lot.neighborhood}, ${lot.city}`,
       occupancyStatus,
+      modelLabel,
     };
   } catch {
     return null;
@@ -529,7 +577,10 @@ export async function POST(req: Request) {
     const mergedDocs =
       docs.length > 0 ? docs : resolvedLot.documentsRead || [];
 
-    const apiKey = process.env.GEMINI_API_KEY?.trim() || "";
+    const geminiKey = process.env.GEMINI_API_KEY?.trim() || "";
+    const openRouterKey = process.env.OPENROUTER_API_KEY?.trim() || "";
+    const openRouterModel =
+      process.env.OPENROUTER_MODEL?.trim() || "deepseek/deepseek-chat";
     let usedAiModel = "Baseado nos dados do lote e edital";
     let finalMatrix = defaultMatrix;
     let headline = `${prelim.verdictLabel} · Margem projetada de ${sim.scenarios.minBid.netMarginPct}% no lance mínimo`;
@@ -564,32 +615,35 @@ export async function POST(req: Request) {
       comparables: [],
     };
 
-    if (apiKey) {
+    if (openRouterKey || geminiKey) {
       const firstPdfUrl = mergedDocs.find((d) =>
         d.url.toLowerCase().includes(".pdf")
       )?.url;
-      const pdfBase64 = firstPdfUrl
-        ? await fetchPdfBase64IfPossible(firstPdfUrl)
-        : null;
+      const pdfBase64 =
+        geminiKey && !openRouterKey && firstPdfUrl
+          ? await fetchPdfBase64IfPossible(firstPdfUrl)
+          : null;
 
       const [aiEnhanced, webValuation] = await Promise.all([
         legalText.length > 80 || mergedDocs.length > 0
-          ? generateMatrixWithGemini(
-              apiKey,
+          ? generateMatrixWithAI(
+              { geminiKey, openRouterKey, openRouterModel },
               resolvedLot,
               legalText || resolvedLot.aiSummary,
               pdfBase64,
               defaultMatrix
             )
           : Promise.resolve(null),
-        fetchMarketComparablesWithGemini(
-          apiKey,
-          resolvedLot,
-          sim.estimatedAreaM2,
-          sim.propertyCategory,
-          sim.benchmarkM2,
-          sim.benchmarkTotalValue
-        ),
+        geminiKey
+          ? fetchMarketComparablesWithGemini(
+              geminiKey,
+              resolvedLot,
+              sim.estimatedAreaM2,
+              sim.propertyCategory,
+              sim.benchmarkM2,
+              sim.benchmarkTotalValue
+            )
+          : Promise.resolve(null),
       ]);
 
       if (aiEnhanced) {
@@ -597,9 +651,7 @@ export async function POST(req: Request) {
         executiveSummary = aiEnhanced.executiveSummary;
         headline = aiEnhanced.headline;
         resolvedOccupancy = aiEnhanced.occupancyStatus;
-        usedAiModel = pdfBase64
-          ? "Leitura completa de PDF e Edital"
-          : "Leitura da página e regras do Edital";
+        usedAiModel = aiEnhanced.modelLabel;
       }
 
       if (webValuation) {
