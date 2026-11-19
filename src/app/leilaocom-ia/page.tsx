@@ -2902,11 +2902,11 @@ export default function LeilaoComIaPage() {
               <label className="text-xs font-bold uppercase tracking-wider text-[#475569]">
                 Retorno Estimado
               </label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-[1fr_1.45fr] gap-2">
                 <button
                   type="button"
                   onClick={() => setFilterHighDiscount(false)}
-                  className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${!filterHighDiscount
+                  className={`py-2 px-2.5 rounded-xl text-[11px] sm:text-xs font-semibold border transition-all cursor-pointer whitespace-nowrap ${!filterHighDiscount
                       ? "bg-[#0F2744] text-white border-[#0F2744] shadow-xs"
                       : "bg-white text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1]"
                     }`}
@@ -2916,12 +2916,12 @@ export default function LeilaoComIaPage() {
                 <button
                   type="button"
                   onClick={() => setFilterHighDiscount(true)}
-                  className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${filterHighDiscount
+                  className={`py-2 px-2.5 rounded-xl text-[11px] sm:text-xs font-semibold border transition-all cursor-pointer flex items-center justify-center gap-1 whitespace-nowrap ${filterHighDiscount
                       ? "bg-emerald-700 text-white border-emerald-700 shadow-xs"
                       : "bg-white text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1]"
                     }`}
                 >
-                  <Percent className="w-3.5 h-3.5" />
+                  <Percent className="w-3 h-3 shrink-0" />
                   <span>Retorno estimado acima 18%</span>
                 </button>
               </div>

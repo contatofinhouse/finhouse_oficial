@@ -52,7 +52,7 @@ export interface DailySnapshot {
   lots: ScrapedAuctionLot[];
 }
 
-const SNAPSHOT_VERSION = 5;
+const SNAPSHOT_VERSION = 6;
 const DAILY_TTL_MS = 24 * 60 * 60 * 1000;
 
 // Cache volátil em memória (Node.js process level)
@@ -73,9 +73,12 @@ const STATE_CENTERS: Record<string, [number, number]> = {
 // Bairros da Capital de São Paulo (usados exclusivamente quando cidade === São Paulo)
 const SP_CAPITAL_NEIGHBORHOOD_COORDS: Record<string, [number, number]> = {
   "alto da mooca": [-23.5614, -46.5924],
+  "parque da mooca": [-23.5689, -46.5889],
   mooca: [-23.5558, -46.5967],
   centro: [-23.5453, -46.636],
+  se: [-23.5505, -46.6333],
   republica: [-23.5432, -46.6426],
+  "santa efigenia": [-23.5389, -46.6389],
   "santa cecilia": [-23.5329, -46.6518],
   higienopolis: [-23.5428, -46.6582],
   "bela vista": [-23.5616, -46.649],
@@ -93,6 +96,7 @@ const SP_CAPITAL_NEIGHBORHOOD_COORDS: Record<string, [number, number]> = {
   indianopolis: [-23.6032, -46.6621],
   "vila mariana": [-23.5815, -46.6382],
   "chacara klabin": [-23.5919, -46.6248],
+  "jardim da gloria": [-23.5812, -46.6212],
   aclimacao: [-23.5718, -46.6292],
   liberdade: [-23.5594, -46.6347],
   cambuci: [-23.5656, -46.6164],
@@ -102,16 +106,23 @@ const SP_CAPITAL_NEIGHBORHOOD_COORDS: Record<string, [number, number]> = {
   "jardim edith": [-23.6098, -46.6938],
   "jardim das acacias": [-23.6215, -46.6951],
   "santo amaro": [-23.6528, -46.7074],
+  "jardim dos estados": [-23.6612, -46.6845],
+  "jardim taquaral": [-23.6628, -46.6889],
+  "jardim anchieta": [-23.6612, -46.6789],
   "chacara santo antonio": [-23.6319, -46.7019],
   "granja julieta": [-23.6389, -46.7089],
   "campo belo": [-23.6224, -46.6708],
   "vila mascote": [-23.6431, -46.6628],
   "vila santa catarina": [-23.6512, -46.6658],
   jabaquara: [-23.6461, -46.6411],
+  "vila celeste": [-23.6589, -46.6412],
   "cidade ademar": [-23.6731, -46.6552],
+  "jardim apura": [-23.7112, -46.6489],
   pedreira: [-23.6989, -46.6658],
   ipiranga: [-23.5858, -46.6097],
+  "jardim previdencia": [-23.5958, -46.5989],
   sacoma: [-23.6012, -46.6025],
+  "sao joao climaco": [-23.6258, -46.5989],
   cursino: [-23.6184, -46.6158],
   saude: [-23.6148, -46.6368],
   "bosque da saude": [-23.6098, -46.6251],
@@ -128,6 +139,7 @@ const SP_CAPITAL_NEIGHBORHOOD_COORDS: Record<string, [number, number]> = {
   "vila hamburguesa": [-23.5312, -46.7312],
   jaguare: [-23.5425, -46.7481],
   butanta: [-23.5719, -46.7086],
+  "jardim boa vista": [-23.5828, -46.7689],
   "rio pequeno": [-23.5761, -46.7539],
   morumbi: [-23.5972, -46.7201],
   "vila suzanna": [-23.6169, -46.7404],
@@ -144,15 +156,20 @@ const SP_CAPITAL_NEIGHBORHOOD_COORDS: Record<string, [number, number]> = {
   "jardim sao paulo": [-23.4912, -46.6212],
   "parada inglesa": [-23.4858, -46.6112],
   mandaqui: [-23.4795, -46.6318],
+  "vila romero": [-23.4812, -46.6389],
+  "jardim peri": [-23.4612, -46.6512],
+  "vila cachoeira": [-23.4589, -46.6512],
   tremembe: [-23.4558, -46.6189],
   tucuruvi: [-23.4792, -46.6031],
   "vila constanca": [-23.4758, -46.5989],
+  "vila medeiros": [-23.4889, -46.5812],
   jacana: [-23.4689, -46.5812],
   "vila maria": [-23.5142, -46.5889],
   "vila guilherme": [-23.5148, -46.6078],
   "casa verde": [-23.5058, -46.6558],
   limao: [-23.5028, -46.6728],
   "freguesia do o": [-23.4958, -46.6989],
+  itaberaba: [-23.4744, -46.6711],
   "jardim manoel lopes": [-23.4912, -46.7012],
   brasilandia: [-23.4689, -46.6889],
   pirituba: [-23.4858, -46.7258],
@@ -160,6 +177,7 @@ const SP_CAPITAL_NEIGHBORHOOD_COORDS: Record<string, [number, number]> = {
   jaragua: [-23.4558, -46.7489],
   perus: [-23.4089, -46.7528],
   tatuape: [-23.5402, -46.5766],
+  "vila santo estevao": [-23.5489, -46.5512],
   "jardim analia franco": [-23.5589, -46.5612],
   belem: [-23.5418, -46.5931],
   bras: [-23.5452, -46.6164],
@@ -170,13 +188,18 @@ const SP_CAPITAL_NEIGHBORHOOD_COORDS: Record<string, [number, number]> = {
   "vila carrao": [-23.5518, -46.5358],
   carrao: [-23.5381, -46.5497],
   aricanduva: [-23.5678, -46.5128],
+  "jardim imperador": [-23.5912, -46.5012],
   penha: [-23.5234, -46.5409],
   "penha de franca": [-23.5234, -46.5409],
+  "vila marieta": [-23.5162, -46.5239],
   cangaiba: [-23.5112, -46.5212],
   "vila matilde": [-23.5364, -46.5248],
   "vila esperanca": [-23.5289, -46.5189],
   "artur alvim": [-23.5412, -46.4889],
+  "vila sao nicolau": [-23.5289, -46.4712],
+  "parque boturussu": [-23.5012, -46.4789],
   itaquera: [-23.5418, -46.4539],
+  "vila progresso": [-23.5289, -46.4389],
   "vila carmosina": [-23.5512, -46.4612],
   "parque do carmo": [-23.5789, -46.4612],
   "sao mateus": [-23.6089, -46.4812],
@@ -195,6 +218,7 @@ const SP_CAPITAL_NEIGHBORHOOD_COORDS: Record<string, [number, number]> = {
   "cidade tiradentes": [-23.5912, -46.3989],
   interlagos: [-23.6815, -46.6889],
   socorro: [-23.6912, -46.7089],
+  "rio bonito": [-23.7058, -46.7012],
   "cidade dutra": [-23.7112, -46.6989],
   grajau: [-23.7489, -46.6889],
   parelheiros: [-23.7889, -46.7112],
@@ -272,6 +296,7 @@ const SP_CITIES_COORDS: Record<string, [number, number]> = {
   peruibe: [-24.3203, -46.9989],
   mongagua: [-24.0931, -46.6208],
   bertioga: [-23.8542, -46.1383],
+  "sao sebastiao da grama": [-21.7111, -46.8208],
   "sao sebastiao": [-23.7606, -45.4097],
   ilhabela: [-23.7781, -45.3581],
   caraguatatuba: [-23.6228, -45.4128],
@@ -344,6 +369,114 @@ const SP_CITIES_COORDS: Record<string, [number, number]> = {
   tambau: [-21.7058, -47.2744],
   "santa cruz das palmeiras": [-21.8258, -47.4512],
   jau: [-22.2964, -48.5586],
+  mairipora: [-23.3186, -46.5869],
+  cajamar: [-23.3556, -46.8769],
+  caieiras: [-23.3644, -46.7408],
+  "franco da rocha": [-23.3286, -46.7244],
+  "francisco morato": [-23.2817, -46.7425],
+  jarinu: [-23.1014, -46.7283],
+  louveira: [-23.0864, -46.9486],
+  itupeva: [-23.1531, -47.0578],
+  cabreuva: [-23.3075, -47.1331],
+  "campo limpo paulista": [-23.2064, -46.7844],
+  "varzea paulista": [-23.2114, -46.8283],
+  amparo: [-22.7039, -46.7653],
+  socorro: [-22.5914, -46.5289],
+  "serra negra": [-22.6119, -46.7006],
+  "aguas de lindoia": [-22.4739, -46.6328],
+  lindoia: [-22.5231, -46.6503],
+  "monte alegre do sul": [-22.6819, -46.6808],
+  pedreira: [-22.7419, -46.9014],
+  jaguariuna: [-22.7056, -46.9858],
+  holambra: [-22.6322, -47.0558],
+  "artur nogueira": [-22.5731, -47.1725],
+  cosmopolis: [-22.6458, -47.1964],
+  conchal: [-22.3303, -47.1725],
+  brotas: [-22.2842, -48.1267],
+  "dois corregos": [-22.3667, -48.3822],
+  "barra bonita": [-22.4947, -48.5583],
+  "lencois paulista": [-22.5986, -48.8003],
+  pederneiras: [-22.3517, -48.7753],
+  agudos: [-22.4694, -48.9864],
+  cafelandia: [-21.8028, -49.61],
+  lins: [-21.6786, -49.7425],
+  promissao: [-21.5369, -49.8583],
+  penapolis: [-21.4197, -50.0775],
+  andradina: [-20.8961, -51.3794],
+  "ilha solteira": [-20.4314, -51.3428],
+  "santa fe do sul": [-20.2111, -50.9258],
+  "jose bonifacio": [-21.0528, -49.6883],
+  "novo horizonte": [-21.4681, -49.2208],
+  ibitinga: [-21.7578, -48.8292],
+  itapolis: [-21.5956, -48.8128],
+  itajobi: [-21.3183, -49.0542],
+  "alvares machado": [-22.0792, -51.4719],
+  pirapozinho: [-22.2753, -51.5],
+  tarabai: [-22.3033, -51.5592],
+  martinopolis: [-22.1464, -51.1708],
+  indiana: [-22.1722, -51.2519],
+  "presidente bernardes": [-22.0061, -51.5531],
+  "presidente venceslau": [-21.8761, -51.8439],
+  "presidente epitacio": [-21.7633, -52.1156],
+  caiua: [-21.8319, -51.9881],
+  dracena: [-21.4836, -51.5339],
+  "tupi paulista": [-21.3814, -51.5714],
+  panorama: [-21.3564, -51.8597],
+  adamantina: [-21.6853, -51.0725],
+  "osvaldo cruz": [-21.7969, -50.8789],
+  "paraguacu paulista": [-22.4128, -50.5758],
+  palmital: [-22.7889, -50.2175],
+  "candido mota": [-22.7464, -50.3869],
+  itarare: [-24.1125, -49.3314],
+  itai: [-23.4178, -49.0906],
+  paranapanema: [-23.3886, -48.7228],
+  "aguas de santa barbara": [-22.8811, -49.2414],
+  angatuba: [-23.4906, -48.4128],
+  alambari: [-23.5503, -47.8886],
+  sarapui: [-23.6406, -47.8247],
+  "capela do alto": [-23.4706, -47.7347],
+  "aracoiaba da serra": [-23.5047, -47.6144],
+  "salto de pirapora": [-23.6494, -47.5739],
+  piedade: [-23.7119, -47.4278],
+  "vargem grande paulista": [-23.6028, -47.0258],
+  "pirapora do bom jesus": [-23.3967, -47.0014],
+  aracariguama: [-23.4386, -47.0614],
+  aluminio: [-23.535, -47.2622],
+  igarata: [-23.2044, -46.1561],
+  guararema: [-23.415, -46.0369],
+  "biritiba mirim": [-23.5731, -46.0389],
+  salesopolis: [-23.5322, -45.8464],
+  "sao luiz do paraitinga": [-23.2219, -45.31],
+  cunha: [-23.0744, -44.9597],
+  cruzeiro: [-22.5761, -44.9622],
+  "cachoeira paulista": [-22.6653, -45.0094],
+  jacupiranga: [-24.6939, -48.0022],
+  registro: [-24.4875, -47.8439],
+  "ilha comprida": [-24.7397, -47.5394],
+  iguape: [-24.7081, -47.5553],
+  cananeia: [-25.0147, -47.9267],
+  cubatao: [-23.8953, -46.4253],
+  saltinho: [-22.8461, -47.6761],
+  divinolandia: [-21.6625, -46.7389],
+  "vargem grande do sul": [-21.8292, -46.8939],
+  itobi: [-21.7372, -46.9747],
+  cajuru: [-21.2753, -47.3039],
+  "luis antonio": [-21.5542, -47.7044],
+  guariba: [-21.3592, -48.2283],
+  pitangueiras: [-21.0094, -48.2217],
+  guaraci: [-20.4986, -48.9447],
+  "onda verde": [-20.6128, -49.2989],
+  "nova granada": [-20.5339, -49.3142],
+  potirendaba: [-21.0458, -49.3772],
+  mendonca: [-21.1661, -49.5297],
+  ubarana: [-21.1664, -49.7183],
+  barbosa: [-21.2667, -49.9489],
+  zacarias: [-21.0519, -50.0514],
+  buritama: [-21.0667, -50.1475],
+  "americo de campos": [-20.2989, -49.7314],
+  novais: [-20.9922, -48.9189],
+  guapiacu: [-20.795, -49.2203],
+  ipua: [-20.4378, -48.0122],
 };
 
 // 5 Zonas da Capital para distribuição de lotes da capital sem bairro explícito
@@ -365,6 +498,7 @@ function normalizeStr(s: string): string {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[´`’']/g, "'")
     .trim();
 }
 
@@ -442,26 +576,30 @@ function validateOrResolveCoords(
     return [resolvedLat, resolvedLng];
   }
 
-  // Detecta coordenada placeholder da sede do Superbid (Praça da Sé / Liberdade)
+  // Detecta coordenada placeholder genérica da sede do Superbid (Praça da Sé / Liberdade)
   const isSuperbidDefaultPlaceholder =
-    Math.hypot(rawLat - -23.555771, rawLng - -46.639557) < 0.05 ||
-    Math.hypot(rawLat - -23.55052, rawLng - -46.633309) < 0.05;
+    Math.hypot(rawLat - -23.555771, rawLng - -46.639557) < 0.015 ||
+    Math.hypot(rawLat - -23.55052, rawLng - -46.633309) < 0.015;
 
   const normC = normalizeStr(city);
 
-  // Se a cidade NÃO é São Paulo e a coordenada caiu na Capital de SP, descarta SEMPRE
-  if (
-    normC !== "sao paulo" &&
-    (isSuperbidDefaultPlaceholder ||
-      (rawLat > -23.8 && rawLat < -23.4 && rawLng > -46.8 && rawLng < -46.4))
-  ) {
-    return [resolvedLat, resolvedLng];
+  if (normC !== "sao paulo") {
+    if (isSuperbidDefaultPlaceholder) {
+      return [resolvedLat, resolvedLng];
+    }
+    const cityCoords = findCityCoords(normC);
+    if (
+      cityCoords &&
+      Math.hypot(rawLat - cityCoords[0], rawLng - cityCoords[1]) > 0.35
+    ) {
+      return [resolvedLat, resolvedLng];
+    }
+    return [rawLat, rawLng];
   }
 
   // Se a cidade é São Paulo, caiu no placeholder genérico e temos bairro mapeado, usa o bairro
   const normN = normalizeStr(neighborhood);
   if (
-    normC === "sao paulo" &&
     isSuperbidDefaultPlaceholder &&
     normN &&
     !normN.includes("centro") &&
@@ -505,6 +643,18 @@ function parseBRLNumber(raw?: string | null): number {
   const cleaned = raw.replace(/[^\d,]/g, "").replace(",", ".");
   const val = parseFloat(cleaned);
   return isNaN(val) ? 0 : val;
+}
+
+function extractAreaM2(text?: string | null): number | null {
+  if (!text) return null;
+  const m = text.match(/(\d{1,3}(?:\.\d{3})+(?:,\d+)?|\d+(?:[.,]\d+)?)\s*m[²2]/i);
+  if (!m?.[1]) return null;
+  const raw = m[1];
+  const normalized = raw.includes(",")
+    ? raw.replace(/\./g, "").replace(",", ".")
+    : raw.replace(/\.(?=\d{3}\b)/g, "");
+  const val = Math.round(parseFloat(normalized));
+  return Number.isFinite(val) && val > 0 ? val : null;
 }
 
 function stripTags(html: string): string {
@@ -622,9 +772,28 @@ export async function scrapeMegaLeiloes(uf: string): Promise<ScrapedAuctionLot[]
     }
 
     const localityRaw = stripTags(localityMatch?.[1] || "");
-    const [neighborhoodPart, cityStatePart] = localityRaw.split("·").map((s) => s.trim());
-    const [cityPart, statePart] = (cityStatePart || localityRaw).split("/").map((s) => s.trim());
+    const titleParts = rawTitle.split(" - ").map((s) => s.trim());
 
+    let cityPart = "São Paulo";
+    let statePart = uf.toUpperCase();
+    let neighborhoodPart = "Centro";
+
+    if (localityRaw.includes("·")) {
+      const [nP, csP] = localityRaw.split("·").map((s) => s.trim());
+      const [cP, sP] = (csP || "").split(/[,/]/).map((s) => s.trim());
+      neighborhoodPart = nP || "Centro";
+      cityPart = cP || "São Paulo";
+      statePart = sP || uf.toUpperCase();
+    } else {
+      const [cP, sP] = localityRaw.split(/[,/]/).map((s) => s.trim());
+      if (cP) cityPart = cP;
+      if (sP) statePart = sP;
+      if (titleParts.length >= 4) {
+        neighborhoodPart = titleParts[titleParts.length - 3] || "Centro";
+      }
+    }
+
+    const cleanPropTitle = titleParts[0] || rawTitle;
     const formattedNeighborhood = toTitleCase(neighborhoodPart || "Centro");
     const formattedCity = toTitleCase(cityPart || "São Paulo");
 
@@ -636,10 +805,7 @@ export async function scrapeMegaLeiloes(uf: string): Promise<ScrapedAuctionLot[]
       code
     );
 
-    const areaMatch = rawTitle.match(/(\d+(?:[.,]\d+)?)\s*m²/i);
-    const areaM2 = areaMatch
-      ? Math.round(parseFloat(areaMatch[1].replace(".", "").replace(",", ".")))
-      : null;
+    const areaM2 = extractAreaM2(rawTitle);
 
     results.push({
       id: `ml-${code}`,
@@ -647,7 +813,7 @@ export async function scrapeMegaLeiloes(uf: string): Promise<ScrapedAuctionLot[]
       source: "Mega Leilões",
       sourceUrl,
       imageUrl: imgMatch?.[1] || "",
-      title: `${rawTitle} · ${formattedNeighborhood} (${formattedCity})`,
+      title: `${cleanPropTitle} · ${formattedNeighborhood} (${formattedCity})`,
       address: `${formattedNeighborhood} · ${formattedCity}/${statePart || uf.toUpperCase()}`,
       neighborhood: formattedNeighborhood,
       city: formattedCity,
@@ -688,19 +854,40 @@ export async function scrapeMegaLeiloes(uf: string): Promise<ScrapedAuctionLot[]
 }
 
 export async function scrapePortalZuk(uf: string): Promise<ScrapedAuctionLot[]> {
-  const targetUrl = `https://www.portalzuk.com.br/leilao-de-imoveis/u/todos-imoveis/${uf.toLowerCase()}`;
+  const lc = uf.toLowerCase();
+  const targetUrls =
+    lc === "sp"
+      ? [
+          "https://www.portalzuk.com.br/leilao-de-imoveis/u/todos-imoveis/sp",
+          "https://www.portalzuk.com.br/leilao-de-imoveis/c/todos-imoveis/sp/capital/sao-paulo",
+          "https://www.portalzuk.com.br/leilao-de-imoveis/r/todos-imoveis/sp/grande-sao-paulo",
+          "https://www.portalzuk.com.br/leilao-de-imoveis/r/todos-imoveis/sp/interior",
+          "https://www.portalzuk.com.br/leilao-de-imoveis/r/todos-imoveis/sp/litoral",
+        ]
+      : [`https://www.portalzuk.com.br/leilao-de-imoveis/u/todos-imoveis/${lc}`];
 
-  const res = await fetch(targetUrl, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-    },
-    next: { revalidate: 600 },
-  });
+  const htmlResponses = await Promise.allSettled(
+    targetUrls.map(async (targetUrl) => {
+      const res = await fetch(targetUrl, {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        },
+        next: { revalidate: 600 },
+      });
+      if (!res.ok) return "";
+      return res.text();
+    })
+  );
 
-  if (!res.ok) return [];
-  const html = await res.text();
-  const blocks = html.split('class="card-property card_lotes_div"').slice(1);
+  const blocks: string[] = [];
+  for (const r of htmlResponses) {
+    if (r.status === "fulfilled" && r.value) {
+      blocks.push(...r.value.split('class="card-property card_lotes_div"').slice(1));
+    }
+  }
+
+  const seenUrls = new Set<string>();
   const results: ScrapedAuctionLot[] = [];
 
   for (const b of blocks) {
@@ -720,7 +907,7 @@ export async function scrapePortalZuk(uf: string): Promise<ScrapedAuctionLot[]> 
     const addrBlock = safeB.match(
       /<address class="card-property-address">([\s\S]*?)<\/address>/
     );
-    const areaMatch = safeB.match(/card-property-info-label">([\d.,]+)m²/i);
+    const areaMatch = safeB.match(/card-property-info-label">([\d.,]+\s*m²)/i);
     const priceBlocks = [
       ...safeB.matchAll(
         /card-property-price-value">R\$\s*(?:<span[^>]*>)?([\d.,]+)/g
@@ -729,7 +916,8 @@ export async function scrapePortalZuk(uf: string): Promise<ScrapedAuctionLot[]> 
     const dateBlocks = [...safeB.matchAll(/card-property-price-data">([^<]+)</g)];
 
     const sourceUrl = urlMatch?.[1];
-    if (!sourceUrl) continue;
+    if (!sourceUrl || seenUrls.has(sourceUrl)) continue;
+    seenUrls.add(sourceUrl);
 
     const p1 = parseBRLNumber(priceBlocks[0]?.[1]);
     const p2 = parseBRLNumber(priceBlocks[1]?.[1]);
@@ -753,25 +941,29 @@ export async function scrapePortalZuk(uf: string): Promise<ScrapedAuctionLot[]> 
     const uniqueId = `zuk-${lastPart || code || results.length + 1}`;
     const dashParts = (leftPart || "").split(" - ").map((s) => s.trim());
     const seller = dashParts[dashParts.length - 1] || "Instituição Financeira";
-    const street = dashParts[1] || "";
+    let street = dashParts[1] || "";
 
     let parsedCity = slugCity;
     let parsedNeighborhood = slugNeighborhood;
     if (addrBlock?.[1]) {
-      const addrLine = stripTags(addrBlock[1]);
-      const mCity = addrLine.match(/^([^/]+)\/[A-Z]{2}\s*-\s*(.+)$/);
+      const spans = [
+        ...addrBlock[1].matchAll(/<span[^>]*>([\s\S]*?)<\/span>/gi),
+      ].map((m) => stripTags(m[1]));
+      const firstSpan = spans[0] || stripTags(addrBlock[1]);
+      const mCity = firstSpan.match(/^([^/]+)\/\s*[A-Z]{2}\s*-\s*(.+)$/i);
       if (mCity) {
         parsedCity = mCity[1].trim();
         parsedNeighborhood = mCity[2].trim();
+      }
+      if (spans[1]) {
+        street = spans[1].trim();
       }
     }
 
     const formattedCity = toTitleCase(parsedCity);
     const formattedNeighborhood = toTitleCase(parsedNeighborhood);
     const propType = stripTags(typeMatch?.[1] || "Imóvel");
-    const areaM2 = areaMatch
-      ? Math.round(parseFloat(areaMatch[1].replace(".", "").replace(",", ".")))
-      : null;
+    const areaM2 = extractAreaM2(areaMatch?.[1]);
 
     const rawAuctionDate =
       dateBlocks[1]?.[1]?.trim() || dateBlocks[0]?.[1]?.trim() || "Em aberto";
@@ -923,10 +1115,7 @@ export async function scrapeSuperbidAndSold(uf = "sp"): Promise<ScrapedAuctionLo
       }
 
       const combinedText = `${shortDesc} ${detailedDesc}`;
-      const areaMatch = combinedText.match(/(\d+(?:[.,]\d+)?)\s*m[²2]/i);
-      const areaM2 = areaMatch
-        ? Math.round(parseFloat(areaMatch[1].replace(".", "").replace(",", ".")))
-        : null;
+      const areaM2 = extractAreaM2(combinedText);
 
       const discMatch = combinedText.match(/(\d{1,2})\s*%\s*abaixo/i);
       const discountPct = discMatch
@@ -1044,31 +1233,49 @@ export async function scrapeSodreSantoro(uf = "sp"): Promise<ScrapedAuctionLot[]
             .join("; ")
         : pageRes.headers.get("set-cookie") || "";
 
-    const searchRes = await fetch("https://www.sodresantoro.com.br/api/search-lots", {
-      method: "POST",
-      cache: "no-store",
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        "Content-Type": "application/json",
-        Cookie: cookies,
-        Origin: "https://www.sodresantoro.com.br",
-        Referer: "https://www.sodresantoro.com.br/imoveis/lotes",
-      },
-      body: JSON.stringify({
-        page: 1,
-        perPage: 50,
-        query: {
-          bool: {
-            filter: [{ term: { segment_base: "imoveis" } }],
-          },
-        },
-      }),
-    });
+    const pages = [1, 2];
+    const items: Record<string, any>[] = [];
+    const seenLotIds = new Set<string>();
 
-    if (!searchRes.ok) return [];
-    const data = await searchRes.json();
-    const items = Array.isArray(data?.results) ? data.results : [];
+    for (const page of pages) {
+      const searchRes = await fetch("https://www.sodresantoro.com.br/api/search-lots", {
+        method: "POST",
+        cache: "no-store",
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+          "Content-Type": "application/json",
+          Cookie: cookies,
+          Origin: "https://www.sodresantoro.com.br",
+          Referer: "https://www.sodresantoro.com.br/imoveis/lotes",
+        },
+        body: JSON.stringify({
+          indices: ["imoveis", "judiciais-imoveis"],
+          page,
+          size: 250,
+          query: {
+            bool: {
+              filter: [{ term: { segment_base: "imoveis" } }],
+            },
+          },
+        }),
+      });
+
+      if (!searchRes.ok) break;
+      const data = await searchRes.json();
+      const pageItems = Array.isArray(data?.results) ? data.results : [];
+      for (const it of pageItems) {
+        const lid = String(it.lot_id || it.id || "");
+        if (lid && !seenLotIds.has(lid)) {
+          seenLotIds.add(lid);
+          items.push(it);
+        }
+      }
+      if (!data?.total || items.length >= data.total || pageItems.length === 0) {
+        break;
+      }
+    }
+
     const results: ScrapedAuctionLot[] = [];
 
     for (const item of items) {
@@ -1091,6 +1298,7 @@ export async function scrapeSodreSantoro(uf = "sp"): Promise<ScrapedAuctionLot[]
         continue;
       }
 
+      const desc = stripTags(item.lot_description || "");
       const bidInitial = parseFloat(item.bid_initial || item.bid_actual || "0");
       const secondPracaVal = parseFloat(item.tj_praca_value || "0");
       const minBid =
@@ -1099,28 +1307,36 @@ export async function scrapeSodreSantoro(uf = "sp"): Promise<ScrapedAuctionLot[]
           : Math.round(bidInitial);
       if (!minBid || minBid < 20000) continue;
 
+      const evalMatch = desc.match(/avalia[çc][ãa]o(?:\s+atualizada)?\s*:\s*R\$\s*([\d.,]+)/i);
+      const parsedEval = evalMatch ? parseBRLNumber(evalMatch[1]) : 0;
+      const highestKnownValue = Math.max(bidInitial, secondPracaVal, parsedEval);
+
+      const marketValue =
+        highestKnownValue > minBid
+          ? Math.round(highestKnownValue)
+          : Math.round(minBid * 1.45);
+
       const discountPct = item.tj_praca_discount
         ? parseInt(String(item.tj_praca_discount), 10)
-        : secondPracaVal > 0 && bidInitial > secondPracaVal
-        ? Math.round((1 - secondPracaVal / bidInitial) * 100)
+        : marketValue > minBid
+        ? Math.round((1 - minBid / marketValue) * 100)
         : 0;
-      const marketValue =
-        bidInitial > minBid ? Math.round(bidInitial) : Math.round(minBid * 1.35);
 
       const rawCity = String(item.lot_city || "São Paulo").trim();
       const rawNeigh = String(item.lot_neighborhood || "").trim();
       const normRawCity = normalizeStr(rawCity);
 
-      // No Sodré Santoro, às vezes lot_city vem preenchido com um bairro da Capital (ex: "santo amaro")
+      // No Sodré Santoro, apenas "santo amaro" (antiga comarca/subprefeitura) aparece no campo lot_city
       const isSpNeighborhoodAsCity =
-        Boolean(SP_CAPITAL_NEIGHBORHOOD_COORDS[normRawCity]) &&
-        !Boolean(SP_CITIES_COORDS[normRawCity]);
+        normRawCity === "santo amaro" ||
+        (Boolean(SP_CAPITAL_NEIGHBORHOOD_COORDS[normRawCity]) &&
+          !Boolean(SP_CITIES_COORDS[normRawCity]));
 
       const city = isSpNeighborhoodAsCity
         ? "São Paulo"
         : toTitleCase(rawCity || "São Paulo");
       const neighborhood = isSpNeighborhoodAsCity
-        ? toTitleCase(rawCity)
+        ? toTitleCase(rawNeigh || rawCity)
         : toTitleCase(rawNeigh || "Centro");
 
       const street = item.lot_street ? toTitleCase(item.lot_street) : "";
@@ -1139,11 +1355,7 @@ export async function scrapeSodreSantoro(uf = "sp"): Promise<ScrapedAuctionLot[]
       }
       const [lat, lng] = validateOrResolveCoords(rawLat, rawLng, neighborhood, city, "SP", code);
 
-      const desc = stripTags(item.lot_description || "");
-      const areaMatch = desc.match(/(\d+(?:[.,]\d+)?)\s*m²/i);
-      const areaM2 = areaMatch
-        ? Math.round(parseFloat(areaMatch[1].replace(".", "").replace(",", ".")))
-        : null;
+      const areaM2 = extractAreaM2(desc);
       const matMatch = desc.match(/matr[íi]cula\s*n?[º°]?\s*([\d.]+[^,.;\n]{0,40})/i);
 
       const rawDate = item.lot_date_end || item.auction_date_2 || item.auction_date_end || "";
