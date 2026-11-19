@@ -1483,7 +1483,7 @@ export default function LeilaoComIaPage() {
                     </span>
                     <span className="text-[#CBD5E1]">|</span>
                     <span className="hidden sm:inline text-[#64748B]">
-                      Mega, Zuk, Superbid & Sold
+                      Mega, Zuk, Superbid, Sold &amp; Sodré
                     </span>
                   </>
                 )}
@@ -3145,7 +3145,7 @@ export default function LeilaoComIaPage() {
                   Consolidação Multileiloeiro e Filtro de 2ª Praça
                 </h4>
                 <p className="text-xs text-[#475569] leading-relaxed">
-                  Varredura diária de editais judiciais (TJSP e TRTs) e extrajudiciais de instituições financeiras (Lei nº 9.514/97) no Mega Leilões, Portal Zuk, Superbid e Sold, priorizando lotes em 2ª praça com deságio real de 40% a 60% abaixo da avaliação.
+                  Varredura diária de editais judiciais (TJSP e TRTs) e extrajudiciais de instituições financeiras (Lei nº 9.514/97) no Mega Leilões, Portal Zuk, Superbid, Sold e Sodré Santoro, priorizando lotes em 2ª praça com deságio real de 40% a 60% abaixo da avaliação.
                 </p>
               </div>
 
@@ -3281,6 +3281,17 @@ export default function LeilaoComIaPage() {
                 </p>
               </div>
             </div>
+          </div>
+
+          {/* AVISO LEGAL E PREVENÇÃO A FRAUDES */}
+          <div className="pt-6 border-t border-[#E2E8F0] flex items-start gap-2.5 text-[11px] text-[#64748B] leading-relaxed">
+            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <p>
+              <strong className="text-[#334155]">
+                Aviso importante e prevenção a fraudes:
+              </strong>{" "}
+              Os dados, valores, datas e estimativas exibidos são coletados automaticamente e estão sujeitos a divergências ou atualizações. Verifique sempre o edital e a página oficial do leiloeiro antes de realizar qualquer cadastro ou ofertar um lance. Certifique-se da autenticidade do portal e do registro ativo do leiloeiro na Junta Comercial (JUCESP) para evitar sites falsos e fraudes.
+            </p>
           </div>
         </div>
       </section>

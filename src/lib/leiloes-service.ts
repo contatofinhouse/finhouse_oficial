@@ -52,7 +52,7 @@ export interface DailySnapshot {
   lots: ScrapedAuctionLot[];
 }
 
-const SNAPSHOT_VERSION = 3;
+const SNAPSHOT_VERSION = 4;
 const DAILY_TTL_MS = 24 * 60 * 60 * 1000;
 
 // Cache volátil em memória (Node.js process level)
@@ -1023,20 +1023,219 @@ export async function scrapeSuperbidAndSold(uf = "sp"): Promise<ScrapedAuctionLo
   }
 }
 
+export async function scrapeSodreSantoro(uf = "sp"): Promise<ScrapedAuctionLot[]> {
+  if (uf.toLowerCase() !== "sp") return [];
+
+  try {
+    const pageRes = await fetch("https://www.sodresantoro.com.br/imoveis/lotes", {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      },
+      next: { revalidate: 600 },
+    });
+
+    const getSetCookie = (pageRes.headers as unknown as { getSetCookie?: () => string[] }).getSetCookie;
+    const cookies =
+      typeof getSetCookie === "function"
+        ? getSetCookie
+            .call(pageRes.headers)
+            .map((c: string) => c.split(";")[0])
+            .join("; ")
+        : pageRes.headers.get("set-cookie") || "";
+
+    const searchRes = await fetch("https://www.sodresantoro.com.br/api/search-lots", {
+      method: "POST",
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Content-Type": "application/json",
+        Cookie: cookies,
+        Origin: "https://www.sodresantoro.com.br",
+        Referer: "https://www.sodresantoro.com.br/imoveis/lotes",
+      },
+      body: JSON.stringify({
+        page: 1,
+        perPage: 50,
+        query: {
+          bool: {
+            filter: [{ term: { segment_base: "imoveis" } }],
+          },
+        },
+      }),
+    });
+
+    if (!searchRes.ok) return [];
+    const data = await searchRes.json();
+    const items = Array.isArray(data?.results) ? data.results : [];
+    const results: ScrapedAuctionLot[] = [];
+
+    for (const item of items) {
+      const auctionSt = String(item.auction_status || "").toLowerCase();
+      const lotSt = String(item.lot_status || "").toLowerCase();
+      if (
+        auctionSt.includes("encerrad") ||
+        auctionSt.includes("fechad") ||
+        lotSt.includes("vendid") ||
+        lotSt.includes("encerrad") ||
+        lotSt.includes("sustad") ||
+        lotSt.includes("suspens")
+      ) {
+        continue;
+      }
+
+      const st = (item.lot_state || "").toLowerCase();
+      const loc = (item.lot_location || "").toLowerCase();
+      if (!st.includes("paulo") && st !== "sp" && !loc.includes("/ sp")) {
+        continue;
+      }
+
+      const bidInitial = parseFloat(item.bid_initial || item.bid_actual || "0");
+      const secondPracaVal = parseFloat(item.tj_praca_value || "0");
+      const minBid =
+        secondPracaVal > 0 && secondPracaVal < bidInitial
+          ? Math.round(secondPracaVal)
+          : Math.round(bidInitial);
+      if (!minBid || minBid < 20000) continue;
+
+      const discountPct = item.tj_praca_discount
+        ? parseInt(String(item.tj_praca_discount), 10)
+        : secondPracaVal > 0 && bidInitial > secondPracaVal
+        ? Math.round((1 - secondPracaVal / bidInitial) * 100)
+        : 0;
+      const marketValue =
+        bidInitial > minBid ? Math.round(bidInitial) : Math.round(minBid * 1.35);
+
+      const rawCity = String(item.lot_city || "São Paulo").trim();
+      const rawNeigh = String(item.lot_neighborhood || "").trim();
+      const normRawCity = normalizeStr(rawCity);
+
+      // No Sodré Santoro, às vezes lot_city vem preenchido com um bairro da Capital (ex: "santo amaro")
+      const isSpNeighborhoodAsCity =
+        Boolean(SP_CAPITAL_NEIGHBORHOOD_COORDS[normRawCity]) &&
+        !Boolean(SP_CITIES_COORDS[normRawCity]);
+
+      const city = isSpNeighborhoodAsCity
+        ? "São Paulo"
+        : toTitleCase(rawCity || "São Paulo");
+      const neighborhood = isSpNeighborhoodAsCity
+        ? toTitleCase(rawCity)
+        : toTitleCase(rawNeigh || "Centro");
+
+      const street = item.lot_street ? toTitleCase(item.lot_street) : "";
+      const code = `SS-${item.lot_id || item.id}`;
+
+      let rawLat: number | null = null;
+      let rawLng: number | null = null;
+      if (typeof item.lot_coordinates === "string" && item.lot_coordinates.includes(",")) {
+        const [cLat, cLng] = item.lot_coordinates
+          .split(",")
+          .map((s: string) => parseFloat(s.trim()));
+        if (Number.isFinite(cLat) && Number.isFinite(cLng)) {
+          rawLat = cLat;
+          rawLng = cLng;
+        }
+      }
+      const [lat, lng] = validateOrResolveCoords(rawLat, rawLng, neighborhood, city, "SP", code);
+
+      const desc = stripTags(item.lot_description || "");
+      const areaMatch = desc.match(/(\d+(?:[.,]\d+)?)\s*m²/i);
+      const areaM2 = areaMatch
+        ? Math.round(parseFloat(areaMatch[1].replace(".", "").replace(",", ".")))
+        : null;
+      const matMatch = desc.match(/matr[íi]cula\s*n?[º°]?\s*([\d.]+[^,.;\n]{0,40})/i);
+
+      const rawDate = item.lot_date_end || item.auction_date_2 || item.auction_date_end || "";
+      let auctionDate = "Em aberto";
+      if (typeof rawDate === "string" && rawDate.includes("-")) {
+        const [dPart, tPart] = rawDate.split(" ");
+        const [yyyy, mm, dd] = (dPart || "").split("-");
+        if (yyyy && mm && dd) {
+          auctionDate = `${dd}/${mm}/${yyyy}${tPart ? ` às ${tPart.slice(0, 5)}` : ""}`;
+        }
+      }
+      if (!isAuctionUpcoming(auctionDate)) continue;
+
+      const isJudicial = Boolean(item.lot_is_judicial);
+      const seller = toTitleCase(item.client_name || "Sodré Santoro");
+      const sourceUrl = `https://leilao.sodresantoro.com.br/leilao/${item.auction_id}/lote/${item.lot_id}/`;
+      const imageUrl =
+        Array.isArray(item.lot_pictures) && item.lot_pictures[0] ? item.lot_pictures[0] : "";
+
+      results.push({
+        id: `ss-${item.lot_id || item.id}`,
+        code,
+        source: "Sodré Santoro",
+        sourceUrl,
+        imageUrl,
+        title: `${toTitleCase(item.lot_category || "Imóvel")}${
+          areaM2 ? ` ${areaM2}m²` : ""
+        } · ${neighborhood} (${city})`,
+        address: street
+          ? `${street} — ${neighborhood}, ${city}/SP`
+          : `${neighborhood} · ${city}/SP`,
+        neighborhood,
+        city,
+        state: "SP",
+        lat,
+        lng,
+        marketValue,
+        minBid,
+        discountPct,
+        modality: isJudicial ? "Leilão Judicial" : `Extrajudicial · ${seller}`,
+        seller,
+        auctionDate,
+        areaM2,
+        acceptsFinancing: !isJudicial,
+        occupancy: (item.lot_occupied || "").toLowerCase().includes("desocupad")
+          ? "Desocupado"
+          : "Ver no Edital",
+        riskLevel: !isJudicial ? "baixo" : "medio",
+        riskScore: !isJudicial ? 90 : 80,
+        aiSummary: desc.slice(0, 420) || `Lote oficial Sodré Santoro em ${city}/SP.`,
+        aiChecklist: {
+          debts: isJudicial
+            ? "Leilão Judicial Sodré Santoro: IPTU sub-roga no preço da arrematação (Art. 130 CTN)."
+            : "Verificar regras do comitente vendedor no edital para IPTU e condomínio.",
+          matriculaStatus: matMatch
+            ? `Extraído da descrição: Matrícula ${matMatch[1].trim()}.`
+            : "Matrícula e edital disponíveis na página oficial do lote.",
+          paymentRule: isJudicial
+            ? "À vista ou parcelamento judicial conforme Art. 895 do CPC."
+            : "À vista ou financiamento conforme condições de venda.",
+          lawyerAlert: item.lot_judicial_process
+            ? `Processo Judicial nº ${item.lot_judicial_process} (${toTitleCase(
+                item.lot_judicial_court || "TJSP"
+              )}): recomendada revisão dos autos antes do lance.`
+            : "Recomendada conferência das condições de venda e posse antes do lance.",
+        },
+        documentsRead: [{ label: "Edital e Ficha Oficial (Sodré Santoro)", url: sourceUrl }],
+      });
+    }
+
+    return results;
+  } catch (err) {
+    console.warn("[Scraper] Aviso ao raspar Sodré Santoro:", err);
+    return [];
+  }
+}
+
 /**
- * Executa a raspagem unificada (Mega Leilões, Portal Zuk, Superbid & Sold) com deduplicação e dispersão espacial
+ * Executa a raspagem unificada (Mega Leilões, Portal Zuk, Superbid, Sold & Sodré Santoro) com deduplicação e dispersão espacial
  */
 export async function runDailyScrape(uf = "sp"): Promise<ScrapedAuctionLot[]> {
-  const [megaLots, zukLots, sbSoldLots] = await Promise.allSettled([
+  const [megaLots, zukLots, sbSoldLots, sodreLots] = await Promise.allSettled([
     scrapeMegaLeiloes(uf),
     scrapePortalZuk(uf),
     scrapeSuperbidAndSold(uf),
+    scrapeSodreSantoro(uf),
   ]);
 
   const rawCombined: ScrapedAuctionLot[] = [
     ...(zukLots.status === "fulfilled" ? zukLots.value : []),
     ...(megaLots.status === "fulfilled" ? megaLots.value : []),
     ...(sbSoldLots.status === "fulfilled" ? sbSoldLots.value : []),
+    ...(sodreLots.status === "fulfilled" ? sodreLots.value : []),
   ];
 
   const seenIds = new Set<string>();

@@ -17,7 +17,7 @@ export default function Footer() {
                             <span className="text-[17px] font-bold text-[#222]">finHouse. <span className="text-[14px] font-medium text-[#717171] uppercase tracking-[0.2em] ml-2 underline decoration-amber-400 decoration-2 underline-offset-4">VENDE E ALUGA MELHOR.</span></span>
                         </div>
                         <p className="text-[14px] text-[#717171] leading-relaxed max-w-sm">
-                            Seu portal de imóveis e assessoria em financiamentos. Curadoria de imóveis e soluções de crédito com inteligência e transparência.
+                            Seu portal de imóveis e assessoria em financiamentos e leilões. Curadoria de imóveis e soluções de crédito com inteligência e transparência.
                         </p>
                     </div>
                     <div>
@@ -67,10 +67,13 @@ export default function Footer() {
                 </div>
 
                 <div className="border-t border-[#ebebeb] pt-8 flex flex-col items-center gap-4">
-                    <div className="max-w-2xl text-center">
-                        <p className="text-[12px] text-[#b0b0b0] leading-relaxed">
+                    <div className="max-w-3xl text-center space-y-2">
+                        <p className="text-[12px] text-[#8a8a8a] leading-relaxed">
                             finHouse · CNPJ: 60.806.192/0001-50<br />
-                            A finHouse é um correspondente bancário e não uma instituição financeira. Não cobramos qualquer taxa ou comissão de nossos clientes.
+                            A finHouse é um correspondente bancário e plataforma de inteligência imobiliária, não sendo uma instituição financeira ou leiloeiro oficial.
+                        </p>
+                        <p className="text-[11px] text-[#9a9a9a] leading-relaxed">
+                            <strong>Aviso importante e prevenção a fraudes:</strong> Os dados, valores, datas e análises de leilões são automatizados e passíveis de erro ou atualização. Verifique sempre o edital e a página oficial do leiloeiro antes de efetuar cadastro ou ofertar qualquer lance. Certifique-se da autenticidade do site e do registro oficial do leiloeiro na Junta Comercial (JUCESP) para evitar fraudes.
                         </p>
                     </div>
                     <p className="text-[11px] text-[#ddd] font-medium tracking-widest lowercase underline decoration-[#eee] underline-offset-4">© {new Date().getFullYear()} finHouse · vende melhor.</p>
