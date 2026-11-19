@@ -33,7 +33,7 @@ import {
 import type { ScrapedAuctionLot } from "@/app/api/leiloes/route";
 
 const WA_NUMBER = "5511955842951";
-const DOSSIE_PRICE = "R$ 49,90";
+const DOSSIE_PRICE = "R$ 59,90 / 6 meses";
 
 const formatBRL = (value: number) =>
   new Intl.NumberFormat("pt-BR", {
@@ -2598,7 +2598,7 @@ export default function LeilaoComIaPage() {
                     onClick={() => setModalMode("lawyer")}
                     className="flex-1 py-2.5 px-3 rounded-xl bg-[#1E293B] text-white font-semibold text-xs cursor-pointer text-center"
                   >
-                    Abater meus R$ 49,90 na Due Diligence com Advogado Parceiro
+                    Abater meus R$ 59,90 na Due Diligence com Advogado Parceiro
                   </button>
                   <button
                     type="button"
