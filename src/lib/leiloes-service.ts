@@ -55,7 +55,7 @@ export interface DailySnapshot {
   lots: ScrapedAuctionLot[];
 }
 
-const SNAPSHOT_VERSION = 7;
+const SNAPSHOT_VERSION = 8;
 const DAILY_TTL_MS = 24 * 60 * 60 * 1000;
 
 // Cache volátil em memória (Node.js process level)
@@ -1122,10 +1122,15 @@ export async function scrapeSuperbidAndSold(uf = "sp"): Promise<ScrapedAuctionLo
       const sellerName = stripTags(o.seller?.name || o.store?.name || "Comitente Superbid");
       const storeName = (o.store?.name || "").toUpperCase();
 
+      const auctionDesc = String(o.auction?.desc || "").toLowerCase();
+      const auctioneerName = String(o.auction?.auctioneer || "").toLowerCase();
+
       if (
         !shortDesc ||
         shortDesc.toLowerCase().includes("teste") ||
-        sellerName.toLowerCase().includes("demo")
+        sellerName.toLowerCase().includes("demo") ||
+        auctionDesc.includes("demo") ||
+        auctioneerName.includes("demo")
       ) {
         continue;
       }
@@ -1213,6 +1218,29 @@ export async function scrapeSuperbidAndSold(uf = "sp"): Promise<ScrapedAuctionLo
       }
 
       const sourceUrl = `https://www.superbid.net/oferta/${o.id}`;
+      const sbAttachments: { label: string; url: string }[] = [];
+      if (Array.isArray(o.product?.attachments)) {
+        for (const att of o.product.attachments) {
+          if (att?.link && typeof att.link === "string") {
+            const fname = String(att.originalFileName || "Anexo Oficial").trim();
+            const label = /mat/i.test(fname)
+              ? `Matrícula (${fname})`
+              : /edital/i.test(fname)
+              ? `Edital (${fname})`
+              : fname;
+            sbAttachments.push({ label, url: att.link });
+          }
+        }
+      }
+      sbAttachments.push({ label: `Ficha Oficial (${source})`, url: sourceUrl });
+
+      const combinedLower = combinedText.toLowerCase();
+      const sbOccupancy: "Desocupado" | "Ocupado" | "Ver no Edital" =
+        combinedLower.includes("desocupad")
+          ? "Desocupado"
+          : combinedLower.includes("ocupad")
+          ? "Ocupado"
+          : "Ver no Edital";
 
       results.push({
         id: `sb-${o.id}`,
@@ -1234,11 +1262,13 @@ export async function scrapeSuperbidAndSold(uf = "sp"): Promise<ScrapedAuctionLo
         seller: sellerName,
         auctionDate,
         areaM2,
-        acceptsFinancing: !isJudicial,
-        occupancy: shortDesc.toLowerCase().includes("desocupado") ? "Desocupado" : "Ver no Edital",
+        acceptsFinancing: !isJudicial || combinedLower.includes("financiado"),
+        occupancy: sbOccupancy,
         riskLevel: isJudicial ? "medio" : "baixo",
         riskScore: isJudicial ? 82 : 91,
-        aiSummary: `Oportunidade ofertada via ${source} por ${sellerName} em ${cityClean}/SP.`,
+        aiSummary: detailedDesc
+          ? detailedDesc.slice(0, 420)
+          : `Oportunidade ofertada via ${source} por ${sellerName} em ${cityClean}/SP.`,
         aiChecklist: {
           debts: isJudicial
             ? "Leilão Judicial: IPTU sub-roga no preço (Art. 130 CTN); verificar débitos condominiais no edital."
@@ -1249,7 +1279,7 @@ export async function scrapeSuperbidAndSold(uf = "sp"): Promise<ScrapedAuctionLo
             : "À vista ou condições facilitadas de parcelamento do comitente vendedor.",
           lawyerAlert: "Recomenda-se prévia diligência jurídica e vistoria externa antes da oferta.",
         },
-        documentsRead: [{ label: `Ficha Oficial (${source})`, url: sourceUrl }],
+        documentsRead: sbAttachments,
       });
     }
 

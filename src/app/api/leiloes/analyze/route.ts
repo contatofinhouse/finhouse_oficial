@@ -20,6 +20,105 @@ function stripTags(html: string): string {
 }
 
 async function scrapeLotDetailPage(sourceUrl: string) {
+  const seenUrls = new Set<string>();
+  const documentsRead: { label: string; url: string }[] = [];
+
+  // 1. Caso Superbid / Sold Leilões (SPA -> consulta direta na API offer-query)
+  const sbMatch = sourceUrl.match(/superbid\.net\/oferta\/(\d+)/i);
+  if (sbMatch?.[1]) {
+    const sbRes = await fetch(
+      `https://offer-query.superbid.net/offers/?portalId=[2,15]&filter=id:${sbMatch[1]}`,
+      {
+        headers: {
+          Accept: "application/json",
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        },
+      }
+    );
+    if (sbRes.ok) {
+      const sbData = await sbRes.json().catch(() => ({}));
+      const offer = sbData?.offers?.[0];
+      if (offer) {
+        if (Array.isArray(offer.product?.attachments)) {
+          for (const att of offer.product.attachments) {
+            if (att?.link && !seenUrls.has(att.link)) {
+              seenUrls.add(att.link);
+              const fname = String(att.originalFileName || "Anexo Oficial").trim();
+              documentsRead.push({
+                label: /mat/i.test(fname) ? "Matrícula do Imóvel" : fname,
+                url: att.link,
+              });
+            }
+          }
+        }
+        if (documentsRead.length === 0) {
+          documentsRead.push({ label: "Página Oficial e Edital", url: sourceUrl });
+        }
+        const desc = stripTags(
+          `${offer.offerDescription?.offerDescription || ""} ${
+            offer.product?.detailedDescription || ""
+          }`
+        ).slice(0, 7500);
+        return {
+          legalText: desc,
+          documentsRead,
+          exactLat: null,
+          exactLng: null,
+          exactAuctionDate: null,
+          lotImage: offer.product?.thumbnailUrl || null,
+        };
+      }
+    }
+  }
+
+  // 2. Caso Sodré Santoro (consulta API de anexos e condições de venda)
+  const ssMatch = sourceUrl.match(/sodresantoro\.com\.br\/leilao\/(\d+)\/lote\/(\d+)/i);
+  if (ssMatch?.[1]) {
+    const auctionId = ssMatch[1];
+    const [attRes, condRes] = await Promise.allSettled([
+      fetch(
+        `https://prd-api.sodresantoro.com.br/api/v1/site/attachments?auctionId=${auctionId}`,
+        { headers: { "User-Agent": "Mozilla/5.0" } }
+      ),
+      fetch(
+        `https://prd-api.sodresantoro.com.br/api/v1/site/conditions-of-sale?auctionId=${auctionId}`,
+        { headers: { "User-Agent": "Mozilla/5.0" } }
+      ),
+    ]);
+    let condText = "";
+    if (attRes.status === "fulfilled" && attRes.value.ok) {
+      const attData = await attRes.value.json().catch(() => ({}));
+      if (Array.isArray(attData?.data)) {
+        for (const a of attData.data) {
+          if (a?.link && !seenUrls.has(a.link)) {
+            seenUrls.add(a.link);
+            documentsRead.push({
+              label: a.name || "Edital e Condições",
+              url: a.link,
+            });
+          }
+        }
+      }
+    }
+    if (condRes.status === "fulfilled" && condRes.value.ok) {
+      const condData = await condRes.value.json().catch(() => ({}));
+      if (condData?.data?.text) {
+        condText = stripTags(condData.data.text).slice(0, 7500);
+      }
+    }
+    if (documentsRead.length === 0) {
+      documentsRead.push({ label: "Página Oficial e Edital", url: sourceUrl });
+    }
+    return {
+      legalText: condText,
+      documentsRead,
+      exactLat: null,
+      exactLng: null,
+      exactAuctionDate: null,
+      lotImage: null,
+    };
+  }
+
   const res = await fetch(sourceUrl, {
     headers: {
       "User-Agent":
@@ -31,7 +130,23 @@ async function scrapeLotDetailPage(sourceUrl: string) {
     throw new Error(`Não foi possível acessar a página do leilão (${res.status})`);
   }
 
-  const html = await res.text();
+  let html = await res.text();
+
+  // Se for Frazão Leilões, anexa o HTML de /Sale/LotDocs para capturar Edital, Matrícula e Laudo
+  const frazaoDocsMatch = html.match(
+    /id="LotDocs"[^>]*data-leilao-id="(\d+)"[^>]*data-lote-id="(\d+)"/i
+  );
+  if (frazaoDocsMatch?.[1] && frazaoDocsMatch?.[2]) {
+    try {
+      const fzRes = await fetch(
+        `https://www.frazaoleiloes.com.br/Sale/LotDocs?loteId=${frazaoDocsMatch[2]}&leilaoId=${frazaoDocsMatch[1]}`,
+        { headers: { "User-Agent": "Mozilla/5.0" } }
+      );
+      if (fzRes.ok) {
+        html += "\n" + (await fzRes.text());
+      }
+    } catch {}
+  }
 
   // Extrai links reais de PDFs (Edital, Matrícula, Laudo) priorizando o texto âncora e nome real
   const anchorMatches = [
@@ -40,13 +155,12 @@ async function scrapeLotDetailPage(sourceUrl: string) {
     ),
   ];
 
-  const seenUrls = new Set<string>();
-  const documentsRead: { label: string; url: string }[] = [];
-
   for (const match of anchorMatches) {
-    const rawUrl = match[1];
+    const rawUrl = match[1].replace(/&amp;/g, "&").trim();
     const fullUrl = rawUrl.startsWith("http")
       ? rawUrl
+      : rawUrl.startsWith("//")
+      ? `https:${rawUrl}`
       : new URL(rawUrl, sourceUrl).toString();
 
     const lower = fullUrl.toLowerCase();

@@ -51,12 +51,16 @@ export interface DeepDossierReport {
 const globalDossierCache = new Map<string, DeepDossierReport>();
 
 function stripTags(html: string): string {
-  return html
+  return (html || "")
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
     .replace(/<style[\s\S]*?<\/style>/gi, " ")
     .replace(/<[^>]*>/g, " ")
+    .replace(/&#(\d+);/g, (_, d) => String.fromCharCode(Number(d)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCharCode(parseInt(h, 16)))
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
+    .replace(/&#039;/g, "'")
+    .replace(/&quot;/g, '"')
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -65,9 +69,10 @@ async function fetchPdfBase64IfPossible(
   pdfUrl: string
 ): Promise<string | null> {
   try {
+    const cleanUrl = pdfUrl.replace(/&amp;/g, "&").trim();
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 7000);
-    const res = await fetch(pdfUrl, {
+    const timeout = setTimeout(() => controller.abort(), 4500);
+    const res = await fetch(cleanUrl, {
       signal: controller.signal,
       headers: {
         "User-Agent":
@@ -77,11 +82,11 @@ async function fetchPdfBase64IfPossible(
     clearTimeout(timeout);
     if (!res.ok) return null;
     const contentType = res.headers.get("content-type") || "";
-    if (!contentType.includes("pdf") && !pdfUrl.toLowerCase().includes(".pdf")) {
+    if (!contentType.includes("pdf") && !cleanUrl.toLowerCase().includes(".pdf")) {
       return null;
     }
     const arrayBuffer = await res.arrayBuffer();
-    if (arrayBuffer.byteLength < 500 || arrayBuffer.byteLength > 8 * 1024 * 1024) {
+    if (arrayBuffer.byteLength < 500 || arrayBuffer.byteLength > 5 * 1024 * 1024) {
       return null;
     }
     return Buffer.from(arrayBuffer).toString("base64");
@@ -91,9 +96,107 @@ async function fetchPdfBase64IfPossible(
 }
 
 async function scrapePageAndDocs(sourceUrl: string) {
+  const docs: { label: string; url: string }[] = [];
+  const seen = new Set<string>();
+  const addDoc = (rawLabel: string, rawUrl: string) => {
+    const cleanUrl = rawUrl.replace(/&amp;/g, "&").trim();
+    if (!cleanUrl) return;
+    const fullUrl = cleanUrl.startsWith("http")
+      ? cleanUrl
+      : cleanUrl.startsWith("//")
+      ? `https:${cleanUrl}`
+      : new URL(cleanUrl, sourceUrl).toString();
+    if (seen.has(fullUrl) || fullUrl.toLowerCase().includes("privacidade")) {
+      return;
+    }
+    seen.add(fullUrl);
+    let label = stripTags(rawLabel || "").trim();
+    if (!label || label.length > 56) label = "Documento PDF";
+    if (/edital/i.test(fullUrl) || /edital/i.test(label)) {
+      label = "Edital do Leilão";
+    } else if (/matr/i.test(fullUrl) || /matr/i.test(label)) {
+      label = "Matrícula do Imóvel";
+    } else if (/laudo/i.test(fullUrl) || /laudo/i.test(label)) {
+      label = "Laudo de Avaliação";
+    } else if (/iptu|d[ée]bito/i.test(label)) {
+      label = "Demonstrativo de Débitos / IPTU";
+    }
+    docs.push({ label, url: fullUrl });
+  };
+
   try {
+    // 1. Caso Superbid / Sold Leilões (SPA -> consulta direta na API oficial offer-query em ~150ms)
+    const sbMatch = sourceUrl.match(/superbid\.net\/oferta\/(\d+)/i);
+    if (sbMatch?.[1]) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 4500);
+      const res = await fetch(
+        `https://offer-query.superbid.net/offers/?portalId=[2,15]&filter=id:${sbMatch[1]}`,
+        {
+          signal: controller.signal,
+          headers: {
+            Accept: "application/json",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          },
+        }
+      );
+      clearTimeout(timeout);
+      if (res.ok) {
+        const data = await res.json();
+        const offer = data?.offers?.[0];
+        if (offer) {
+          if (Array.isArray(offer.product?.attachments)) {
+            for (const att of offer.product.attachments) {
+              if (att?.link) {
+                addDoc(att.originalFileName || "Matrícula / Anexo PDF", att.link);
+              }
+            }
+          }
+          const desc = stripTags(
+            `${offer.offerDescription?.offerDescription || ""} ${
+              offer.product?.detailedDescription || ""
+            }`
+          ).slice(0, 6500);
+          return { legalText: desc, docs };
+        }
+      }
+    }
+
+    // 2. Caso Sodré Santoro (consulta API de anexos e condições de venda do leilão)
+    const ssMatch = sourceUrl.match(/sodresantoro\.com\.br\/leilao\/(\d+)\/lote\/(\d+)/i);
+    if (ssMatch?.[1]) {
+      const auctionId = ssMatch[1];
+      const [attRes, condRes] = await Promise.allSettled([
+        fetch(
+          `https://prd-api.sodresantoro.com.br/api/v1/site/attachments?auctionId=${auctionId}`,
+          { headers: { "User-Agent": "Mozilla/5.0" } }
+        ),
+        fetch(
+          `https://prd-api.sodresantoro.com.br/api/v1/site/conditions-of-sale?auctionId=${auctionId}`,
+          { headers: { "User-Agent": "Mozilla/5.0" } }
+        ),
+      ]);
+      let condText = "";
+      if (attRes.status === "fulfilled" && attRes.value.ok) {
+        const attData = await attRes.value.json().catch(() => ({}));
+        if (Array.isArray(attData?.data)) {
+          for (const a of attData.data) {
+            if (a?.link) addDoc(a.name || "Edital / Anexo", a.link);
+          }
+        }
+      }
+      if (condRes.status === "fulfilled" && condRes.value.ok) {
+        const condData = await condRes.value.json().catch(() => ({}));
+        if (condData?.data?.text) {
+          condText = stripTags(condData.data.text).slice(0, 5000);
+        }
+      }
+      return { legalText: condText, docs };
+    }
+
+    // 3. Demais Leiloeiros (HTML SSR: Mega Leilões, Portal Zuk, Biasi, Frazão, Grupo Lance)
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
+    const timeout = setTimeout(() => controller.abort(), 5500);
     const res = await fetch(sourceUrl, {
       signal: controller.signal,
       headers: {
@@ -105,37 +208,44 @@ async function scrapePageAndDocs(sourceUrl: string) {
     if (!res.ok) return { legalText: "", docs: [] };
 
     const html = await res.text();
-    const docs: { label: string; url: string }[] = [];
-    const seen = new Set<string>();
 
+    // Se for Frazão Leilões, busca o endpoint /Sale/LotDocs com todos os PDFs (Edital, Matrícula, IPTU, Laudo)
+    const frazaoDocsMatch = html.match(
+      /id="LotDocs"[^>]*data-leilao-id="(\d+)"[^>]*data-lote-id="(\d+)"/i
+    );
+    if (frazaoDocsMatch?.[1] && frazaoDocsMatch?.[2]) {
+      try {
+        const fzRes = await fetch(
+          `https://www.frazaoleiloes.com.br/Sale/LotDocs?loteId=${frazaoDocsMatch[2]}&leilaoId=${frazaoDocsMatch[1]}`,
+          { headers: { "User-Agent": "Mozilla/5.0" } }
+        );
+        if (fzRes.ok) {
+          const fzHtml = await fzRes.text();
+          for (const fm of fzHtml.matchAll(
+            /<a[^>]*href=["']([^"']+\.pdf(?:\?[^"']*)?)["'][^>]*>([\s\S]*?)<\/a>/gi
+          )) {
+            addDoc(fm[2], fm[1]);
+          }
+        }
+      } catch {}
+    }
+
+    // Links <a href="...pdf">
     const matches = [
       ...html.matchAll(
         /<a[^>]*href=["']([^"']+\.pdf(?:\?[^"']*)?)["'][^>]*>([\s\S]*?)<\/a>/gi
       ),
     ];
-
     for (const m of matches) {
-      const rawUrl = m[1];
-      const fullUrl = rawUrl.startsWith("http")
-        ? rawUrl
-        : new URL(rawUrl, sourceUrl).toString();
-      if (
-        seen.has(fullUrl) ||
-        fullUrl.toLowerCase().includes("privacidade")
-      ) {
-        continue;
-      }
-      seen.add(fullUrl);
-      const anchor = stripTags(m[2] || "").trim();
-      let label = anchor && anchor.length < 48 ? anchor : "Documento PDF";
-      if (/edital/i.test(fullUrl) || /edital/i.test(label)) {
-        label = "Edital do Leilão";
-      } else if (/matr/i.test(fullUrl) || /matr/i.test(label)) {
-        label = "Matrícula do Imóvel";
-      } else if (/laudo/i.test(fullUrl) || /laudo/i.test(label)) {
-        label = "Laudo de Avaliação";
-      }
-      docs.push({ label, url: fullUrl });
+      addDoc(m[2], m[1]);
+    }
+
+    // Links diretos .pdf soltos no HTML (ex: CloudFront Portal Zuk ou CDNs)
+    const rawPdfUrls = [
+      ...html.matchAll(/(?:https?:)?\/\/[^"'\s<>]+\.pdf(?:\?[^"'\s<>]*)?/gi),
+    ].map((m) => m[0]);
+    for (const rawPdf of rawPdfUrls) {
+      addDoc(rawPdf.split("/").pop()?.split("?")[0] || "Edital PDF", rawPdf);
     }
 
     const semIdx = html.indexOf("semelhantes");
@@ -192,33 +302,68 @@ Texto extraído da página/edital: """${legalText.slice(0, 4800)}"""`;
     let modelLabel = "Leitura da página e regras do Edital";
 
     if (options.openRouterKey) {
-      const model = options.openRouterModel || "deepseek/deepseek-chat";
-      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${options.openRouterKey}`,
-          "HTTP-Referer": "https://www.finhouse.com.br",
-          "X-Title": "finHouse Leilao com IA",
-        },
-        body: JSON.stringify({
-          model,
-          temperature: 0.15,
-          response_format: { type: "json_object" },
-          messages: [
+      const model = options.openRouterModel || "google/gemini-2.5-flash";
+      const userContent = pdfBase64
+        ? [
+            { type: "text", text: prompt },
             {
-              role: "system",
-              content:
-                "Você é um auditor jurídico-imobiliário especialista em leilões no Estado de São Paulo. Responda estritamente em JSON válido, sem markdown.",
+              type: "file",
+              file: {
+                filename: "edital_matricula_lote.pdf",
+                file_data: `data:application/pdf;base64,${pdfBase64}`,
+              },
             },
-            { role: "user", content: prompt },
-          ],
-        }),
-      });
+          ]
+        : prompt;
+
+      const callOpenRouter = async (contentPayload: unknown, withPlugin: boolean) => {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 14000);
+        try {
+          return await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            signal: controller.signal,
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${options.openRouterKey}`,
+              "HTTP-Referer": "https://www.finhouse.com.br",
+              "X-Title": "finHouse Leilao com IA",
+            },
+            body: JSON.stringify({
+              model,
+              temperature: 0.15,
+              response_format: { type: "json_object" },
+              ...(withPlugin
+                ? { plugins: [{ id: "file-parser", pdf: { engine: "pdf-text" } }] }
+                : {}),
+              messages: [
+                {
+                  role: "system",
+                  content:
+                    "Você é um auditor jurídico-imobiliário especialista em leilões no Estado de São Paulo. Responda estritamente em JSON válido, sem markdown.",
+                },
+                { role: "user", content: contentPayload },
+              ],
+            }),
+          });
+        } finally {
+          clearTimeout(timeout);
+        }
+      };
+
+      const isNativeMultimodal = /gemini|claude|gpt-4o/i.test(model);
+      let res = await callOpenRouter(userContent, Boolean(pdfBase64 && !isNativeMultimodal));
+      if (!res.ok && pdfBase64) {
+        // Fallback rápido sem o anexo binário caso o PDF seja escaneado/grande demais para o parser de texto
+        res = await callOpenRouter(prompt, false);
+      }
+
       if (res.ok) {
         const data = await res.json();
         raw = data?.choices?.[0]?.message?.content || "";
-        modelLabel = `Análise Jurídica IA (${model})`;
+        modelLabel = pdfBase64
+          ? `Leitura completa de PDF e Edital (${model})`
+          : `Análise Jurídica IA (${model})`;
       }
     }
 
@@ -580,7 +725,7 @@ export async function POST(req: Request) {
     const geminiKey = process.env.GEMINI_API_KEY?.trim() || "";
     const openRouterKey = process.env.OPENROUTER_API_KEY?.trim() || "";
     const openRouterModel =
-      process.env.OPENROUTER_MODEL?.trim() || "deepseek/deepseek-chat";
+      process.env.OPENROUTER_MODEL?.trim() || "google/gemini-2.5-flash";
     let usedAiModel = "Baseado nos dados do lote e edital";
     let finalMatrix = defaultMatrix;
     let headline = `${prelim.verdictLabel} · Margem projetada de ${sim.scenarios.minBid.netMarginPct}% no lance mínimo`;
@@ -616,13 +761,16 @@ export async function POST(req: Request) {
     };
 
     if (openRouterKey || geminiKey) {
-      const firstPdfUrl = mergedDocs.find((d) =>
-        d.url.toLowerCase().includes(".pdf")
-      )?.url;
-      const pdfBase64 =
-        geminiKey && !openRouterKey && firstPdfUrl
-          ? await fetchPdfBase64IfPossible(firstPdfUrl)
-          : null;
+      const priorityPdfDoc =
+        mergedDocs.find(
+          (d) =>
+            d.url.toLowerCase().includes(".pdf") &&
+            /edital|matr/i.test(d.label)
+        ) ||
+        mergedDocs.find((d) => d.url.toLowerCase().includes(".pdf"));
+      const pdfBase64 = priorityPdfDoc
+        ? await fetchPdfBase64IfPossible(priorityPdfDoc.url)
+        : null;
 
       const [aiEnhanced, webValuation] = await Promise.all([
         legalText.length > 80 || mergedDocs.length > 0
