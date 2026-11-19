@@ -23,7 +23,9 @@ function PremiumAnaliseLotContent() {
   const auditSteps = [
     "Localizando dados e documentos públicos do leilão",
     "Estruturando matriz jurídica (rito, débitos, ocupação e matrícula)",
-    "Calculando Lance Teto, reforma SP e cenários de viabilidade",
+    "Estimando valor de mercado no bairro e custos de aquisição (ITBI e cartório)",
+    "Projetando custos de reforma (CUB/SINAPI-SP) e prazo de giro",
+    "Calculando Lance Teto recomendado e cenários de viabilidade líquida",
   ];
 
   useEffect(() => {
@@ -31,7 +33,7 @@ function PremiumAnaliseLotContent() {
 
     const timer = setInterval(() => {
       setStepIdx((prev) => (prev < auditSteps.length - 1 ? prev + 1 : prev));
-    }, 1200);
+    }, 1600);
 
     async function loadOrGenerateDossier() {
       try {
