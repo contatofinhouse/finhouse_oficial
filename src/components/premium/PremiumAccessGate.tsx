@@ -9,7 +9,6 @@ import {
   Mail,
   MessageCircle,
   ShieldCheck,
-  Sparkles,
   ArrowLeft,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -135,8 +134,8 @@ export default function PremiumAccessGate({
                 finHouse
               </span>
             </Link>
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/70">
-              <Sparkles className="w-3 h-3" />
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/70">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
               15 dias grátis
             </span>
           </div>
@@ -363,3 +362,4 @@ export default function PremiumAccessGate({
     </>
   );
 }
+
