@@ -396,6 +396,7 @@ export default function LeilaoComIaPage() {
   const [filterHighDiscount, setFilterHighDiscount] = useState(false);
   const [filterSecondStageOnly, setFilterSecondStageOnly] = useState(false);
   const [filterCity, setFilterCity] = useState<string>("");
+  const [filterSource, setFilterSource] = useState<string>("");
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [minValue, setMinValue] = useState<string>("");
   const [maxValue, setMaxValue] = useState<string>("");
@@ -409,6 +410,17 @@ export default function LeilaoComIaPage() {
     }
     return Array.from(citySet).sort((a, b) =>
       a.localeCompare(b, "pt-BR", { sensitivity: "base" })
+    );
+  }, [lots]);
+
+  const availableSources = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const lot of lots) {
+      const src = (lot.source || "").trim();
+      if (src) counts.set(src, (counts.get(src) || 0) + 1);
+    }
+    return Array.from(counts.entries()).sort((a, b) =>
+      a[0].localeCompare(b[0], "pt-BR", { sensitivity: "base" })
     );
   }, [lots]);
 
@@ -499,11 +511,12 @@ export default function LeilaoComIaPage() {
     if (filterHighDiscount) count++;
     if (filterSecondStageOnly) count++;
     if (filterCity) count++;
+    if (filterSource) count++;
     if (minValue) count++;
     if (maxValue) count++;
     if (filterFavoritesOnly) count++;
     return count;
-  }, [filterFinancing, filterHighDiscount, filterSecondStageOnly, filterCity, minValue, maxValue, filterFavoritesOnly]);
+  }, [filterFinancing, filterHighDiscount, filterSecondStageOnly, filterCity, filterSource, minValue, maxValue, filterFavoritesOnly]);
 
   // Referência da coluna de detalhes para resetar scroll ao topo
   const rightColumnRef = useRef<HTMLDivElement | null>(null);
@@ -633,20 +646,24 @@ export default function LeilaoComIaPage() {
       return copy.sort((a, b) => b.discountPct - a.discountPct);
     };
 
-    // 1. Aplica filtros base (Valor, Financiamento, Super Desconto, 2ª Praça e Favoritos)
+    // 1. Aplica filtros base (Valor, Financiamento, ROI > 18%, 2ª Praça, Cidade, Leiloeiro e Favoritos)
     const baseLots = lots.filter((lot) => {
       const matchesFinancing = !filterFinancing || lot.acceptsFinancing;
-      const matchesDiscount = !filterHighDiscount || lot.discountPct >= 35;
+      const matchesRoi18 =
+        !filterHighDiscount || computeLotViability(lot).netRoiPct > 18;
       const matchesSecondStage = !filterSecondStageOnly || isLotSecondStage(lot);
       const matchesCity = !filterCity || (lot.city || "").trim() === filterCity;
+      const matchesSource =
+        !filterSource || (lot.source || "").trim() === filterSource;
       const matchesFavorite = !filterFavoritesOnly || Boolean(favorites[lot.id]);
       const matchesMin = isNaN(minNum) || minNum === 0 || lot.minBid >= minNum;
       const matchesMax = isNaN(maxNum) || maxNum === Infinity || lot.minBid <= maxNum;
       return (
         matchesFinancing &&
-        matchesDiscount &&
+        matchesRoi18 &&
         matchesSecondStage &&
         matchesCity &&
+        matchesSource &&
         matchesFavorite &&
         matchesMin &&
         matchesMax
@@ -766,6 +783,7 @@ export default function LeilaoComIaPage() {
     filterHighDiscount,
     filterSecondStageOnly,
     filterCity,
+    filterSource,
     filterFavoritesOnly,
     favorites,
     minValue,
@@ -1307,6 +1325,7 @@ export default function LeilaoComIaPage() {
                     setFilterHighDiscount(false);
                     setFilterSecondStageOnly(false);
                     setFilterCity("");
+                    setFilterSource("");
                     setFilterFavoritesOnly(false);
                     setMinValue("");
                     setMaxValue("");
@@ -2878,10 +2897,10 @@ export default function LeilaoComIaPage() {
               </div>
             </div>
 
-            {/* 3. Desconto Mínimo */}
+            {/* 3. Retorno Estimado */}
             <div className="space-y-2">
               <label className="text-xs font-bold uppercase tracking-wider text-[#475569]">
-                Desconto sobre Avaliação
+                Retorno Estimado
               </label>
               <div className="grid grid-cols-2 gap-2">
                 <button
@@ -2892,7 +2911,7 @@ export default function LeilaoComIaPage() {
                       : "bg-white text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1]"
                     }`}
                 >
-                  Qualquer Desconto
+                  Qualquer Retorno
                 </button>
                 <button
                   type="button"
@@ -2903,12 +2922,31 @@ export default function LeilaoComIaPage() {
                     }`}
                 >
                   <Percent className="w-3.5 h-3.5" />
-                  <span>Super Desconto (+35%)</span>
+                  <span>Retorno estimado acima 18%</span>
                 </button>
               </div>
             </div>
 
-            {/* 4. Cidade */}
+            {/* 4. Leiloeiro */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase tracking-wider text-[#475569]">
+                Leiloeiro ({availableSources.length})
+              </label>
+              <select
+                value={filterSource}
+                onChange={(e) => setFilterSource(e.target.value)}
+                className="w-full px-3 py-2 text-xs bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl text-[#0F172A] focus:outline-none focus:border-[#0F3B78] cursor-pointer"
+              >
+                <option value="">Todos os Leiloeiros</option>
+                {availableSources.map(([src, cnt]) => (
+                  <option key={src} value={src}>
+                    {src} ({cnt})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* 5. Cidade */}
             <div className="space-y-2">
               <label className="text-xs font-bold uppercase tracking-wider text-[#475569]">
                 Cidade ({availableCities.length})
@@ -2927,7 +2965,7 @@ export default function LeilaoComIaPage() {
               </select>
             </div>
 
-            {/* 5. Faixa de Preço (Lance Mínimo) */}
+            {/* 6. Faixa de Preço (Lance Mínimo) */}
             <div className="space-y-2">
               <label className="text-xs font-bold uppercase tracking-wider text-[#475569]">
                 Faixa de Preço (Lance Mínimo)
@@ -2984,6 +3022,7 @@ export default function LeilaoComIaPage() {
                   setFilterHighDiscount(false);
                   setFilterSecondStageOnly(false);
                   setFilterCity("");
+                  setFilterSource("");
                   setFilterFavoritesOnly(false);
                   setMinValue("");
                   setMaxValue("");
