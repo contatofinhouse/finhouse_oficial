@@ -412,6 +412,87 @@ export default function LeilaoComIaPage() {
     );
   }, [lots]);
 
+  const [showAllCitiesBelow, setShowAllCitiesBelow] = useState(false);
+
+  const cityMarketStats = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        city: string;
+        count: number;
+        secondStageCount: number;
+        maxDiscount: number;
+        minPrice: number;
+        lat: number;
+        lng: number;
+      }
+    >();
+
+    for (const lot of lots) {
+      const city = (lot.city || "").trim();
+      if (!city) continue;
+      const existing = map.get(city);
+      const isSecond = isLotSecondStage(lot);
+      if (!existing) {
+        map.set(city, {
+          city,
+          count: 1,
+          secondStageCount: isSecond ? 1 : 0,
+          maxDiscount: lot.discountPct || 0,
+          minPrice: lot.minBid || 0,
+          lat: lot.lat,
+          lng: lot.lng,
+        });
+      } else {
+        existing.count += 1;
+        if (isSecond) existing.secondStageCount += 1;
+        if ((lot.discountPct || 0) > existing.maxDiscount) {
+          existing.maxDiscount = lot.discountPct;
+        }
+        if (lot.minBid > 0 && (existing.minPrice === 0 || lot.minBid < existing.minPrice)) {
+          existing.minPrice = lot.minBid;
+        }
+      }
+    }
+
+    return Array.from(map.values()).sort(
+      (a, b) => b.count - a.count || a.city.localeCompare(b.city, "pt-BR")
+    );
+  }, [lots]);
+
+  const handleSelectCityFromHub = (
+    cityName: string,
+    coords?: { lat: number; lng: number }
+  ) => {
+    hasUserInteractedRef.current = true;
+    const isSame = filterCity === cityName;
+    const nextCity = isSame ? "" : cityName;
+    setFilterCity(nextCity);
+
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    if (mapInstanceRef.current) {
+      try {
+        if (!nextCity) {
+          mapInstanceRef.current.setView([-23.5505, -46.6333], 9, {
+            animate: true,
+          });
+        } else if (coords && Number.isFinite(coords.lat) && Number.isFinite(coords.lng)) {
+          const zoom =
+            nextCity.toLowerCase() === "são paulo" ||
+            nextCity.toLowerCase() === "sao paulo"
+              ? 11
+              : 12;
+          mapInstanceRef.current.setView([coords.lat, coords.lng], zoom, {
+            animate: true,
+          });
+        }
+      } catch {}
+    }
+  };
+
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (filterFinancing) count++;
@@ -2931,6 +3012,278 @@ export default function LeilaoComIaPage() {
           <span>{toastMessage}</span>
         </div>
       )}
+
+      {/* ─── CENTRAL REGIONAL DE LEILÕES SP, METODOLOGIA & GUIA TÉCNICO ─── */}
+      <section className="bg-white border-t border-[#E2E8F0] py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1440px] mx-auto space-y-12">
+          {/* BLOCO 1: RADAR REGIONAL POR CIDADE (DADOS EM TEMPO REAL DA BASE SP) */}
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+              <div>
+                <div className="text-[11px] font-bold uppercase tracking-wider text-[#0F3B78]">
+                  Radar Municipal · Estado de São Paulo
+                </div>
+                <h2 className="text-lg sm:text-xl font-bold tracking-[-0.02em] text-[#0F172A] mt-0.5">
+                  Explorar Leilões de Imóveis por Cidade em SP
+                </h2>
+                <p className="text-xs text-[#64748B] mt-0.5">
+                  Selecione um município para centralizar o mapa, filtrar os lotes ativos e comparar preços mínimos e descontos de 2ª praça.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {filterCity && (
+                  <button
+                    type="button"
+                    onClick={() => handleSelectCityFromHub(filterCity)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors cursor-pointer"
+                  >
+                    Limpar filtro ({filterCity})
+                  </button>
+                )}
+                {cityMarketStats.length > 12 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllCitiesBelow((v) => !v)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold text-[#0F2744] bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#CBD5E1] transition-colors cursor-pointer"
+                  >
+                    {showAllCitiesBelow
+                      ? "Mostrar principais polos (12)"
+                      : `Ver todas as ${cityMarketStats.length} cidades`}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
+              {(showAllCitiesBelow
+                ? cityMarketStats
+                : cityMarketStats.slice(0, 12)
+              ).map((item) => {
+                const isSelectedCity = filterCity === item.city;
+                return (
+                  <button
+                    key={item.city}
+                    type="button"
+                    onClick={() =>
+                      handleSelectCityFromHub(item.city, {
+                        lat: item.lat,
+                        lng: item.lng,
+                      })
+                    }
+                    className={`text-left p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                      isSelectedCity
+                        ? "bg-[#0F2744] text-white border-[#0F2744] shadow-sm"
+                        : "bg-[#F8FAFC] hover:bg-white text-[#0F172A] border-[#E2E8F0] hover:border-[#0F2744]/40 hover:shadow-xs"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-1.5">
+                      <span className="text-xs font-bold leading-snug line-clamp-1">
+                        {item.city}
+                      </span>
+                      <span
+                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 tabular-nums ${
+                          isSelectedCity
+                            ? "bg-white/15 text-white"
+                            : "bg-white text-[#0F2744] border border-[#E2E8F0]"
+                        }`}
+                      >
+                        {item.count} {item.count === 1 ? "lote" : "lotes"}
+                      </span>
+                    </div>
+
+                    <div className="space-y-0.5">
+                      <div
+                        className={`text-[11px] font-semibold tabular-nums ${
+                          isSelectedCity ? "text-slate-200" : "text-[#334155]"
+                        }`}
+                      >
+                        {item.minPrice > 0
+                          ? `A partir de ${formatBRL(item.minPrice)}`
+                          : "Consultar edital"}
+                      </div>
+                      <div
+                        className={`text-[10px] font-medium ${
+                          isSelectedCity
+                            ? "text-emerald-300"
+                            : item.maxDiscount > 0
+                            ? "text-emerald-700"
+                            : "text-[#64748B]"
+                        }`}
+                      >
+                        {item.maxDiscount > 0
+                          ? `Até -${item.maxDiscount}% · ${item.secondStageCount} em 2ª praça`
+                          : `${item.secondStageCount} em 2ª praça`}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* BLOCO 2: METODOLOGIA DE VIABILIDADE & AUDITORIA FINHOUSE (3 PILARES TÉCNICOS) */}
+          <div className="pt-8 border-t border-[#E2E8F0] space-y-4">
+            <div>
+              <div className="text-[11px] font-bold uppercase tracking-wider text-[#0F3B78]">
+                Metodologia Proprietária
+              </div>
+              <h3 className="text-base sm:text-lg font-bold tracking-[-0.02em] text-[#0F172A] mt-0.5">
+                Como a Inteligência finHouse Calcula Viabilidade e Risco em Leilões
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-5 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#0F3B78]">
+                    01 · Monitoramento &amp; Triagem
+                  </span>
+                  <Compass className="w-4 h-4 text-[#0F2744]" />
+                </div>
+                <h4 className="text-sm font-bold text-[#0F172A]">
+                  Consolidação Multileiloeiro e Filtro de 2ª Praça
+                </h4>
+                <p className="text-xs text-[#475569] leading-relaxed">
+                  Varredura diária de editais judiciais (TJSP e TRTs) e extrajudiciais de instituições financeiras (Lei nº 9.514/97) no Mega Leilões, Portal Zuk, Superbid e Sold, priorizando lotes em 2ª praça com deságio real de 40% a 60% abaixo da avaliação.
+                </p>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#0F3B78]">
+                    02 · Auditoria Jurídica (Semáforo)
+                  </span>
+                  <Scale className="w-4 h-4 text-[#0F2744]" />
+                </div>
+                <h4 className="text-sm font-bold text-[#0F172A]">
+                  Matriz de Risco em 8 Pontos do Edital e Matrícula
+                </h4>
+                <p className="text-xs text-[#475569] leading-relaxed">
+                  Inspeção estruturada de sub-rogação de IPTU (Art. 130, parágrafo único, do CTN), responsabilidade por passivo de condomínio (<em>propter rem</em>), situação ocupacional (imissão na posse), penhoras/usufruto na matrícula e blindagem da arrematação (Art. 903 do CPC).
+                </p>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#0F3B78]">
+                    03 · Engenharia Reversa (DRE SP)
+                  </span>
+                  <BarChart3 className="w-4 h-4 text-[#0F2744]" />
+                </div>
+                <h4 className="text-sm font-bold text-[#0F172A]">
+                  Cálculo Reverso de Lance Teto e Margem Líquida
+                </h4>
+                <p className="text-xs text-[#475569] leading-relaxed">
+                  Partimos do valor de mercado real no bairro (FipeZAP/ITBI SP com quartis P25–P75) e deduzimos comissão de 5% do leiloeiro, ITBI municipal, registro no CRI-SP, reforma CUB/SINAPI, vacância, corretagem (6%) e IR (15%) para cravar seu Lance Teto seguro.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* BLOCO 3: GUIA TÉCNICO (FAQ APROFUNDADO) + ACESSO PREMIUM 15 DIAS GRÁTIS */}
+          <div className="pt-8 border-t border-[#E2E8F0] grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <div className="lg:col-span-8 space-y-3">
+              <div>
+                <div className="text-[11px] font-bold uppercase tracking-wider text-[#0F3B78]">
+                  Guia Técnico de Arrematação
+                </div>
+                <h3 className="text-base sm:text-lg font-bold tracking-[-0.02em] text-[#0F172A] mt-0.5">
+                  Perguntas Frequentes sobre Leilão de Imóveis em São Paulo
+                </h3>
+              </div>
+
+              <div className="divide-y divide-[#E2E8F0] border border-[#E2E8F0] rounded-2xl bg-[#F8FAFC]/60 overflow-hidden">
+                {[
+                  {
+                    q: "Como calcular o Lance Teto para não perder margem na disputa do leilão?",
+                    a: "O Lance Teto deve ser calculado de trás para frente: parta do valor conservador de liquidez do imóvel no bairro (P25/Mediana FipeZAP) e subtraia a margem líquida alvo (ex.: 18%), comissão do leiloeiro (5% sobre o lance), ITBI (2% a 3% em SP), escritura/registro no Cartório de Registro de Imóveis, custo de reforma por m² (CUB/SINAPI-SP), meses de condomínio/IPTU durante o giro, corretagem de venda (6%) e Imposto de Renda sobre ganho de capital (15%). No Módulo Premium finHouse esse cálculo é atualizado em tempo real.",
+                  },
+                  {
+                    q: "Qual a diferença prática entre Leilão Judicial e Leilão Extrajudicial de Bancos?",
+                    a: "O Leilão Judicial decorre de processo cível, trabalhista ou execução fiscal (regido pelo Art. 881 e seguintes do CPC), geralmente oferecendo 50% ou 60% de desconto na 2ª praça e sub-rogação de IPTU no preço (Art. 130 do CTN). Já o Leilão Extrajudicial decorre na maioria dos casos de consolidação de propriedade por alienação fiduciária (Lei nº 9.514/97), costuma ter trâmite cartorário mais ágil e frequentemente aceita financiamento bancário ou parcelamento direto.",
+                  },
+                  {
+                    q: "Quem responde pelas dívidas de IPTU e condomínio anteriores à arrematação?",
+                    a: "Para o IPTU, o Art. 130, parágrafo único, do Código Tributário Nacional determina que nos leilões judiciais os créditos tributários sub-rogam-se no preço pago, entregando o imóvel livre de IPTU pretérito (salvo disposição expressa em contrário em leilões extrajudiciais). Já a dívida de condomínio tem natureza propter rem: se o edital prever expressamente que o passivo condominial corre por conta do arrematante, esse valor deve ser integralmente abatido do seu Lance Teto.",
+                  },
+                  {
+                    q: "Como funciona a desocupação de imóvel ocupado adquirido em leilão?",
+                    a: "Mais de 85% dos imóveis em leilão encontram-se ocupados — exatamente o que gera o deságio de 40% a 50%. Na alienação fiduciária (Lei nº 9.514/97, Art. 30), a lei prevê liminar de reintegração de posse em 60 dias após o registro. Em leilão judicial, o próprio juiz do processo expede o mandado de imissão na posse (Art. 901, § 1º, do CPC). Na prática, acordos amigáveis de saída costumam resolver a posse entre 30 e 90 dias.",
+                  },
+                  {
+                    q: "Por que a avaliação do edital às vezes difere do valor real de mercado no bairro?",
+                    a: "Em processos judiciais antigos, o laudo de avaliação pode ter sido homologado há anos (ficando defasado) ou pode ter avaliado a área total do terreno sem refletir a liquidez real da tipologia. Por isso o Dossiê finHouse confronta automaticamente a avaliação do edital com o R$/m² real do bairro (faixa P25, Mediana e P75 FipeZAP/SP) e sinaliza distorções superiores a 25%.",
+                  },
+                ].map((item) => (
+                  <details key={item.q} className="group px-5 py-3.5 text-xs">
+                    <summary className="font-bold text-[#0F172A] cursor-pointer list-none flex items-center justify-between gap-3">
+                      <span>{item.q}</span>
+                      <span className="w-5 h-5 rounded-full bg-white border border-[#E2E8F0] text-[#475569] flex items-center justify-center shrink-0 group-open:rotate-45 transition-transform font-semibold">
+                        +
+                      </span>
+                    </summary>
+                    <p className="text-[#475569] mt-2.5 leading-relaxed">
+                      {item.a}
+                    </p>
+                  </details>
+                ))}
+              </div>
+            </div>
+
+            {/* CARD LATERAL DE CONVERSÃO: MÓDULO PREMIUM (15 DIAS GRÁTIS) */}
+            <div className="lg:col-span-4 rounded-2xl bg-[#0F2744] text-white p-6 space-y-4 shadow-sm">
+              <div className="flex items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-white/10 text-emerald-300 border border-white/15">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  15 dias de teste grátis
+                </span>
+                <span className="text-[11px] text-slate-300">Sem cartão</span>
+              </div>
+
+              <div className="space-y-1.5">
+                <h4 className="text-base font-bold tracking-[-0.01em] text-white">
+                  Screener Profissional &amp; Dossiês de Viabilidade SP
+                </h4>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Acesse a tabela completa dos {lots.length || 500}+ lotes ativos em SP com cálculo automático de Lance Teto, ROI líquido e matriz jurídica.
+                </p>
+              </div>
+
+              <ul className="space-y-2 text-xs text-slate-200 pt-1">
+                {[
+                  "3 dossiês completos inéditos por dia (cache = 0 crédito)",
+                  "Semáforo jurídico em 8 pontos (edital, IPTU, condomínio e posse)",
+                  "Simulador de Lance Teto com reforma CUB/SINAPI-SP e faixa P25–P75",
+                  "Comparador lado a lado de até 3 lotes + Exportação CSV e PDF",
+                ].map((feat) => (
+                  <li key={feat} className="flex items-start gap-2">
+                    <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                    <span>{feat}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="pt-2 space-y-2">
+                <Link
+                  href="/leilaocom-ia/premium"
+                  className="w-full py-3 px-4 rounded-xl bg-white hover:bg-slate-100 text-[#0F2744] font-bold text-xs flex items-center justify-center gap-2 transition-colors"
+                >
+                  <span>
+                    {hasActiveUserTrial
+                      ? "Acessar Painel Premium Agora"
+                      : "Liberar 15 Dias Grátis com Google"}
+                  </span>
+                  <ChevronRight className="w-4 h-4" />
+                </Link>
+                <p className="text-[11px] text-center text-slate-300">
+                  Após os 15 dias: {DOSSIE_PRICE} (sem cobrança automática)
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ─── FOOTER OFICIAL FINHOUSE (RESPALDO INSTITUCIONAL) ─── */}
       <Footer />
