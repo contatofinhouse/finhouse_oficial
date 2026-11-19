@@ -19,11 +19,10 @@ export interface ReformaLevelSpec {
 export const REFORMA_SP_TABLE: Record<ReformaLevel, ReformaLevelSpec> = {
   0: {
     level: 0,
-    label: "Nível 0 — Sem Reforma / Limpeza",
+    label: "Nível 0 — Sem Reforma",
     shortLabel: "Sem Reforma",
-    description:
-      "Apenas limpeza pesada pós-desocupação, troca de fechadura e pequenos reparos.",
-    costPerM2: { Econômico: 60, Médio: 90, AAA: 140 },
+    description: "Sem reforma prevista (custo zero de obra).",
+    costPerM2: { Econômico: 0, Médio: 0, AAA: 0 },
   },
   1: {
     level: 1,

@@ -826,7 +826,7 @@ export default function DossierFullView({
               <div className="bg-[#F8FAFC] rounded-lg p-3.5 border border-[#E2E8F0] space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-medium text-[#334155]">
-                    2. Padrão de Reforma ({sim.propertyTier})
+                    2. Padrão de Reforma
                   </label>
                   <span className="text-xs font-semibold text-[#0F172A]">
                     {formatBRL(sim.reformaCost)}
@@ -866,8 +866,8 @@ export default function DossierFullView({
                       {holdingMonths} meses
                     </span>
                   </div>
-                  <div className="grid grid-cols-4 gap-1.5">
-                    {[6, 9, 12, 18].map((m) => (
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {[6, 9, 12].map((m) => (
                       <button
                         key={m}
                         onClick={() => setHoldingMonths(m)}
@@ -892,8 +892,8 @@ export default function DossierFullView({
                       {targetMarginPct}%
                     </span>
                   </div>
-                  <div className="grid grid-cols-4 gap-1.5">
-                    {[12, 15, 18, 22].map((pct) => (
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {[15, 18, 22].map((pct) => (
                       <button
                         key={pct}
                         onClick={() => setTargetMarginPct(pct)}
