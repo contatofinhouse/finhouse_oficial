@@ -7,6 +7,9 @@ export interface ScrapedAuctionLot {
     | "Superbid"
     | "Sold Leilões"
     | "Sodré Santoro"
+    | "Biasi Leilões"
+    | "Frazão Leilões"
+    | "Grupo Lance"
     | "Banco do Brasil"
     | "Caixa";
   sourceUrl: string;

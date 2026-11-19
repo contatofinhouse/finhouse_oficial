@@ -11,6 +11,9 @@ export interface ScrapedAuctionLot {
     | "Superbid"
     | "Sold Leilões"
     | "Sodré Santoro"
+    | "Biasi Leilões"
+    | "Frazão Leilões"
+    | "Grupo Lance"
     | "Banco do Brasil"
     | "Caixa";
   sourceUrl: string;
@@ -52,7 +55,7 @@ export interface DailySnapshot {
   lots: ScrapedAuctionLot[];
 }
 
-const SNAPSHOT_VERSION = 6;
+const SNAPSHOT_VERSION = 7;
 const DAILY_TTL_MS = 24 * 60 * 60 * 1000;
 
 // Cache volátil em memória (Node.js process level)
@@ -222,6 +225,38 @@ const SP_CAPITAL_NEIGHBORHOOD_COORDS: Record<string, [number, number]> = {
   "cidade dutra": [-23.7112, -46.6989],
   grajau: [-23.7489, -46.6889],
   parelheiros: [-23.7889, -46.7112],
+  "vila regente feijo": [-23.5608, -46.5689],
+  "vila albertina": [-23.4539, -46.6128],
+  "jardim tiete": [-23.5912, -46.4712],
+  "vila guarani": [-23.6358, -46.6389],
+  "chacara california": [-23.5358, -46.5589],
+  "vila suzana": [-23.6169, -46.7404],
+  "vila gomes cardim": [-23.5489, -46.5689],
+  "jardim ipanema": [-23.4558, -46.7312],
+  "vila basileia": [-23.4858, -46.6412],
+  "jardim vergueiro": [-23.6489, -46.7312],
+  "parque peruche": [-23.4958, -46.6489],
+  "vila nelson": [-23.5289, -46.5312],
+  "jardim luisa": [-23.6589, -46.7589],
+  "jardim barro branco": [-23.4689, -46.6189],
+  "jardim comercial": [-23.6689, -46.7689],
+  "jardim ampliacao": [-23.6189, -46.7312],
+  "jardim oriental": [-23.6439, -46.6389],
+  "jardim rosa maria": [-23.5812, -46.7589],
+  "vila das merces": [-23.6212, -46.6089],
+  "vila gustavo": [-23.4812, -46.5989],
+  "vila sarah": [-23.5858, -46.7612],
+  "jardim sarah": [-23.5858, -46.7612],
+  "vila feliz": [-23.5989, -46.5289],
+  "vila joao batista": [-23.4758, -46.6889],
+  "parque ramos freitas": [-23.4658, -46.6289],
+  "lauzane paulista": [-23.4758, -46.6489],
+  "vila ida": [-23.5412, -46.7112],
+  "vila clara": [-23.6589, -46.6489],
+  "parque sao luis": [-23.4912, -46.7189],
+  "jardim angela": [-23.6889, -46.7689],
+  "jardim ibitirama": [-23.5912, -46.5712],
+  "vila primavera": [-23.5989, -46.5389],
 };
 
 const SP_CITIES_COORDS: Record<string, [number, number]> = {
@@ -477,6 +512,16 @@ const SP_CITIES_COORDS: Record<string, [number, number]> = {
   novais: [-20.9922, -48.9189],
   guapiacu: [-20.795, -49.2203],
   ipua: [-20.4378, -48.0122],
+  "sao manuel": [-22.7311, -48.5706],
+  "palmeira d'oeste": [-20.4158, -50.7619],
+  piratininga: [-22.4139, -49.135],
+  piracaia: [-23.0539, -46.3581],
+  orlandia: [-20.7203, -47.8867],
+  "valentim gentil": [-20.4222, -50.0881],
+  jardinopolis: [-21.0178, -47.7639],
+  juquia: [-24.3169, -47.6369],
+  "monte mor": [-22.9467, -47.315],
+  araruama: [-22.8728, -42.3431],
 };
 
 // 5 Zonas da Capital para distribuição de lotes da capital sem bairro explícito
@@ -658,11 +703,14 @@ function extractAreaM2(text?: string | null): number | null {
 }
 
 function stripTags(html: string): string {
-  return html
+  return (html || "")
     .replace(/<[^>]*>/g, " ")
+    .replace(/&#(\d+);/g, (_, d) => String.fromCharCode(Number(d)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCharCode(parseInt(h, 16)))
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
     .replace(/&#039;/g, "'")
+    .replace(/&apos;/g, "'")
     .replace(/&quot;/g, '"')
     .replace(/\s+/g, " ")
     .trim();
@@ -1433,15 +1481,554 @@ export async function scrapeSodreSantoro(uf = "sp"): Promise<ScrapedAuctionLot[]
   }
 }
 
+function parseBlueIntraLocationFromTitle(rawTitle: string): {
+  city: string;
+  neighborhood: string;
+  cleanTitle: string;
+} {
+  const cleanT = rawTitle
+    .replace(/\s*[/-]\s*SP\s*$/i, "")
+    .replace(/,\s*SP\s*$/i, "")
+    .replace(/\s+SP\s*$/i, "")
+    .trim();
+
+  let city = "São Paulo";
+  let neighborhood = "Centro";
+  let propTitle = cleanT;
+
+  if (cleanT.includes(" - ")) {
+    const parts = cleanT
+      .split(" - ")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (parts.length >= 2) {
+      city = parts[parts.length - 1];
+      propTitle = parts[0];
+      if (parts.length >= 3) {
+        neighborhood = parts[parts.length - 2];
+      } else {
+        const mBairro = parts[0].match(/.*\b(?:no|na|em)\s+(?:bairro\s+)?([^,-]+)$/i);
+        if (mBairro) neighborhood = mBairro[1].trim();
+      }
+    }
+  } else if (cleanT.includes(",")) {
+    const parts = cleanT
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (parts.length >= 2) {
+      propTitle = parts[0];
+      const lastPart = parts[parts.length - 1];
+      if (/\s+em\s+/i.test(lastPart)) {
+        const emParts = lastPart.split(/\s+em\s+/i);
+        city = emParts[emParts.length - 1].trim();
+        neighborhood = emParts[0].replace(/^.*\b(?:no|na|em)\s+/i, "").trim();
+      } else {
+        city = lastPart;
+        const prev = parts[parts.length - 2];
+        const mBairro = prev.match(/.*\b(?:no|na|em)\s+(?:bairro\s+)?(.+)$/i);
+        neighborhood = mBairro ? mBairro[1].trim() : prev;
+      }
+    }
+  } else if (/\s+em\s+/i.test(cleanT)) {
+    const emParts = cleanT.split(/\s+em\s+/i);
+    city = emParts[emParts.length - 1].trim();
+    const prev = emParts.slice(0, -1).join(" em ");
+    propTitle = prev;
+    const mBairro = prev.match(/.*\b(?:no|na)\s+(?:bairro\s+)?(.+)$/i);
+    if (mBairro) neighborhood = mBairro[1].trim();
+  }
+
+  city = city.replace(/^pres\.?\s+/i, "Presidente ").trim();
+  neighborhood = neighborhood.replace(/\s*\(zona\s+[^)]+\)/gi, "").trim();
+
+  return {
+    city: toTitleCase(city || "São Paulo"),
+    neighborhood: toTitleCase(neighborhood || "Centro"),
+    cleanTitle: propTitle,
+  };
+}
+
+export async function scrapeBiasiLeiloes(uf = "sp"): Promise<ScrapedAuctionLot[]> {
+  if (uf.toLowerCase() !== "sp") return [];
+
+  try {
+    const targetUrl =
+      "https://www.biasileiloes.com.br/Sale/LotListSearch?buscaImovel=true&estado=sp&cidade=todas-as-cidades&bairro=todos-os-bairros&segmento=todos-os-segmentos&start=0&limit=120";
+    const res = await fetch(targetUrl, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      },
+      next: { revalidate: 600 },
+    });
+
+    if (!res.ok) return [];
+    const html = await res.text();
+    const cards = html
+      .split('class="col-xs-12 col-sm-6 col-md-4 col-lg-3 mb-4">')
+      .slice(1);
+    const results: ScrapedAuctionLot[] = [];
+
+    for (const c of cards) {
+      const hrefMatch = c.match(/href="(\/lotes\/(\d+)\/[^"]+)"/i);
+      if (!hrefMatch?.[1] || !hrefMatch?.[2]) continue;
+
+      const loteId = hrefMatch[2];
+      const sourceUrl = `https://www.biasileiloes.com.br${hrefMatch[1]}`;
+      const statusText = stripTags(
+        c.match(/class="label-md[^"]*">([\s\S]*?)<\/div>/i)?.[1] || ""
+      ).toLowerCase();
+      if (
+        statusText.includes("encerrad") ||
+        statusText.includes("vendid") ||
+        statusText.includes("sustad") ||
+        statusText.includes("suspens") ||
+        statusText.includes("cancelad")
+      ) {
+        continue;
+      }
+
+      const rawTitle = stripTags(
+        c.match(/<h2 class="h5 card-title[^"]*">([\s\S]*?)<\/h2>/i)?.[1] || ""
+      );
+      if (!rawTitle) continue;
+
+      const { city, neighborhood } = parseBlueIntraLocationFromTitle(rawTitle);
+      if (normalizeStr(city) === "araruama") continue;
+
+      const prices = [...c.matchAll(/R\$\s*([\d.,]+)/g)]
+        .map((m) => parseBRLNumber(m[1]))
+        .filter((v) => v > 0);
+      if (prices.length === 0) continue;
+
+      const p1 = prices[0];
+      const p2 = prices[1] || 0;
+      const minBid = p2 > 0 && p2 < p1 ? Math.round(p2) : Math.round(p1);
+      if (minBid < 20000) continue;
+
+      const marketValue =
+        p2 > 0 && p1 > p2 ? Math.round(p1) : Math.round(minBid * 1.45);
+      const discountPct =
+        p2 > 0 && p1 > p2 ? Math.round((1 - p2 / p1) * 100) : 0;
+
+      const imgMatch = c.match(/class="card-img-cover"\s+src="([^"]+)"/i);
+      const sellerMatch = c.match(
+        /class="image-comitente"[^>]+alt="Logo(?:\s+de)?\s*([^"]+)"/i
+      );
+      const seller = toTitleCase(stripTags(sellerMatch?.[1] || "Comitente Bancário"));
+      const isJudicial =
+        seller.toLowerCase().includes("tribunal") ||
+        seller.toLowerCase().includes("justiça");
+
+      const code = `BS-${loteId}`;
+      const [lat, lng] = resolveCoords(neighborhood, city, "SP", code);
+      const areaM2 = extractAreaM2(rawTitle);
+      const dateMatch = c.match(/(\d{2}\/\d{2}\/\d{4})/);
+      const auctionDate =
+        dateMatch?.[1] && isAuctionUpcoming(dateMatch[1])
+          ? dateMatch[1]
+          : "Aberto para Lances";
+
+      results.push({
+        id: `bs-${loteId}`,
+        code,
+        source: "Biasi Leilões",
+        sourceUrl,
+        imageUrl: imgMatch?.[1] || "",
+        title: rawTitle,
+        address: `${neighborhood} · ${city}/SP`,
+        neighborhood,
+        city,
+        state: "SP",
+        lat,
+        lng,
+        marketValue,
+        minBid,
+        discountPct,
+        modality: isJudicial ? "Leilão Judicial" : `Extrajudicial · ${seller}`,
+        seller,
+        auctionDate,
+        areaM2,
+        acceptsFinancing: !isJudicial,
+        occupancy: rawTitle.toLowerCase().includes("desocupad")
+          ? "Desocupado"
+          : "Ver no Edital",
+        riskLevel: !isJudicial ? "baixo" : "medio",
+        riskScore: !isJudicial ? 90 : 82,
+        aiSummary: `Imóvel ofertado via Biasi Leilões (${seller}) em ${neighborhood}, ${city}/SP.`,
+        aiChecklist: {
+          debts: isJudicial
+            ? "Leilão Judicial: IPTU sub-roga no valor da arrematação (Art. 130 CTN)."
+            : "Leilão Extrajudicial Biasi: consulte a cláusula de quitação de IPTU e condomínio no edital do banco.",
+          matriculaStatus: "Matrícula e edital oficial disponíveis na página do lote na Biasi Leilões.",
+          paymentRule: isJudicial
+            ? "À vista ou parcelamento judicial conforme edital."
+            : "À vista, parcelamento ou financiamento conforme regras do comitente vendedor.",
+          lawyerAlert:
+            "Recomenda-se conferência integral das condições de venda e situação ocupacional antes do lance.",
+        },
+        documentsRead: [{ label: "Edital e Ficha Oficial (Biasi Leilões)", url: sourceUrl }],
+      });
+    }
+
+    return results;
+  } catch (err) {
+    console.warn("[Scraper] Aviso ao raspar Biasi Leilões:", err);
+    return [];
+  }
+}
+
+export async function scrapeFrazaoLeiloes(uf = "sp"): Promise<ScrapedAuctionLot[]> {
+  if (uf.toLowerCase() !== "sp") return [];
+
+  try {
+    const targetUrl =
+      "https://www.frazaoleiloes.com.br/Sale/SearchLotResult?uf=SP&loteAtivo=true&ExibirInternosPrimeiro=true&limit=150&start=0&page=1";
+    const res = await fetch(targetUrl, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      },
+      next: { revalidate: 600 },
+    });
+
+    if (!res.ok) return [];
+    const html = await res.text();
+    const cards = html.split('id="card-lote">').slice(1);
+    const results: ScrapedAuctionLot[] = [];
+
+    for (const c of cards) {
+      const hrefMatch = c.match(/href="(\/lote\/(\d+)-[^"]+)"/i);
+      if (!hrefMatch?.[1] || !hrefMatch?.[2]) continue;
+
+      const loteId = hrefMatch[2];
+      const sourceUrl = `https://www.frazaoleiloes.com.br${hrefMatch[1]}`;
+
+      const tipo = stripTags(c.match(/data-tipo="([^"]*)"/i)?.[1] || "Imóvel");
+      if (/ve[íi]culo|carro|moto|sucata|m[áa]quina|equipamento|inform[áa]tica/i.test(tipo)) {
+        continue;
+      }
+
+      const rawTitle = stripTags(
+        c.match(/class="col-12 lot-title-cap[^"]*"[\s\S]*?<b[^>]*>([\s\S]*?)<\/b>/i)?.[1] || ""
+      );
+      if (
+        !rawTitle ||
+        /\b(?:vw|volkswagen|fiat|chevrolet|ford|kombi|sucata|ve[íi]culo)\b/i.test(rawTitle)
+      ) {
+        continue;
+      }
+
+      const statusText = stripTags(
+        c.match(/class="label-md[^"]*">([\s\S]*?)<\/span>/i)?.[1] || ""
+      ).toLowerCase();
+      if (
+        statusText.includes("encerrad") ||
+        statusText.includes("vendid") ||
+        statusText.includes("sustad") ||
+        statusText.includes("suspens") ||
+        statusText.includes("cancelad")
+      ) {
+        continue;
+      }
+
+      const calBlock = stripTags(
+        c.match(/class="col-12 inf-leilao-calendar">([\s\S]*?)<\/div>\s*<\/div>\s*<\/div>/i)?.[1] ||
+          c
+      );
+      const prices = [...calBlock.matchAll(/R\$\s*([\d.,]+)/g)]
+        .map((m) => parseBRLNumber(m[1]))
+        .filter((v) => v > 0);
+      if (prices.length === 0) continue;
+
+      const p1 = prices[0];
+      const p2 = prices[1] || 0;
+      const minBid = p2 > 0 && p2 < p1 ? Math.round(p2) : Math.round(p1);
+      if (minBid < 20000) continue;
+
+      const discMatch = calBlock.match(/-(\d{1,2})%/);
+      const discountPct = discMatch
+        ? parseInt(discMatch[1], 10)
+        : p2 > 0 && p1 > p2
+        ? Math.round((1 - p2 / p1) * 100)
+        : 0;
+      const marketValue =
+        p2 > 0 && p1 > p2
+          ? Math.round(p1)
+          : discountPct > 0 && discountPct < 85
+          ? Math.round(minBid / (1 - discountPct / 100))
+          : Math.round(minBid * 1.45);
+
+      const dateMatches = [
+        ...calBlock.matchAll(/(\d{2}\/\d{2}\/\d{4})(?:\s*às\s*(\d{2}[h:]\d{2}))?/gi),
+      ];
+      const lastDateMatch = dateMatches[dateMatches.length - 1];
+      let extractedDate = "";
+      if (lastDateMatch?.[1]) {
+        const timePart = lastDateMatch[2] ? ` às ${lastDateMatch[2].replace("h", ":")}` : "";
+        extractedDate = `${lastDateMatch[1]}${timePart}`;
+      }
+      const auctionDate =
+        extractedDate && isAuctionUpcoming(extractedDate)
+          ? extractedDate
+          : "Aberto para Lances";
+
+      const { city, neighborhood } = parseBlueIntraLocationFromTitle(rawTitle);
+      const street = toTitleCase(stripTags(c.match(/data-addr="([^"]*)"/i)?.[1] || ""));
+      const areaBlock = stripTags(
+        c.match(/class="col-12 d-flex lot-area-cap"[\s\S]*?<span>([\s\S]*?)<\/span>/i)?.[1] || ""
+      );
+      const areaM2 = extractAreaM2(areaBlock) || extractAreaM2(rawTitle);
+
+      const imgMatch = c.match(
+        /<img[^>]+src="(https:\/\/cdn\.frazaoleiloes\.com\.br\/images\/lot\/[^"]+)"/i
+      );
+      const sellerMatch = c.match(
+        /class="comitente-logo-ico"[\s\S]*?alt="Logo\s*([^"]+)"/i
+      );
+      const seller = toTitleCase(stripTags(sellerMatch?.[1] || "Comitente Frazão"));
+      const isJudicial =
+        seller.toLowerCase().includes("tribunal") ||
+        seller.toLowerCase().includes("justiça");
+
+      const code = `FZ-${loteId}`;
+      const [lat, lng] = resolveCoords(neighborhood, city, "SP", code);
+
+      results.push({
+        id: `fz-${loteId}`,
+        code,
+        source: "Frazão Leilões",
+        sourceUrl,
+        imageUrl: imgMatch?.[1] || "",
+        title: `${toTitleCase(tipo)}${areaM2 ? ` ${areaM2}m²` : ""} · ${neighborhood} (${city})`,
+        address: street
+          ? `${street} — ${neighborhood}, ${city}/SP`
+          : `${neighborhood} · ${city}/SP`,
+        neighborhood,
+        city,
+        state: "SP",
+        lat,
+        lng,
+        marketValue,
+        minBid,
+        discountPct,
+        modality: isJudicial ? "Leilão Judicial" : `Extrajudicial · ${seller}`,
+        seller,
+        auctionDate,
+        areaM2,
+        acceptsFinancing: !isJudicial,
+        occupancy: rawTitle.toLowerCase().includes("desocupad")
+          ? "Desocupado"
+          : rawTitle.toLowerCase().includes("ocupad") || rawTitle.toLowerCase().includes("locad")
+          ? "Ocupado"
+          : "Ver no Edital",
+        riskLevel: !isJudicial ? "baixo" : "medio",
+        riskScore: !isJudicial ? 90 : 81,
+        aiSummary: `${rawTitle}. Ofertado via Frazão Leilões (${seller}).`,
+        aiChecklist: {
+          debts: isJudicial
+            ? "Leilão Judicial Frazão: IPTU sub-roga no valor da arrematação (Art. 130 CTN)."
+            : "Leilão Extrajudicial Frazão: verifique as regras de quitação de IPTU e condomínio no edital do comitente.",
+          matriculaStatus: "Matrícula e edital oficial disponíveis na página do lote na Frazão Leilões.",
+          paymentRule: isJudicial
+            ? "À vista ou parcelamento judicial nos termos do edital."
+            : "À vista ou condições de financiamento/parcelamento do banco comitente.",
+          lawyerAlert:
+            "Indispensável leitura integral do edital e verificação de posse antes do lance.",
+        },
+        documentsRead: [{ label: "Edital e Ficha Oficial (Frazão Leilões)", url: sourceUrl }],
+      });
+    }
+
+    return results;
+  } catch (err) {
+    console.warn("[Scraper] Aviso ao raspar Frazão Leilões:", err);
+    return [];
+  }
+}
+
+export async function scrapeGrupoLance(uf = "sp"): Promise<ScrapedAuctionLot[]> {
+  if (uf.toLowerCase() !== "sp") return [];
+
+  try {
+    const pages = [1, 2, 3];
+    const htmlPages = await Promise.allSettled(
+      pages.map(async (p) => {
+        const targetUrl = `https://www.grupolance.com.br/imoveis/sp?pagina=${p}`;
+        const res = await fetch(targetUrl, {
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+          },
+          next: { revalidate: 600 },
+        });
+        if (!res.ok) return "";
+        return res.text();
+      })
+    );
+
+    const blocks: string[] = [];
+    for (const hp of htmlPages) {
+      if (hp.status === "fulfilled" && hp.value) {
+        blocks.push(...hp.value.split('<div class="card-item ').slice(1));
+      }
+    }
+
+    const results: ScrapedAuctionLot[] = [];
+    const seenKeys = new Set<string>();
+
+    for (const b of blocks) {
+      const keyMatch = b.match(/data-key="(\d+)"/);
+      const loteKey = keyMatch?.[1];
+      if (!loteKey || seenKeys.has(loteKey)) continue;
+      seenKeys.add(loteKey);
+
+      const titleTagMatch = b.match(/class="card-title"\s+href="([^"]+)"\s+title="([^"]+)"/i);
+      if (!titleTagMatch?.[1] || !titleTagMatch?.[2]) continue;
+
+      const rawHref = titleTagMatch[1];
+      const sourceUrl = rawHref.startsWith("http")
+        ? rawHref
+        : `https://www.grupolance.com.br${rawHref}`;
+      const rawTitle = stripTags(titleTagMatch[2]);
+
+      const imgMatch = b.match(/background:\s*url\(([^)]+)\)/i);
+      let imageUrl = (imgMatch?.[1] || "").replace(/['"]/g, "").trim();
+      if (imageUrl.startsWith("//")) imageUrl = `https:${imageUrl}`;
+
+      const locMatch = b.match(/class="card-locality"[^>]*title="([^"]+)"/i);
+      const locRaw = stripTags(locMatch?.[1] || "São Paulo, SP");
+      const [cityRaw] = locRaw.split(",").map((s) => s.trim());
+      const city = toTitleCase(cityRaw || "São Paulo");
+
+      const titleCommaParts = rawTitle
+        .replace(/\s*\/?\s*SP\s*$/i, "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const neighborhood = toTitleCase(
+        titleCommaParts.length >= 3
+          ? titleCommaParts[titleCommaParts.length - 2]
+          : "Centro"
+      );
+
+      const counterMatch = b.match(/class="card-counter">\s*(\d+)%/i);
+      const cardPriceMatch = b.match(/class="card-price">\s*R\$\s*([\d.,]+)/i);
+      const dateRows = [...b.matchAll(/<ol class="card-instance-date">([\s\S]*?)<\/ol>/gi)].map(
+        (m) => m[1]
+      );
+
+      const rowPrices: number[] = [];
+      const rowEndDates: string[] = [];
+      for (const dr of dateRows) {
+        const lis = [...dr.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)].map((m) =>
+          stripTags(m[1])
+        );
+        if (lis[1]) rowEndDates.push(lis[1]);
+        else if (lis[0]) rowEndDates.push(lis[0]);
+        const pStr = lis.find((l) => l.includes("R$"));
+        if (pStr) {
+          const val = parseBRLNumber(pStr);
+          if (val > 0) rowPrices.push(val);
+        }
+      }
+
+      const p1 = rowPrices[0] || parseBRLNumber(cardPriceMatch?.[1]);
+      const p2 = rowPrices[1] || 0;
+      const minBid = p2 > 0 && p2 < p1 ? Math.round(p2) : Math.round(p1);
+      if (!minBid || minBid < 20000) continue;
+
+      const discountPct = counterMatch
+        ? parseInt(counterMatch[1], 10)
+        : p2 > 0 && p1 > p2
+        ? Math.round((1 - p2 / p1) * 100)
+        : 0;
+      const marketValue =
+        p2 > 0 && p1 > p2
+          ? Math.round(p1)
+          : discountPct > 0 && discountPct < 85
+          ? Math.round(minBid / (1 - discountPct / 100))
+          : Math.round(minBid * 1.45);
+
+      const rawAuctionDate =
+        rowEndDates[rowEndDates.length - 1] || rowEndDates[0] || "Aberto para Lances";
+      if (!isAuctionUpcoming(rawAuctionDate)) continue;
+
+      const isJudicial = b.includes("/leiloes/judiciais") || b.includes("/leiloes/trt");
+      const code = `GL-${loteKey}`;
+      const [lat, lng] = resolveCoords(neighborhood, city, "SP", code);
+      const areaM2 = extractAreaM2(rawTitle);
+
+      results.push({
+        id: `gl-${loteKey}`,
+        code,
+        source: "Grupo Lance",
+        sourceUrl,
+        imageUrl,
+        title: rawTitle,
+        address: `${neighborhood} · ${city}/SP`,
+        neighborhood,
+        city,
+        state: "SP",
+        lat,
+        lng,
+        marketValue,
+        minBid,
+        discountPct,
+        modality: isJudicial ? "Leilão Judicial" : "Leilão Extrajudicial",
+        seller: isJudicial ? "Tribunal de Justiça / TRT" : "Comitente Grupo Lance",
+        auctionDate: rawAuctionDate,
+        areaM2,
+        acceptsFinancing: !isJudicial,
+        occupancy: "Ver no Edital",
+        riskLevel: discountPct >= 40 ? "baixo" : "medio",
+        riskScore: isJudicial ? 83 : 90,
+        aiSummary: `Lote ${code} ofertado via Grupo Lance (${
+          isJudicial ? "Leilão Judicial" : "Extrajudicial"
+        }) em ${city}/SP.`,
+        aiChecklist: {
+          debts: isJudicial
+            ? "Leilão Judicial Grupo Lance: IPTU sub-roga no preço da arrematação (Art. 130 CTN)."
+            : "Consulte o edital para regras de quitação de IPTU e condomínio.",
+          matriculaStatus: "Matrícula e edital disponíveis nos anexos da página oficial do Grupo Lance.",
+          paymentRule: isJudicial
+            ? "À vista ou parcelamento judicial pelo Art. 895 do CPC."
+            : "Conforme condições do edital do comitente.",
+          lawyerAlert:
+            "Recomenda-se análise prévia dos autos e verificação ocupacional antes do lance.",
+        },
+        documentsRead: [{ label: "Edital e Ficha Oficial (Grupo Lance)", url: sourceUrl }],
+      });
+    }
+
+    return results;
+  } catch (err) {
+    console.warn("[Scraper] Aviso ao raspar Grupo Lance:", err);
+    return [];
+  }
+}
+
 /**
- * Executa a raspagem unificada (Mega Leilões, Portal Zuk, Superbid, Sold & Sodré Santoro) com deduplicação e dispersão espacial
+ * Executa a raspagem unificada (Mega Leilões, Portal Zuk, Superbid, Sold, Sodré Santoro, Biasi, Frazão e Grupo Lance) com deduplicação e dispersão espacial
  */
 export async function runDailyScrape(uf = "sp"): Promise<ScrapedAuctionLot[]> {
-  const [megaLots, zukLots, sbSoldLots, sodreLots] = await Promise.allSettled([
+  const [
+    megaLots,
+    zukLots,
+    sbSoldLots,
+    sodreLots,
+    biasiLots,
+    frazaoLots,
+    grupoLanceLots,
+  ] = await Promise.allSettled([
     scrapeMegaLeiloes(uf),
     scrapePortalZuk(uf),
     scrapeSuperbidAndSold(uf),
     scrapeSodreSantoro(uf),
+    scrapeBiasiLeiloes(uf),
+    scrapeFrazaoLeiloes(uf),
+    scrapeGrupoLance(uf),
   ]);
 
   const rawCombined: ScrapedAuctionLot[] = [
@@ -1449,6 +2036,9 @@ export async function runDailyScrape(uf = "sp"): Promise<ScrapedAuctionLot[]> {
     ...(megaLots.status === "fulfilled" ? megaLots.value : []),
     ...(sbSoldLots.status === "fulfilled" ? sbSoldLots.value : []),
     ...(sodreLots.status === "fulfilled" ? sodreLots.value : []),
+    ...(biasiLots.status === "fulfilled" ? biasiLots.value : []),
+    ...(frazaoLots.status === "fulfilled" ? frazaoLots.value : []),
+    ...(grupoLanceLots.status === "fulfilled" ? grupoLanceLots.value : []),
   ];
 
   const seenIds = new Set<string>();

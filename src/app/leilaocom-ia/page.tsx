@@ -1127,11 +1127,17 @@ export default function LeilaoComIaPage() {
                   ? "SB"
                   : lot.source === "Sodré Santoro"
                     ? "SS"
-                    : lot.source === "Banco do Brasil"
-                      ? "BB"
-                      : lot.source === "Caixa"
-                        ? "CEF"
-                        : "LOTE";
+                    : lot.source === "Biasi Leilões"
+                      ? "BS"
+                      : lot.source === "Frazão Leilões"
+                        ? "FZ"
+                        : lot.source === "Grupo Lance"
+                          ? "GL"
+                          : lot.source === "Banco do Brasil"
+                            ? "BB"
+                            : lot.source === "Caixa"
+                              ? "CEF"
+                              : "LOTE";
 
       const icon = L.divIcon({
         className: "finhouse-auction-pin",
@@ -3184,7 +3190,7 @@ export default function LeilaoComIaPage() {
                   Consolidação Multileiloeiro e Filtro de 2ª Praça
                 </h4>
                 <p className="text-xs text-[#475569] leading-relaxed">
-                  Varredura diária de editais judiciais (TJSP e TRTs) e extrajudiciais de instituições financeiras (Lei nº 9.514/97) no Mega Leilões, Portal Zuk, Superbid, Sold e Sodré Santoro, priorizando lotes em 2ª praça com deságio real de 40% a 60% abaixo da avaliação.
+                  Varredura diária de editais judiciais (TJSP e TRTs) e extrajudiciais de instituições financeiras (Lei nº 9.514/97) no Mega Leilões, Portal Zuk, Superbid, Sold, Sodré Santoro, Biasi Leilões, Frazão Leilões e Grupo Lance, priorizando lotes em 2ª praça com deságio real de 40% a 60% abaixo da avaliação.
                 </p>
               </div>
 
