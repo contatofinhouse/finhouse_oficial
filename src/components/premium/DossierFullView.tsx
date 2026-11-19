@@ -705,6 +705,10 @@ export default function DossierFullView({
                         m² = {formatBRL(sim.benchmarkTotalValue)}
                       </span>
                     </div>
+                    <p className="pt-1.5 mt-1 border-t border-[#E2E8F0] text-[10px] text-[#64748B] italic">
+                      Aviso: valor meramente estimativo baseado em médias
+                      regionais; valide com imóveis similares antes do lance.
+                    </p>
                   </div>
                 )}
               </div>
