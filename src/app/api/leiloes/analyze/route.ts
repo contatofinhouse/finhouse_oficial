@@ -484,7 +484,7 @@ async function analyzeWithGemini(apiKey: string, prompt: string) {
 
 async function analyzeWithOpenRouter(apiKey: string, prompt: string) {
   const model =
-    process.env.OPENROUTER_MODEL?.trim() || "deepseek/deepseek-chat";
+    process.env.OPENROUTER_MODEL?.trim() || "google/gemini-2.5-flash";
 
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
