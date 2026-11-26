@@ -154,6 +154,10 @@ function PremiumDashboardContent() {
       if (params.get("upgrade") === "1") {
         setUpgradeModalOpen(true);
       }
+      const cidadeParam = params.get("cidade")?.trim();
+      if (cidadeParam) {
+        setCityFilter(cidadeParam);
+      }
     }
 
     async function fetchAll() {

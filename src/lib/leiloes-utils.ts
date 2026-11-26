@@ -131,6 +131,18 @@ export function isLotInSecondPraca(lot: {
 }
 
 /**
+ * Gera slug limpo de URL para cidades e bairros (ex: "São Bernardo do Campo" -> "sao-bernardo-do-campo").
+ */
+export function slugifyTerm(val: string): string {
+  return (val || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/**
  * Adiciona parâmetros UTM da finHouse (finhousebr.com.br) em links HTML externos de leiloeiros,
  * preservando intactas URLs de PDFs ou links assinados (CloudFront / S3).
  */

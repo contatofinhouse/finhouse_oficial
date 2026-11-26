@@ -36,7 +36,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import type { ScrapedAuctionLot } from "@/app/api/leiloes/route";
-import { withFinhouseUtm } from "@/lib/leiloes-utils";
+import { slugifyTerm, withFinhouseUtm } from "@/lib/leiloes-utils";
 
 const WA_NUMBER = "5511955842951";
 const DOSSIE_PRICE = "R$ 59,90 / 6 meses";
@@ -616,10 +616,44 @@ export default function LeilaoComIaPage() {
         setLots(data.lots);
         if (data.updatedAt) setUpdatedAtLabel(data.updatedAt);
 
-        const urlLoteParam =
+        const searchParams =
           typeof window !== "undefined"
-            ? new URLSearchParams(window.location.search).get("lote")?.trim()
+            ? new URLSearchParams(window.location.search)
             : null;
+        const urlLoteParam = searchParams?.get("lote")?.trim() || null;
+        const urlCidadeParam = searchParams?.get("cidade")?.trim() || null;
+        const urlBuscaParam = searchParams?.get("busca")?.trim() || null;
+
+        if (urlBuscaParam) {
+          setSearchQuery(urlBuscaParam);
+        }
+
+        if (urlCidadeParam) {
+          const targetSlug = slugifyTerm(urlCidadeParam);
+          const cityMatch = data.lots.find(
+            (l: ScrapedAuctionLot) => slugifyTerm(l.city) === targetSlug
+          );
+          if (cityMatch) {
+            hasUserInteractedRef.current = true;
+            setFilterCity(cityMatch.city);
+            setSelectedId(cityMatch.id);
+            if (Number.isFinite(cityMatch.lat) && Number.isFinite(cityMatch.lng)) {
+              sharedLotTargetRef.current = {
+                lat: cityMatch.lat,
+                lng: cityMatch.lng,
+              };
+              if (mapInstanceRef.current) {
+                try {
+                  mapInstanceRef.current.setView(
+                    [cityMatch.lat, cityMatch.lng],
+                    12,
+                    { animate: false }
+                  );
+                } catch { }
+              }
+            }
+          }
+        }
 
         if (urlLoteParam) {
           const normParam = urlLoteParam.toLowerCase();
@@ -3597,10 +3631,10 @@ export default function LeilaoComIaPage() {
                 : cityMarketStats.slice(0, 12)
               ).map((item) => {
                 const isSelectedCity = filterCity === item.city;
+                const citySlug = slugifyTerm(item.city);
                 return (
-                  <button
+                  <div
                     key={item.city}
-                    type="button"
                     onClick={() =>
                       handleSelectCityFromHub(item.city, {
                         lat: item.lat,
@@ -3626,7 +3660,7 @@ export default function LeilaoComIaPage() {
                       </span>
                     </div>
 
-                    <div className="space-y-0.5">
+                    <div className="space-y-1">
                       <div
                         className={`text-[11px] font-semibold tabular-nums ${isSelectedCity ? "text-slate-200" : "text-[#334155]"
                           }`}
@@ -3635,22 +3669,67 @@ export default function LeilaoComIaPage() {
                           ? `A partir de ${formatBRL(item.minPrice)}`
                           : "Consultar edital"}
                       </div>
-                      <div
-                        className={`text-[10px] font-medium ${isSelectedCity
-                            ? "text-emerald-300"
-                            : item.maxDiscount > 0
-                              ? "text-emerald-700"
-                              : "text-[#64748B]"
-                          }`}
-                      >
-                        {item.maxDiscount > 0
-                          ? `Até -${item.maxDiscount}% · ${item.secondStageCount} em 2ª praça`
-                          : `${item.secondStageCount} em 2ª praça`}
+                      <div className="flex items-center justify-between gap-1">
+                        <span
+                          className={`text-[10px] font-medium truncate ${isSelectedCity
+                              ? "text-emerald-300"
+                              : item.maxDiscount > 0
+                                ? "text-emerald-700"
+                                : "text-[#64748B]"
+                            }`}
+                        >
+                          {item.maxDiscount > 0
+                            ? `Até -${item.maxDiscount}%`
+                            : `${item.secondStageCount} em 2ª praça`}
+                        </span>
+                        <Link
+                          href={`/leilaocom-ia/sp/${citySlug}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className={`text-[10px] font-semibold underline shrink-0 ${isSelectedCity
+                              ? "text-white hover:text-slate-200"
+                              : "text-[#0F3B78] hover:text-[#0F2744]"
+                            }`}
+                        >
+                          Página →
+                        </Link>
                       </div>
                     </div>
-                  </button>
+                  </div>
                 );
               })}
+            </div>
+
+            {/* Links Regionais Estáticos no HTML (Garante rastreamento imediato pelo Googlebot antes da hidratação JS) */}
+            <div className="pt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-[#64748B]">
+              <span className="font-semibold text-[#334155]">
+                Páginas Regionais SP:
+              </span>
+              {[
+                ["São Paulo Capital", "/leilaocom-ia/sp/sao-paulo"],
+                ["Campinas", "/leilaocom-ia/sp/campinas"],
+                ["Guarulhos", "/leilaocom-ia/sp/guarulhos"],
+                ["Santos", "/leilaocom-ia/sp/santos"],
+                ["Santo André", "/leilaocom-ia/sp/santo-andre"],
+                ["São Bernardo do Campo", "/leilaocom-ia/sp/sao-bernardo-do-campo"],
+                ["São José dos Campos", "/leilaocom-ia/sp/sao-jose-dos-campos"],
+                ["Sorocaba", "/leilaocom-ia/sp/sorocaba"],
+                ["Ribeirão Preto", "/leilaocom-ia/sp/ribeirao-preto"],
+                ["Jundiaí", "/leilaocom-ia/sp/jundiai"],
+                ["Osasco", "/leilaocom-ia/sp/osasco"],
+                ["Barueri", "/leilaocom-ia/sp/barueri"],
+                ["Praia Grande", "/leilaocom-ia/sp/praia-grande"],
+                ["Guarujá", "/leilaocom-ia/sp/guaruja"],
+                ["Piracicaba", "/leilaocom-ia/sp/piracicaba"],
+                ["Indaiatuba", "/leilaocom-ia/sp/indaiatuba"],
+              ].map(([label, href]) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="hover:text-[#0F2744] hover:underline"
+                >
+                  {label}
+                </Link>
+              ))}
             </div>
           </div>
 
@@ -3775,19 +3854,19 @@ export default function LeilaoComIaPage() {
 
               <div className="space-y-1.5">
                 <h4 className="text-base font-bold tracking-[-0.01em] text-white">
-                  Screener Profissional &amp; Dossiês de Viabilidade SP
+                  Ranking de ROI &amp; Dossiês Completos em SP
                 </h4>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  Acesse a tabela completa dos {lots.length || 500}+ lotes ativos em SP com cálculo automático de Lance Teto, ROI líquido e matriz jurídica.
+                  Acesse a tabela completa dos {lots.length || 500}+ imóveis ativos em SP com cálculo automático de ROI, Lance Teto e leitura do edital.
                 </p>
               </div>
 
               <ul className="space-y-2 text-xs text-slate-200 pt-1">
                 {[
-                  "3 dossiês completos inéditos por dia (cache = 0 crédito)",
-                  "Semáforo jurídico em 8 pontos (edital, IPTU, condomínio e posse)",
-                  "Simulador de Lance Teto com reforma CUB/SINAPI-SP e faixa P25–P75",
-                  "Comparador lado a lado de até 3 lotes + Exportação CSV e PDF",
+                  "ROI e Lance Teto real descontando ITBI, leiloeiro, cartório e reforma",
+                  "Dossiês completos ilimitados (edital, matrícula, IPTU, condomínio e posse)",
+                  "Ranking comparativo de todos os lotes de SP pelo maior retorno",
+                  "Comparador lado a lado de até 3 opções + Exportação CSV e PDF",
                 ].map((feat) => (
                   <li key={feat} className="flex items-start gap-2">
                     <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
