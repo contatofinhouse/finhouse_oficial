@@ -142,27 +142,40 @@ export default function PremiumAccessGate({
 
           <div className="space-y-1.5">
             <h1 className="text-xl font-bold tracking-[-0.02em] text-[#0F172A]">
-              Acesse o Módulo Premium de Leilões
+              Descubra o lucro real e os riscos antes de dar seu lance
             </h1>
             <p className="text-xs sm:text-sm text-[#475569] leading-relaxed">
-              Entre com sua conta Google para liberar{" "}
-              <strong className="text-[#0F172A]">15 dias de teste grátis</strong>{" "}
-              sem cartão de crédito.
+              Teste grátis por{" "}
+              <strong className="text-[#0F172A]">15 dias (sem cartão)</strong>{" "}
+              o painel completo de análise, dossiês e comparação de leilões em SP.
             </p>
           </div>
 
-          <ul className="space-y-2 text-xs text-[#334155] bg-[#F8FAFC] rounded-xl p-4 border border-[#E2E8F0]">
-            {[
-              "3 dossiês profundos inéditos por dia (lotes em cache = 0 crédito)",
-              "Semáforo jurídico em 8 pontos + Calculadora Reversa de Lance Teto",
-              "Comparador lado a lado de até 3 lotes + Exportação CSV e PDF",
-              "Após 15 dias: R$ 59,90 por 6 meses (sem renovação automática)",
-            ].map((item) => (
-              <li key={item} className="flex items-start gap-2">
-                <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                <span>{item}</span>
-              </li>
-            ))}
+          <ul className="space-y-2.5 text-xs text-[#334155] bg-[#F8FAFC] rounded-xl p-4 border border-[#E2E8F0]">
+            <li className="flex items-start gap-2">
+              <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+              <span>
+                <strong className="text-[#0F172A]">ROI e Lance Teto real:</strong> saiba exatamente até quanto ofertar e quanto sobra de lucro já descontando ITBI, leiloeiro, cartório e reforma.
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+              <span>
+                <strong className="text-[#0F172A]">Dossiês completos ilimitados:</strong> leitura do edital e da matrícula apontando dívidas de condomínio/IPTU, ocupação e riscos jurídicos.
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+              <span>
+                <strong className="text-[#0F172A]">Ranking e Comparador de Oportunidades:</strong> filtre centenas de imóveis em SP pelo maior ROI, compare até 3 opções lado a lado e baixe em PDF.
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+              <span>
+                <strong className="text-[#0F172A]">Sem pegadinha após os 15 dias:</strong> se quiser continuar, são apenas <strong>R$ 59,90 por 6 meses</strong> (menos de R$ 10/mês, sem renovação automática).
+              </span>
+            </li>
           </ul>
 
           <button

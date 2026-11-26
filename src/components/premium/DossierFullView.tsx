@@ -446,7 +446,7 @@ export default function DossierFullView({
                 {formatBRL(sim.scenarios.minBid.netProfit)}
               </p>
               <p className="text-[11px] text-[#64748B]">
-                ROI líquido: {sim.scenarios.minBid.roiPct}% (após custos e IR)
+                ROI: {sim.scenarios.minBid.roiPct}% (após custos e IR)
               </p>
             </div>
             <div className="p-4">

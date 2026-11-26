@@ -31,7 +31,9 @@ export interface UserAccessState {
 }
 
 const TRIAL_DAYS = Number(process.env.TRIAL_DAYS || "15");
-const DEFAULT_DAILY_LIMIT = Number(process.env.REPORTS_DAILY_PER_USER || "3");
+// Limite silencioso anti-abuso/automação nos bastidores (uso humano é ilimitado na UI)
+const DEFAULT_DAILY_LIMIT = Number(process.env.REPORTS_DAILY_PER_USER || "30");
+const memoryDailyAbuseTracker = new Map<string, { date: string; lotIds: Set<string> }>();
 
 /**
  * Valida o token Bearer enviado no cabeçalho Authorization usando Supabase Auth.
@@ -162,7 +164,10 @@ export async function getUserAccessState(
   const daysLeft =
     plan === "admin" ? 999 : Math.max(0, Math.ceil(msLeft / (24 * 60 * 60 * 1000)));
   const isActive = plan === "admin" || msLeft > 0;
-  const dailyLimit = plan === "admin" ? 999 : acc?.daily_limit ?? DEFAULT_DAILY_LIMIT;
+  const dailyLimit =
+    plan === "admin"
+      ? 999
+      : Math.max(DEFAULT_DAILY_LIMIT, acc?.daily_limit ?? DEFAULT_DAILY_LIMIT);
 
   const todayStartIso = getTodayStartBRTIso();
 
@@ -202,17 +207,39 @@ export async function getUserAccessState(
 }
 
 /**
- * Reserva crédito (via RPC atômica reserve_credit) ou vincula lote em cache (0 crédito).
+ * Vincula lote ao histórico do usuário e aplica trava silenciosa anti-abuso nos bastidores.
  */
 export async function reserveOrLinkLotReport(
   user: ServerUser,
   lotId: string,
   fromCache: boolean
 ): Promise<{ ok: true } | { ok: false; code: "expired" | "limit" }> {
+  const access = await getUserAccessState(user);
+  if (!access.isActive) return { ok: false, code: "expired" };
+
   const admin = getSupabaseAdmin();
-  if (!admin) return { ok: true };
 
-  if (user.isAdmin) {
+  // Fallback em memória para proteção anti-scraping caso SUPABASE_SERVICE_ROLE_KEY não esteja ativa
+  if (!admin) {
+    if (!user.isAdmin && !fromCache) {
+      const todayKey = getTodayStartBRTIso().slice(0, 10);
+      const current = memoryDailyAbuseTracker.get(user.id);
+      if (!current || current.date !== todayKey) {
+        memoryDailyAbuseTracker.set(user.id, {
+          date: todayKey,
+          lotIds: new Set([lotId]),
+        });
+      } else {
+        if (!current.lotIds.has(lotId) && current.lotIds.size >= DEFAULT_DAILY_LIMIT) {
+          return { ok: false, code: "limit" };
+        }
+        current.lotIds.add(lotId);
+      }
+    }
+    return { ok: true };
+  }
+
+  if (user.isAdmin || fromCache) {
     await admin
       .from("report_requests")
       .upsert(
@@ -222,31 +249,18 @@ export async function reserveOrLinkLotReport(
     return { ok: true };
   }
 
-  // Se veio do cache global, não consome crédito diário (mas exige acesso ativo)
-  if (fromCache) {
-    const access = await getUserAccessState(user);
-    if (!access.isActive) return { ok: false, code: "expired" };
-    await admin
-      .from("report_requests")
-      .upsert(
-        { user_id: user.id, lot_id: lotId, used_credit: false },
-        { onConflict: "user_id,lot_id" }
-      );
-    return { ok: true };
+  // Verifica trava silenciosa anti-abuso diretamente (independente de valores antigos de daily_limit=3 no banco)
+  if (!access.analyzedLotIds.includes(lotId) && access.usedToday >= access.dailyLimit) {
+    return { ok: false, code: "limit" };
   }
 
-  const { data: status, error } = await admin.rpc("reserve_credit", {
-    p_user: user.id,
-    p_lot: lotId,
-  });
+  await admin
+    .from("report_requests")
+    .upsert(
+      { user_id: user.id, lot_id: lotId, used_credit: true },
+      { onConflict: "user_id,lot_id" }
+    );
 
-  if (error) {
-    console.warn("[AuthServer] Aviso em reserve_credit:", error.message);
-    return { ok: true };
-  }
-
-  if (status === "expired") return { ok: false, code: "expired" };
-  if (status === "limit") return { ok: false, code: "limit" };
   return { ok: true };
 }
 

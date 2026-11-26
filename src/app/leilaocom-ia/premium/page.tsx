@@ -613,18 +613,17 @@ function PremiumDashboardContent() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <div className="hidden lg:flex items-center gap-3 text-xs text-[#475569] border-r border-[#E2E8F0] pr-3">
-              <span>
-                Período de avaliação:{" "}
-                <strong className="text-[#0F172A]">{quota.daysLeft} dias</strong>
-              </span>
-              <span className="text-[#CBD5E1]">·</span>
-              <span>
-                Cota diária:{" "}
-                <strong className="text-[#0F172A]">
-                  {quota.creditsLeftToday}/{quota.dailyLimit}
-                </strong>
-              </span>
+            <div className="hidden lg:flex items-center gap-2 text-xs text-[#475569] border-r border-[#E2E8F0] pr-3">
+              {access?.plan === "premium" || access?.plan === "admin" ? (
+                <span className="font-semibold text-emerald-700">
+                  Plano Semestral Ativo
+                </span>
+              ) : (
+                <span>
+                  Avaliação gratuita:{" "}
+                  <strong className="text-[#0F172A]">{quota.daysLeft} dias</strong>
+                </span>
+              )}
             </div>
 
             <button
@@ -678,8 +677,8 @@ function PremiumDashboardContent() {
                       </div>
                       <div className="text-[11px] text-[#334155] pt-1">
                         {access?.plan === "premium" || access?.plan === "admin"
-                          ? `Plano Semestral · ${quota.creditsLeftToday}/${quota.dailyLimit} hoje`
-                          : `Avaliação: ${quota.daysLeft} dias · ${quota.creditsLeftToday}/${quota.dailyLimit} hoje`}
+                          ? "Plano Semestral · Acesso ilimitado"
+                          : `Avaliação gratuita · ${quota.daysLeft} dias restantes`}
                       </div>
                     </div>
 
@@ -1346,25 +1345,22 @@ function PremiumDashboardContent() {
             </div>
 
             <div className="border-t border-b border-[#E2E8F0] py-3.5 space-y-2 text-xs text-[#334155]">
-              <div className="flex items-center gap-2">
-                <Check className="w-3.5 h-3.5 text-[#0F2744] shrink-0" />
+              <div className="flex items-start gap-2">
+                <Check className="w-3.5 h-3.5 text-[#0F2744] shrink-0 mt-0.5" />
                 <span>
-                  Até 3 dossiês econômico-jurídicos inéditos por dia + consulta
-                  ilimitada aos lotes já analisados
+                  <strong>ROI e Lance Teto real:</strong> saiba até quanto ofertar e quanto sobra de lucro já descontando ITBI, leiloeiro, cartório e reforma
                 </span>
               </div>
-              <div className="flex items-center gap-2">
-                <Check className="w-3.5 h-3.5 text-[#0F2744] shrink-0" />
+              <div className="flex items-start gap-2">
+                <Check className="w-3.5 h-3.5 text-[#0F2744] shrink-0 mt-0.5" />
                 <span>
-                  Calculadora Reversa de Lance Teto e estimativa de reforma SP
-                  (base CUB/SINAPI)
+                  <strong>Dossiês completos ilimitados:</strong> leitura do edital e matrícula apontando dívidas de IPTU/condomínio, ocupação e riscos
                 </span>
               </div>
-              <div className="flex items-center gap-2">
-                <Check className="w-3.5 h-3.5 text-[#0F2744] shrink-0" />
+              <div className="flex items-start gap-2">
+                <Check className="w-3.5 h-3.5 text-[#0F2744] shrink-0 mt-0.5" />
                 <span>
-                  Comparador lado a lado (até 3 imóveis) e exportação em PDF e
-                  CSV
+                  <strong>Ranking e Comparador:</strong> filtre os imóveis de SP pelo maior ROI, compare até 3 opções lado a lado e baixe em PDF/CSV
                 </span>
               </div>
             </div>

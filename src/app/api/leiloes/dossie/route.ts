@@ -706,8 +706,8 @@ export async function POST(req: Request) {
         return NextResponse.json(
           {
             error:
-              "Você atingiu o limite de 3 análises inéditas hoje. Lotes já em cache continuam liberados.",
-            code: "DAILY_LIMIT_REACHED",
+              "Detectamos um volume incomum de requisições automáticas em curto intervalo. Aguarde alguns instantes ou consulte os dossiês já abertos.",
+            code: "FAIR_USE_LIMIT_REACHED",
           },
           { status: 429 }
         );

@@ -1482,7 +1482,7 @@ export default function LeilaoComIaPage() {
                         <div className="pt-1">
                           {access?.plan === "premium" || access?.plan === "admin" ? (
                             <div className="text-[11px] font-medium text-emerald-700 bg-emerald-50/80 border border-emerald-200/60 rounded-lg px-2 py-1">
-                              Plano Semestral Ativo · {access.creditsLeftToday}/{access.dailyLimit} hoje
+                              Plano Semestral · Acesso ilimitado
                             </div>
                           ) : access && !access.isActive ? (
                             <div className="text-[11px] font-medium text-amber-800 bg-amber-50 border border-amber-200/70 rounded-lg px-2 py-1">
@@ -1490,7 +1490,7 @@ export default function LeilaoComIaPage() {
                             </div>
                           ) : (
                             <div className="text-[11px] font-medium text-[#334155] bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-2 py-1">
-                              Teste Grátis · <strong>{access?.daysLeft ?? 15} dias</strong> restantes ({access?.creditsLeftToday ?? 3}/{access?.dailyLimit ?? 3} dossiês hoje)
+                              Teste Grátis · <strong>{access?.daysLeft ?? 15} dias</strong> restantes (acesso ilimitado)
                             </div>
                           )}
                         </div>
@@ -1999,7 +1999,7 @@ export default function LeilaoComIaPage() {
                           )}
                         </div>
 
-                        {/* Micro-gatilho minimalista: ROI Líquido & Lance Teto */}
+                        {/* Micro-gatilho minimalista: ROI & Lance Teto */}
                         <div
                           onClick={(e) => {
                             if (!hasActiveUserTrial) openDossieModal(lot.id, e);
@@ -2009,7 +2009,7 @@ export default function LeilaoComIaPage() {
                           {hasActiveUserTrial ? (
                             <>
                               <span className="text-[#475569] truncate">
-                                ROI líq. est.:{" "}
+                                ROI estimado:{" "}
                                 <strong className="text-emerald-700 font-bold">
                                   +{cardViability.netRoiPct}%
                                 </strong>
@@ -2025,7 +2025,7 @@ export default function LeilaoComIaPage() {
                             <>
                               <span className="flex items-center gap-1.5 text-[#475569] truncate">
                                 <Lock className="w-3 h-3 text-[#0F2744] shrink-0" />
-                                <span className="truncate">ROI líquido e Lance Teto no Dossiê</span>
+                                <span className="truncate">ROI e Lance Teto calculados no Dossiê</span>
                               </span>
                               <span className="font-semibold text-emerald-700 shrink-0">
                                 15d grátis
@@ -2090,10 +2090,10 @@ export default function LeilaoComIaPage() {
 
                         <div className="space-y-1">
                           <h4 className="text-sm font-bold text-[#0F172A] leading-snug">
-                            Compare todos os lotes de SP por ROI líquido e Lance Teto
+                            Compare todos os imóveis de SP por ROI e Lance Teto
                           </h4>
                           <p className="text-xs text-[#475569] leading-relaxed">
-                            Filtre mais de {lots.length || 500} imóveis por margem real pós-custos, compare até 3 lotes lado a lado e abra dossiês com leitura integral da matrícula e do edital.
+                            Filtre mais de {lots.length || 500} imóveis pelo maior ROI já descontando custos, compare até 3 opções lado a lado e abra dossiês completos ilimitados.
                           </p>
                         </div>
 
@@ -2695,10 +2695,10 @@ export default function LeilaoComIaPage() {
                 Acesso finHouse · 15 dias grátis
               </div>
               <h3 className="text-lg font-bold text-[#0F172A]">
-                Entrar ou criar conta gratuita
+                Descubra o lucro real e os riscos antes do lance
               </h3>
               <p className="text-xs text-[#64748B] leading-relaxed">
-                Desbloqueie a inteligência completa para arrematar com margem segura em São Paulo:
+                Entre com o Google para liberar 15 dias grátis (sem cartão) no painel completo:
               </p>
             </div>
 
@@ -2706,19 +2706,19 @@ export default function LeilaoComIaPage() {
               <div className="flex items-start gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
                 <span>
-                  <strong>Dashboard Comparativo (Screener):</strong> ordene todos os imóveis de SP por ROI líquido e compare até 3 lotes lado a lado
+                  <strong>ROI e Lance Teto real:</strong> saiba até quanto ofertar e quanto sobra de lucro já descontando ITBI, leiloeiro, cartório e reforma
                 </span>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
                 <span>
-                  <strong>Dossiê Completo:</strong> leitura integral de PDFs (matrícula e edital), dívidas de IPTU/condomínio e ocupação
+                  <strong>Dossiês completos ilimitados:</strong> leitura do edital e da matrícula apontando dívidas de condomínio/IPTU, ocupação e riscos jurídicos
                 </span>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
                 <span>
-                  <strong>Lance Teto &amp; ROI Líquido:</strong> simulação real com ITBI, leiloeiro, cartório e reforma SP
+                  <strong>Ranking e Comparador:</strong> filtre os imóveis de SP pelo maior ROI e compare até 3 opções lado a lado
                 </span>
               </div>
             </div>
@@ -2785,19 +2785,19 @@ export default function LeilaoComIaPage() {
               <div className="flex items-start gap-2">
                 <Check className="w-3.5 h-3.5 text-[#0F2744] shrink-0 mt-0.5" />
                 <span>
-                  Até 3 dossiês completos inéditos por dia + releitura ilimitada dos lotes já analisados
+                  <strong>ROI e Lance Teto real:</strong> saiba até quanto ofertar e quanto sobra de lucro já descontando ITBI, leiloeiro, cartório e reforma
                 </span>
               </div>
               <div className="flex items-start gap-2">
                 <Check className="w-3.5 h-3.5 text-[#0F2744] shrink-0 mt-0.5" />
                 <span>
-                  Dashboard Comparativo SP (Screener), comparador lado a lado (até 3 lotes) e exportação CSV/PDF
+                  <strong>Dossiês completos ilimitados:</strong> leitura do edital e matrícula apontando dívidas de condomínio/IPTU, ocupação e riscos
                 </span>
               </div>
               <div className="flex items-start gap-2">
                 <Check className="w-3.5 h-3.5 text-[#0F2744] shrink-0 mt-0.5" />
                 <span>
-                  Calculadora Reversa de Lance Teto e simulador de reforma SP (CUB/SINAPI)
+                  <strong>Ranking e Comparador:</strong> filtre os imóveis de SP pelo maior ROI, compare até 3 opções lado a lado e baixe em PDF/CSV
                 </span>
               </div>
             </div>
@@ -2876,25 +2876,25 @@ export default function LeilaoComIaPage() {
               {/* O que vem no Dossiê + Ecossistema Completo */}
               <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-2 text-xs text-[#334155]">
                 <div className="font-semibold text-[#0F172A]">
-                  Sua conta libera o ecossistema completo por 15 dias grátis:
+                  Teste grátis por 15 dias (sem cartão) o acesso completo:
                 </div>
                 <ul className="space-y-1.5 text-[11px]">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
                     <span>
-                      <strong>Dossiê Completo (PDFs + Edital/Matrícula):</strong> análise em 8 pontos de dívidas (IPTU/Condomínio), ocupação e riscos jurídicos
+                      <strong>ROI e Lance Teto real:</strong> saiba até quanto ofertar e quanto sobra de lucro já descontando ITBI, leiloeiro, cartório e reforma
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
                     <span>
-                      <strong>Lance Teto &amp; Simulador de ROI Líquido:</strong> lucro real descontando ITBI SP, leiloeiro, cartório e reforma (CUB/SINAPI)
+                      <strong>Dossiês completos ilimitados:</strong> leitura do edital e da matrícula apontando dívidas de condomínio/IPTU, ocupação e riscos jurídicos
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
                     <span>
-                      <strong>Dashboard Comparativo SP (Screener):</strong> ordene todos os lotes por retorno líquido e compare até 3 imóveis lado a lado
+                      <strong>Ranking e Comparador:</strong> filtre os imóveis de SP pelo maior ROI, compare até 3 opções lado a lado e baixe em PDF
                     </span>
                   </li>
                 </ul>
@@ -2961,8 +2961,8 @@ export default function LeilaoComIaPage() {
                     <span>Continuar com Google — 15 dias grátis</span>
                   </button>
                   <p className="text-[11px] text-center text-[#64748B]">
-                    Sem cartão no teste (até 3 dossiês inéditos/dia). Depois apenas{" "}
-                    <strong className="text-[#0F172A]">R$ 59,90 por 6 meses</strong> (&lt; R$ 10/mês).
+                    Sem pegadinha após os 15 dias: se quiser continuar, são apenas{" "}
+                    <strong className="text-[#0F172A]">R$ 59,90 por 6 meses</strong> (menos de R$ 10/mês, sem renovação automática).
                   </p>
                 </div>
               )}

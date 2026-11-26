@@ -1,4 +1,5 @@
-export const DAILY_LIMIT_PER_USER = 3;
+// Trava silenciosa anti-abuso/scraping (uso humano liberado sem contador visível)
+export const DAILY_LIMIT_PER_USER = 30;
 export const TRIAL_DURATION_DAYS = 15;
 export const PLAN_PRICE_DISPLAY = "R$ 59,90";
 export const PLAN_MONTHLY_EQUIVALENT = "R$ 9,98/mês";
