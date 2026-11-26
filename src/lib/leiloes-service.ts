@@ -31,6 +31,7 @@ export interface ScrapedAuctionLot {
   modality: string;
   seller: string;
   auctionDate: string;
+  isSecondPraca?: boolean;
   areaM2: number | null;
   acceptsFinancing: boolean;
   occupancy: "Desocupado" | "Ocupado" | "Ver no Edital";
@@ -55,7 +56,7 @@ export interface DailySnapshot {
   lots: ScrapedAuctionLot[];
 }
 
-const SNAPSHOT_VERSION = 8;
+const SNAPSHOT_VERSION = 9;
 const DAILY_TTL_MS = 24 * 60 * 60 * 1000;
 
 // Cache volátil em memória (Node.js process level)
@@ -969,12 +970,22 @@ export async function scrapePortalZuk(uf: string): Promise<ScrapedAuctionLot[]> 
 
     const p1 = parseBRLNumber(priceBlocks[0]?.[1]);
     const p2 = parseBRLNumber(priceBlocks[1]?.[1]);
-    const minBid = p2 > 0 ? p2 : p1;
+    const firstDateStr = dateBlocks[0]?.[1]?.trim() || "";
+    const secondDateStr = dateBlocks[1]?.[1]?.trim() || "";
+    const isFirstPracaStillOpen =
+      Boolean(firstDateStr) &&
+      Boolean(secondDateStr) &&
+      isAuctionUpcoming(firstDateStr);
+
+    const isSecondPraca = !isFirstPracaStillOpen && p2 > 0 && p2 < p1;
+    const minBid = isSecondPraca ? Math.round(p2) : Math.round(p1 || p2);
     if (minBid <= 0) continue;
 
-    const marketValue = p2 > 0 && p1 > p2 ? p1 : minBid;
+    const marketValue = isSecondPraca && p1 > minBid ? Math.round(p1) : minBid;
     const discountPct =
-      marketValue > minBid ? Math.round((1 - minBid / marketValue) * 100) : 0;
+      isSecondPraca && marketValue > minBid
+        ? Math.round((1 - minBid / marketValue) * 100)
+        : 0;
 
     const urlPath = sourceUrl.replace("https://www.portalzuk.com.br/imovel/", "");
     const urlParts = urlPath.split("/");
@@ -1013,8 +1024,9 @@ export async function scrapePortalZuk(uf: string): Promise<ScrapedAuctionLot[]> 
     const propType = stripTags(typeMatch?.[1] || "Imóvel");
     const areaM2 = extractAreaM2(areaMatch?.[1]);
 
-    const rawAuctionDate =
-      dateBlocks[1]?.[1]?.trim() || dateBlocks[0]?.[1]?.trim() || "Em aberto";
+    const rawAuctionDate = isFirstPracaStillOpen
+      ? firstDateStr
+      : secondDateStr || firstDateStr || "Em aberto";
     if (!isAuctionUpcoming(rawAuctionDate)) continue;
 
     const [lat, lng] = resolveCoords(
@@ -1053,6 +1065,7 @@ export async function scrapePortalZuk(uf: string): Promise<ScrapedAuctionLot[]> 
       modality: isJudicial ? "Leilão Judicial" : "Leilão Extrajudicial",
       seller,
       auctionDate: rawAuctionDate,
+      isSecondPraca,
       areaM2,
       acceptsFinancing: !isJudicial,
       occupancy: "Ver no Edital",
@@ -1379,26 +1392,38 @@ export async function scrapeSodreSantoro(uf = "sp"): Promise<ScrapedAuctionLot[]
       const desc = stripTags(item.lot_description || "");
       const bidInitial = parseFloat(item.bid_initial || item.bid_actual || "0");
       const secondPracaVal = parseFloat(item.tj_praca_value || "0");
-      const minBid =
-        secondPracaVal > 0 && secondPracaVal < bidInitial
-          ? Math.round(secondPracaVal)
-          : Math.round(bidInitial);
+      const pracaStatus = String(item.lot_praca_status || "").trim();
+      const pracaLabel = String(item.lot_praca_label || "").trim();
+      const isSecondPraca =
+        pracaStatus === "2" || /2[ªa]\s*pra[çc]a|2[ºo]\s*leil[ãa]o/i.test(pracaLabel);
+
+      // No Sodré Santoro, bid_initial sempre reflete o lance mínimo da praça ATIVA no momento.
+      // Quando lot_praca_status === "1" (1ª Praça), tj_praca_value é apenas o valor futuro da 2ª Praça.
+      const minBid = Math.round(bidInitial);
       if (!minBid || minBid < 20000) continue;
 
       const evalMatch = desc.match(/avalia[çc][ãa]o(?:\s+atualizada)?\s*:\s*R\$\s*([\d.,]+)/i);
       const parsedEval = evalMatch ? parseBRLNumber(evalMatch[1]) : 0;
-      const highestKnownValue = Math.max(bidInitial, secondPracaVal, parsedEval);
 
-      const marketValue =
-        highestKnownValue > minBid
-          ? Math.round(highestKnownValue)
-          : Math.round(minBid * 1.45);
+      let marketValue = minBid;
+      let discountPct = 0;
 
-      const discountPct = item.tj_praca_discount
-        ? parseInt(String(item.tj_praca_discount), 10)
-        : marketValue > minBid
-        ? Math.round((1 - minBid / marketValue) * 100)
-        : 0;
+      if (isSecondPraca) {
+        const highestKnownValue = Math.max(bidInitial, secondPracaVal, parsedEval);
+        marketValue =
+          highestKnownValue > minBid
+            ? Math.round(highestKnownValue)
+            : Math.round(minBid * 1.45);
+        discountPct = item.tj_praca_discount
+          ? parseInt(String(item.tj_praca_discount), 10)
+          : marketValue > minBid
+          ? Math.round((1 - minBid / marketValue) * 100)
+          : 0;
+      } else {
+        marketValue = parsedEval > minBid ? Math.round(parsedEval) : minBid;
+        discountPct =
+          parsedEval > minBid ? Math.round((1 - minBid / parsedEval) * 100) : 0;
+      }
 
       const rawCity = String(item.lot_city || "São Paulo").trim();
       const rawNeigh = String(item.lot_neighborhood || "").trim();
@@ -1476,6 +1501,7 @@ export async function scrapeSodreSantoro(uf = "sp"): Promise<ScrapedAuctionLot[]
         modality: isJudicial ? "Leilão Judicial" : `Extrajudicial · ${seller}`,
         seller,
         auctionDate,
+        isSecondPraca,
         areaM2,
         acceptsFinancing: !isJudicial,
         occupancy: (item.lot_occupied || "").toLowerCase().includes("desocupad")
@@ -1634,13 +1660,14 @@ export async function scrapeBiasiLeiloes(uf = "sp"): Promise<ScrapedAuctionLot[]
 
       const p1 = prices[0];
       const p2 = prices[1] || 0;
-      const minBid = p2 > 0 && p2 < p1 ? Math.round(p2) : Math.round(p1);
+      const isSecondPraca = p2 > 0 && p2 < p1 && c.includes("expired");
+      const minBid = isSecondPraca ? Math.round(p2) : Math.round(p1);
       if (minBid < 20000) continue;
 
       const marketValue =
-        p2 > 0 && p1 > p2 ? Math.round(p1) : Math.round(minBid * 1.45);
+        isSecondPraca && p1 > p2 ? Math.round(p1) : Math.round(minBid);
       const discountPct =
-        p2 > 0 && p1 > p2 ? Math.round((1 - p2 / p1) * 100) : 0;
+        isSecondPraca && p1 > p2 ? Math.round((1 - p2 / p1) * 100) : 0;
 
       const imgMatch = c.match(/class="card-img-cover"\s+src="([^"]+)"/i);
       const sellerMatch = c.match(
@@ -1679,6 +1706,7 @@ export async function scrapeBiasiLeiloes(uf = "sp"): Promise<ScrapedAuctionLot[]
         modality: isJudicial ? "Leilão Judicial" : `Extrajudicial · ${seller}`,
         seller,
         auctionDate,
+        isSecondPraca,
         areaM2,
         acceptsFinancing: !isJudicial,
         occupancy: rawTitle.toLowerCase().includes("desocupad")
@@ -1772,36 +1800,41 @@ export async function scrapeFrazaoLeiloes(uf = "sp"): Promise<ScrapedAuctionLot[
         .filter((v) => v > 0);
       if (prices.length === 0) continue;
 
-      const p1 = prices[0];
-      const p2 = prices[1] || 0;
-      const minBid = p2 > 0 && p2 < p1 ? Math.round(p2) : Math.round(p1);
-      if (minBid < 20000) continue;
-
-      const discMatch = calBlock.match(/-(\d{1,2})%/);
-      const discountPct = discMatch
-        ? parseInt(discMatch[1], 10)
-        : p2 > 0 && p1 > p2
-        ? Math.round((1 - p2 / p1) * 100)
-        : 0;
-      const marketValue =
-        p2 > 0 && p1 > p2
-          ? Math.round(p1)
-          : discountPct > 0 && discountPct < 85
-          ? Math.round(minBid / (1 - discountPct / 100))
-          : Math.round(minBid * 1.45);
-
       const dateMatches = [
         ...calBlock.matchAll(/(\d{2}\/\d{2}\/\d{4})(?:\s*às\s*(\d{2}[h:]\d{2}))?/gi),
       ];
-      const lastDateMatch = dateMatches[dateMatches.length - 1];
-      let extractedDate = "";
-      if (lastDateMatch?.[1]) {
-        const timePart = lastDateMatch[2] ? ` às ${lastDateMatch[2].replace("h", ":")}` : "";
-        extractedDate = `${lastDateMatch[1]}${timePart}`;
-      }
+      const firstDateStr = dateMatches[0]?.[1]
+        ? `${dateMatches[0][1]}${dateMatches[0][2] ? ` às ${dateMatches[0][2].replace("h", ":")}` : ""}`
+        : "";
+      const secondDateStr = dateMatches[1]?.[1]
+        ? `${dateMatches[1][1]}${dateMatches[1][2] ? ` às ${dateMatches[1][2].replace("h", ":")}` : ""}`
+        : "";
+      const isFirstPracaStillOpen =
+        Boolean(firstDateStr) &&
+        Boolean(secondDateStr) &&
+        isAuctionUpcoming(firstDateStr);
+
+      const p1 = prices[0];
+      const p2 = prices[1] || 0;
+      const isSecondPraca = !isFirstPracaStillOpen && p2 > 0 && p2 < p1;
+      const minBid = isSecondPraca ? Math.round(p2) : Math.round(p1);
+      if (minBid < 20000) continue;
+
+      const discMatch = calBlock.match(/-(\d{1,2})%/);
+      const discountPct = isSecondPraca
+        ? discMatch
+          ? parseInt(discMatch[1], 10)
+          : Math.round((1 - p2 / p1) * 100)
+        : 0;
+      const marketValue =
+        isSecondPraca && p1 > p2 ? Math.round(p1) : Math.round(minBid);
+
+      const activeDateStr = isFirstPracaStillOpen
+        ? firstDateStr
+        : secondDateStr || firstDateStr;
       const auctionDate =
-        extractedDate && isAuctionUpcoming(extractedDate)
-          ? extractedDate
+        activeDateStr && isAuctionUpcoming(activeDateStr)
+          ? activeDateStr
           : "Aberto para Lances";
 
       const { city, neighborhood } = parseBlueIntraLocationFromTitle(rawTitle);
@@ -1846,6 +1879,7 @@ export async function scrapeFrazaoLeiloes(uf = "sp"): Promise<ScrapedAuctionLot[
         modality: isJudicial ? "Leilão Judicial" : `Extrajudicial · ${seller}`,
         seller,
         auctionDate,
+        isSecondPraca,
         areaM2,
         acceptsFinancing: !isJudicial,
         occupancy: rawTitle.toLowerCase().includes("desocupad")
@@ -1964,25 +1998,31 @@ export async function scrapeGrupoLance(uf = "sp"): Promise<ScrapedAuctionLot[]> 
         }
       }
 
-      const p1 = rowPrices[0] || parseBRLNumber(cardPriceMatch?.[1]);
+      const cardPrice = parseBRLNumber(cardPriceMatch?.[1]);
+      const p1 = rowPrices[0] || cardPrice;
       const p2 = rowPrices[1] || 0;
-      const minBid = p2 > 0 && p2 < p1 ? Math.round(p2) : Math.round(p1);
+      const firstPracaEnded = Boolean(rowEndDates[0] && !isAuctionUpcoming(rowEndDates[0]));
+      const isSecondPraca =
+        p2 > 0 &&
+        p2 < p1 &&
+        (firstPracaEnded || (cardPrice > 0 && Math.abs(cardPrice - p2) < 10));
+
+      const minBid = isSecondPraca ? Math.round(p2) : Math.round(cardPrice || p1);
       if (!minBid || minBid < 20000) continue;
 
-      const discountPct = counterMatch
-        ? parseInt(counterMatch[1], 10)
-        : p2 > 0 && p1 > p2
-        ? Math.round((1 - p2 / p1) * 100)
+      const discountPct = isSecondPraca
+        ? p1 > p2
+          ? Math.round((1 - p2 / p1) * 100)
+          : counterMatch
+          ? parseInt(counterMatch[1], 10)
+          : 0
         : 0;
       const marketValue =
-        p2 > 0 && p1 > p2
-          ? Math.round(p1)
-          : discountPct > 0 && discountPct < 85
-          ? Math.round(minBid / (1 - discountPct / 100))
-          : Math.round(minBid * 1.45);
+        isSecondPraca && p1 > minBid ? Math.round(p1) : Math.round(minBid);
 
-      const rawAuctionDate =
-        rowEndDates[rowEndDates.length - 1] || rowEndDates[0] || "Aberto para Lances";
+      const rawAuctionDate = isSecondPraca
+        ? rowEndDates[rowEndDates.length - 1] || rowEndDates[0] || "Aberto para Lances"
+        : rowEndDates[0] || rowEndDates[rowEndDates.length - 1] || "Aberto para Lances";
       if (!isAuctionUpcoming(rawAuctionDate)) continue;
 
       const isJudicial = b.includes("/leiloes/judiciais") || b.includes("/leiloes/trt");
@@ -2009,6 +2049,7 @@ export async function scrapeGrupoLance(uf = "sp"): Promise<ScrapedAuctionLot[]> 
         modality: isJudicial ? "Leilão Judicial" : "Leilão Extrajudicial",
         seller: isJudicial ? "Tribunal de Justiça / TRT" : "Comitente Grupo Lance",
         auctionDate: rawAuctionDate,
+        isSecondPraca,
         areaM2,
         acceptsFinancing: !isJudicial,
         occupancy: "Ver no Edital",

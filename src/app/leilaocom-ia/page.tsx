@@ -289,6 +289,7 @@ function computeLotViability(lot: ScrapedAuctionLot) {
 }
 
 function isLotSecondStage(lot: ScrapedAuctionLot): boolean {
+  if (typeof lot.isSecondPraca === "boolean") return lot.isSecondPraca;
   return (
     lot.discountPct > 0 ||
     /2[ªa]\s*praça|segunda\s*praça|2[ºo]\s*leilão|segundo\s*leilão/i.test(
