@@ -494,14 +494,14 @@ export default function LeilaoComIaPage() {
         } else if (coords && Number.isFinite(coords.lat) && Number.isFinite(coords.lng)) {
           const zoom =
             nextCity.toLowerCase() === "são paulo" ||
-            nextCity.toLowerCase() === "sao paulo"
+              nextCity.toLowerCase() === "sao paulo"
               ? 11
               : 12;
           mapInstanceRef.current.setView([coords.lat, coords.lng], zoom, {
             animate: true,
           });
         }
-      } catch {}
+      } catch { }
     }
   };
 
@@ -577,6 +577,8 @@ export default function LeilaoComIaPage() {
   const markersRef = useRef<Record<string, any>>({});
   const [mapReady, setMapReady] = useState(false);
 
+  const sharedLotTargetRef = useRef<{ lat: number; lng: number } | null>(null);
+
   // Busca os leilões de SP (com cache diário de 24h no servidor)
   const fetchLiveAuctions = async () => {
     setLoadingLots(true);
@@ -586,6 +588,38 @@ export default function LeilaoComIaPage() {
       if (data?.lots && Array.isArray(data.lots)) {
         setLots(data.lots);
         if (data.updatedAt) setUpdatedAtLabel(data.updatedAt);
+
+        const urlLoteParam =
+          typeof window !== "undefined"
+            ? new URLSearchParams(window.location.search).get("lote")?.trim()
+            : null;
+
+        if (urlLoteParam) {
+          const normParam = urlLoteParam.toLowerCase();
+          const matchedLot = data.lots.find(
+            (l: ScrapedAuctionLot) =>
+              (l.id || "").toLowerCase() === normParam ||
+              (l.code || "").toLowerCase() === normParam ||
+              (l.id || "").toLowerCase().endsWith(`-${normParam}`)
+          );
+          if (matchedLot) {
+            hasUserInteractedRef.current = true;
+            setSelectedId(matchedLot.id);
+            setMobileTab("detail");
+            if (Number.isFinite(matchedLot.lat) && Number.isFinite(matchedLot.lng)) {
+              sharedLotTargetRef.current = { lat: matchedLot.lat, lng: matchedLot.lng };
+              if (mapInstanceRef.current) {
+                try {
+                  mapInstanceRef.current.setView([matchedLot.lat, matchedLot.lng], 14, {
+                    animate: false,
+                  });
+                } catch { }
+              }
+            }
+            return;
+          }
+        }
+
         if (data.lots.length > 0) {
           setSelectedId(data.lots[0].id);
         }
@@ -600,6 +634,16 @@ export default function LeilaoComIaPage() {
   useEffect(() => {
     fetchLiveAuctions();
   }, []);
+
+  // Quando o mapa termina de inicializar após abertura via link compartilhado (?lote=...), centraliza no lote
+  useEffect(() => {
+    if (mapReady && mapInstanceRef.current && sharedLotTargetRef.current) {
+      const { lat, lng } = sharedLotTargetRef.current;
+      try {
+        mapInstanceRef.current.setView([lat, lng], 14, { animate: false });
+      } catch { }
+    }
+  }, [mapReady]);
 
   // Busca inteligente por CEP via ViaCEP automática
   const [cepResolvedNeighborhood, setCepResolvedNeighborhood] = useState<string>("");
@@ -1293,8 +1337,8 @@ export default function LeilaoComIaPage() {
                 type="button"
                 onClick={() => setShowFilterModal(true)}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold border flex items-center gap-1.5 transition-colors cursor-pointer ${activeFilterCount > 0
-                    ? "bg-[#0F2744] text-white border-[#0F2744] shadow-xs"
-                    : "bg-white text-[#334155] border-[#CBD5E1] hover:border-[#0F2744] hover:bg-slate-50"
+                  ? "bg-[#0F2744] text-white border-[#0F2744] shadow-xs"
+                  : "bg-white text-[#334155] border-[#CBD5E1] hover:border-[#0F2744] hover:bg-slate-50"
                   }`}
               >
                 <SlidersHorizontal className="w-3.5 h-3.5" />
@@ -1311,8 +1355,8 @@ export default function LeilaoComIaPage() {
                 type="button"
                 onClick={() => setFilterFavoritesOnly(!filterFavoritesOnly)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors flex items-center gap-1.5 cursor-pointer ${filterFavoritesOnly
-                    ? "bg-rose-600 text-white border-rose-600 shadow-xs"
-                    : "bg-white text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1]"
+                  ? "bg-rose-600 text-white border-rose-600 shadow-xs"
+                  : "bg-white text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1]"
                   }`}
               >
                 <Heart
@@ -1386,8 +1430,8 @@ export default function LeilaoComIaPage() {
             type="button"
             onClick={() => setShowFilterModal(true)}
             className={`py-2 px-3 rounded-xl text-xs font-semibold border flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer ${activeFilterCount > 0
-                ? "bg-[#0F2744] text-white border-[#0F2744] shadow-xs"
-                : "bg-white text-[#334155] border-[#CBD5E1] hover:bg-slate-50"
+              ? "bg-[#0F2744] text-white border-[#0F2744] shadow-xs"
+              : "bg-white text-[#334155] border-[#CBD5E1] hover:bg-slate-50"
               }`}
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
@@ -1404,8 +1448,8 @@ export default function LeilaoComIaPage() {
             type="button"
             onClick={() => setFilterFavoritesOnly(!filterFavoritesOnly)}
             className={`p-2 rounded-xl border flex items-center justify-center shrink-0 transition-colors cursor-pointer ${filterFavoritesOnly
-                ? "bg-rose-600 text-white border-rose-600 shadow-xs"
-                : "bg-white text-[#475569] border-[#CBD5E1] hover:border-rose-400"
+              ? "bg-rose-600 text-white border-rose-600 shadow-xs"
+              : "bg-white text-[#475569] border-[#CBD5E1] hover:border-rose-400"
               }`}
             title="Ver imóveis favoritados"
           >
@@ -1423,8 +1467,8 @@ export default function LeilaoComIaPage() {
           type="button"
           onClick={() => setMobileTab("feed")}
           className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${mobileTab === "feed" || mobileTab === "detail"
-              ? "bg-[#0F2744] text-white shadow-xs"
-              : "bg-[#F8FAFC] text-[#64748B] hover:text-[#0F172A]"
+            ? "bg-[#0F2744] text-white shadow-xs"
+            : "bg-[#F8FAFC] text-[#64748B] hover:text-[#0F172A]"
             }`}
         >
           <FileText className="w-3.5 h-3.5" />
@@ -1439,8 +1483,8 @@ export default function LeilaoComIaPage() {
             }, 150);
           }}
           className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${mobileTab === "map"
-              ? "bg-[#0F2744] text-white shadow-xs"
-              : "bg-[#F8FAFC] text-[#64748B] hover:text-[#0F172A]"
+            ? "bg-[#0F2744] text-white shadow-xs"
+            : "bg-[#F8FAFC] text-[#64748B] hover:text-[#0F172A]"
             }`}
         >
           <MapPin className="w-3.5 h-3.5" />
@@ -1550,8 +1594,8 @@ export default function LeilaoComIaPage() {
                       }
                     }}
                     className={`flex items-center gap-3 p-2.5 rounded-2xl border transition-all shrink-0 w-[295px] sm:w-[325px] cursor-pointer ${active
-                        ? "bg-[#0F2744] text-white border-[#0F2744] shadow-md ring-2 ring-[#0F2744]/25"
-                        : "bg-[#F8FAFC] hover:bg-white text-[#0F172A] border-[#E2E8F0]"
+                      ? "bg-[#0F2744] text-white border-[#0F2744] shadow-md ring-2 ring-[#0F2744]/25"
+                      : "bg-[#F8FAFC] hover:bg-white text-[#0F172A] border-[#E2E8F0]"
                       }`}
                   >
                     {/* Thumbnail com Foto Real do Lote */}
@@ -1586,8 +1630,8 @@ export default function LeilaoComIaPage() {
                       >
                         <Heart
                           className={`w-3 h-3 transition-colors ${favorites[lot.id]
-                              ? "fill-rose-500 text-rose-500"
-                              : "text-slate-600 hover:text-rose-500"
+                            ? "fill-rose-500 text-rose-500"
+                            : "text-slate-600 hover:text-rose-500"
                             }`}
                         />
                       </button>
@@ -1618,8 +1662,8 @@ export default function LeilaoComIaPage() {
                             type="button"
                             onClick={(e) => handleShare(lot, e)}
                             className={`p-1 rounded-lg border text-[10px] flex items-center justify-center transition-colors cursor-pointer ${active
-                                ? "border-white/30 text-white hover:bg-white/10"
-                                : "border-[#CBD5E1] text-[#0F2744] hover:bg-slate-100"
+                              ? "border-white/30 text-white hover:bg-white/10"
+                              : "border-[#CBD5E1] text-[#0F2744] hover:bg-slate-100"
                               }`}
                             title="Compartilhar imóvel"
                           >
@@ -1629,8 +1673,8 @@ export default function LeilaoComIaPage() {
                             type="button"
                             onClick={(e) => openDossieModal(lot.id, e)}
                             className={`px-2.5 py-1 rounded-lg text-[10px] font-bold flex items-center gap-0.5 shrink-0 whitespace-nowrap transition-colors cursor-pointer ${active
-                                ? "bg-white text-[#0F2744] hover:bg-slate-100 shadow-xs"
-                                : "bg-[#0F2744] text-white hover:bg-[#0A1B30]"
+                              ? "bg-white text-[#0F2744] hover:bg-slate-100 shadow-xs"
+                              : "bg-[#0F2744] text-white hover:bg-[#0A1B30]"
                               }`}
                           >
                             Ver Dossiê
@@ -1671,8 +1715,8 @@ export default function LeilaoComIaPage() {
                     type="button"
                     onClick={() => setFilterFavoritesOnly(!filterFavoritesOnly)}
                     className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-colors flex items-center gap-1 whitespace-nowrap shrink-0 cursor-pointer ${filterFavoritesOnly
-                        ? "bg-rose-600 text-white border-rose-600 shadow-xs"
-                        : "bg-[#F8FAFC] text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1]"
+                      ? "bg-rose-600 text-white border-rose-600 shadow-xs"
+                      : "bg-[#F8FAFC] text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1]"
                       }`}
                   >
                     <Heart
@@ -1754,8 +1798,8 @@ export default function LeilaoComIaPage() {
                           >
                             <Heart
                               className={`w-4 h-4 transition-colors ${favorites[lot.id]
-                                  ? "fill-rose-500 text-rose-500"
-                                  : "text-[#0F172A] hover:text-rose-500"
+                                ? "fill-rose-500 text-rose-500"
+                                : "text-[#0F172A] hover:text-rose-500"
                                 }`}
                             />
                           </button>
@@ -1907,14 +1951,14 @@ export default function LeilaoComIaPage() {
                         >
                           <Heart
                             className={`w-4 h-4 transition-colors ${favorites[selectedLot.id]
-                                ? "fill-rose-500 text-rose-500"
-                                : "text-[#0F172A] hover:text-rose-500"
+                              ? "fill-rose-500 text-rose-500"
+                              : "text-[#0F172A] hover:text-rose-500"
                               }`}
                           />
                           <span
                             className={`hidden sm:inline ${favorites[selectedLot.id]
-                                ? "text-rose-600 font-bold"
-                                : "text-[#0F172A]"
+                              ? "text-rose-600 font-bold"
+                              : "text-[#0F172A]"
                               }`}
                           >
                             {favorites[selectedLot.id] ? "Salvo" : "Salvar"}
@@ -2013,11 +2057,10 @@ export default function LeilaoComIaPage() {
                         </p>
                       </div>
                       <span
-                        className={`whitespace-nowrap shrink-0 text-xs font-bold px-3 py-1 rounded-full ${
-                          isSelectedUnlocked
+                        className={`whitespace-nowrap shrink-0 text-xs font-bold px-3 py-1 rounded-full ${isSelectedUnlocked
                             ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
                             : "bg-[#0F2744] text-white"
-                        }`}
+                          }`}
                       >
                         {isSelectedUnlocked ? "Liberado" : "15 dias grátis"}
                       </span>
@@ -2273,8 +2316,8 @@ export default function LeilaoComIaPage() {
                   >
                     <Heart
                       className={`w-4 h-4 transition-colors ${favorites[mobileMapPreviewLot.id]
-                          ? "fill-rose-500 text-rose-500"
-                          : "text-[#0F172A] hover:text-rose-500"
+                        ? "fill-rose-500 text-rose-500"
+                        : "text-[#0F172A] hover:text-rose-500"
                         }`}
                     />
                   </button>
@@ -2807,8 +2850,8 @@ export default function LeilaoComIaPage() {
                 <button
                   type="submit"
                   className={`w-full py-3 rounded-xl text-white font-bold text-xs transition-colors cursor-pointer shadow-sm ${modalMode === "credit"
-                      ? "bg-[#0F3B78] hover:bg-[#0B2E60]"
-                      : "bg-[#1E293B] hover:bg-[#0F172A]"
+                    ? "bg-[#0F3B78] hover:bg-[#0B2E60]"
+                    : "bg-[#1E293B] hover:bg-[#0F172A]"
                     }`}
                 >
                   {modalMode === "lawyer"
@@ -2855,8 +2898,8 @@ export default function LeilaoComIaPage() {
                   type="button"
                   onClick={() => setFilterFinancing(false)}
                   className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${!filterFinancing
-                      ? "bg-[#0F2744] text-white border-[#0F2744] shadow-xs"
-                      : "bg-white text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1]"
+                    ? "bg-[#0F2744] text-white border-[#0F2744] shadow-xs"
+                    : "bg-white text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1]"
                     }`}
                 >
                   Todos os Leilões
@@ -2865,8 +2908,8 @@ export default function LeilaoComIaPage() {
                   type="button"
                   onClick={() => setFilterFinancing(true)}
                   className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${filterFinancing
-                      ? "bg-[#0F2744] text-white border-[#0F2744] shadow-xs"
-                      : "bg-white text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1]"
+                    ? "bg-[#0F2744] text-white border-[#0F2744] shadow-xs"
+                    : "bg-white text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1]"
                     }`}
                 >
                   <span>🏦 Bancos / Financiamento</span>
@@ -2884,8 +2927,8 @@ export default function LeilaoComIaPage() {
                   type="button"
                   onClick={() => setFilterSecondStageOnly(false)}
                   className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${!filterSecondStageOnly
-                      ? "bg-[#0F2744] text-white border-[#0F2744] shadow-xs"
-                      : "bg-white text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1]"
+                    ? "bg-[#0F2744] text-white border-[#0F2744] shadow-xs"
+                    : "bg-white text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1]"
                     }`}
                 >
                   Todas as Praças
@@ -2894,8 +2937,8 @@ export default function LeilaoComIaPage() {
                   type="button"
                   onClick={() => setFilterSecondStageOnly(true)}
                   className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${filterSecondStageOnly
-                      ? "bg-amber-600 text-white border-amber-600 shadow-xs"
-                      : "bg-white text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1]"
+                    ? "bg-amber-600 text-white border-amber-600 shadow-xs"
+                    : "bg-white text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1]"
                     }`}
                 >
                   <span>🔥 Apenas 2ª Praça</span>
@@ -2913,8 +2956,8 @@ export default function LeilaoComIaPage() {
                   type="button"
                   onClick={() => setFilterHighDiscount(false)}
                   className={`py-2 px-2.5 rounded-xl text-[11px] sm:text-xs font-semibold border transition-all cursor-pointer whitespace-nowrap ${!filterHighDiscount
-                      ? "bg-[#0F2744] text-white border-[#0F2744] shadow-xs"
-                      : "bg-white text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1]"
+                    ? "bg-[#0F2744] text-white border-[#0F2744] shadow-xs"
+                    : "bg-white text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1]"
                     }`}
                 >
                   Qualquer Retorno
@@ -2923,8 +2966,8 @@ export default function LeilaoComIaPage() {
                   type="button"
                   onClick={() => setFilterHighDiscount(true)}
                   className={`py-2 px-2.5 rounded-xl text-[11px] sm:text-xs font-semibold border transition-all cursor-pointer flex items-center justify-center gap-1 whitespace-nowrap ${filterHighDiscount
-                      ? "bg-emerald-700 text-white border-emerald-700 shadow-xs"
-                      : "bg-white text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1]"
+                    ? "bg-emerald-700 text-white border-emerald-700 shadow-xs"
+                    : "bg-white text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1]"
                     }`}
                 >
                   <Percent className="w-3 h-3 shrink-0" />
@@ -3116,22 +3159,20 @@ export default function LeilaoComIaPage() {
                         lng: item.lng,
                       })
                     }
-                    className={`text-left p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${
-                      isSelectedCity
+                    className={`text-left p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${isSelectedCity
                         ? "bg-[#0F2744] text-white border-[#0F2744] shadow-sm"
                         : "bg-[#F8FAFC] hover:bg-white text-[#0F172A] border-[#E2E8F0] hover:border-[#0F2744]/40 hover:shadow-xs"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-start justify-between gap-1.5">
                       <span className="text-xs font-bold leading-snug line-clamp-1">
                         {item.city}
                       </span>
                       <span
-                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 tabular-nums ${
-                          isSelectedCity
+                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 tabular-nums ${isSelectedCity
                             ? "bg-white/15 text-white"
                             : "bg-white text-[#0F2744] border border-[#E2E8F0]"
-                        }`}
+                          }`}
                       >
                         {item.count} {item.count === 1 ? "lote" : "lotes"}
                       </span>
@@ -3139,22 +3180,20 @@ export default function LeilaoComIaPage() {
 
                     <div className="space-y-0.5">
                       <div
-                        className={`text-[11px] font-semibold tabular-nums ${
-                          isSelectedCity ? "text-slate-200" : "text-[#334155]"
-                        }`}
+                        className={`text-[11px] font-semibold tabular-nums ${isSelectedCity ? "text-slate-200" : "text-[#334155]"
+                          }`}
                       >
                         {item.minPrice > 0
                           ? `A partir de ${formatBRL(item.minPrice)}`
                           : "Consultar edital"}
                       </div>
                       <div
-                        className={`text-[10px] font-medium ${
-                          isSelectedCity
+                        className={`text-[10px] font-medium ${isSelectedCity
                             ? "text-emerald-300"
                             : item.maxDiscount > 0
-                            ? "text-emerald-700"
-                            : "text-[#64748B]"
-                        }`}
+                              ? "text-emerald-700"
+                              : "text-[#64748B]"
+                          }`}
                       >
                         {item.maxDiscount > 0
                           ? `Até -${item.maxDiscount}% · ${item.secondStageCount} em 2ª praça`
