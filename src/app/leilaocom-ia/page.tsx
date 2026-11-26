@@ -31,6 +31,9 @@ import {
   Sparkles,
   Heart,
   Share2,
+  User as UserIcon,
+  LogOut,
+  ChevronDown,
 } from "lucide-react";
 import type { ScrapedAuctionLot } from "@/app/api/leiloes/route";
 
@@ -300,8 +303,30 @@ function isLotSecondStage(lot: ScrapedAuctionLot): boolean {
 
 export default function LeilaoComIaPage() {
   const router = useRouter();
-  const { user, access, loginWithGoogle } = useAuth();
+  const { user, access, accessToken, loginWithGoogle, logout } = useAuth();
   const hasActiveUserTrial = Boolean(user && (!access || access.isActive));
+
+  // Menu minimalista de conta e modais globais (login / plano semestral)
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement | null>(null);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const [upgradeWhatsapp, setUpgradeWhatsapp] = useState("");
+  const [upgradeSubmitted, setUpgradeSubmitted] = useState(false);
+
+  useEffect(() => {
+    if (!accountMenuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        accountMenuRef.current &&
+        !accountMenuRef.current.contains(e.target as Node)
+      ) {
+        setAccountMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [accountMenuOpen]);
 
   const [lots, setLots] = useState<ScrapedAuctionLot[]>([]);
   const [loadingLots, setLoadingLots] = useState(true);
@@ -1273,39 +1298,39 @@ export default function LeilaoComIaPage() {
     <div className="min-h-screen w-full max-w-[100vw] overflow-x-hidden bg-[#F8FAFC] text-[#0F172A] flex flex-col font-sans antialiased">
       {/* ─── HEADER INSTITUCIONAL FLUTUANTE (FINHOUSE) ─── */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#E2E8F0] shadow-xs transition-shadow">
-        <div className="h-16 px-4 sm:px-6 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3 shrink-0">
+        <div className="h-14 sm:h-16 px-3.5 sm:px-6 flex items-center justify-between gap-2 sm:gap-3">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
               {/* Logo Institucional finHouse (mesma tipografia da Home) */}
-              <Link href="/" className="flex items-center gap-2 shrink-0 group">
+              <Link href="/" className="flex items-center gap-1.5 sm:gap-2 shrink-0 group">
                 <Image
                   src="/logo.png"
                   alt="finHouse"
-                  width={30}
-                  height={30}
-                  className="rounded-lg"
+                  width={28}
+                  height={28}
+                  className="rounded-lg sm:w-[30px] sm:h-[30px]"
                 />
-                <span className="text-[18px] sm:text-[19px] font-semibold tracking-[-0.02em] text-[#222222]">
+                <span className="text-[16px] sm:text-[19px] font-semibold tracking-[-0.02em] text-[#222222]">
                   finHouse
                 </span>
               </Link>
 
               {/* Divisor Vertical Sutil */}
-              <span className="h-5 w-px bg-[#E2E8F0]" aria-hidden="true" />
+              <span className="h-4 sm:h-5 w-px bg-[#E2E8F0]" aria-hidden="true" />
 
               {/* Sub-brand Logo: leilão com IA (leitura clara sem confundir com .com) */}
               <Link
                 href="/leilaocom-ia"
-                className="flex items-center gap-1.5 shrink-0 select-none"
+                className="flex items-center gap-1 sm:gap-1.5 shrink-0 select-none"
                 title="Leilão com Inteligência Artificial — finHouse"
               >
-                <span className="text-[17px] sm:text-[18px] tracking-[-0.02em] flex items-baseline">
+                <span className="text-[15px] sm:text-[18px] tracking-[-0.02em] flex items-baseline">
                   <span className="font-semibold text-[#222222]">leilão</span>
-                  <span className="font-normal text-[#717171] text-[14px] sm:text-[15px] mx-1">
+                  <span className="font-normal text-[#717171] text-[13px] sm:text-[15px] mx-0.5 sm:mx-1">
                     com
                   </span>
                 </span>
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-[#0F2744] text-white text-[11px] sm:text-[12px] font-bold tracking-tight leading-none shadow-2xs">
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-[#0F2744] text-white text-[10px] sm:text-[12px] font-bold tracking-tight leading-none shadow-2xs">
                   IA
                 </span>
               </Link>
@@ -1389,17 +1414,163 @@ export default function LeilaoComIaPage() {
             </div>
           </div>
 
-          {/* Status de Sincronização Diária no Estado de SP + Link Painel Premium */}
-          <div className="hidden sm:flex items-center gap-3 text-xs text-[#64748B]">
+          {/* Ações à Direita: Screener (Desktop) + Menu Minimalista de Conta/Login (Mobile & Desktop) */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <Link
               href="/leilaocom-ia/premium"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0F2744] hover:bg-[#0A1B30] text-white font-semibold text-xs transition-colors"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0F2744] hover:bg-[#0A1B30] text-white font-semibold text-xs transition-colors"
             >
-              <span>Screener & Comparador</span>
+              <BarChart3 className="w-3.5 h-3.5" />
+              <span>Screener &amp; Comparador</span>
             </Link>
-            <div className="flex items-center gap-1.5">
+
+            <div className="hidden md:flex items-center gap-1.5 text-xs text-[#64748B]">
               <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
               <span>Base SP ({updatedAtLabel})</span>
+            </div>
+
+            {/* Pílula Única de Conta / Login */}
+            <div ref={accountMenuRef} className="relative">
+              {!user ? (
+                <button
+                  type="button"
+                  onClick={() => setAuthModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#CBD5E1] hover:border-[#0F2744] bg-white hover:bg-[#F8FAFC] text-[#0F172A] text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  <UserIcon className="w-3.5 h-3.5 text-[#475569]" />
+                  <span>Entrar</span>
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setAccountMenuOpen((prev) => !prev)}
+                    className="inline-flex items-center gap-1.5 pl-1.5 pr-2.5 py-1 rounded-full border border-[#E2E8F0] hover:border-[#CBD5E1] bg-white hover:bg-[#F8FAFC] text-xs font-medium text-[#0F172A] transition-colors cursor-pointer"
+                    title="Minha conta e acesso"
+                  >
+                    <span className="w-6 h-6 rounded-full bg-[#0F2744] text-white text-[11px] font-bold flex items-center justify-center shrink-0">
+                      {(user.fullName || user.email || "U")
+                        .trim()
+                        .charAt(0)
+                        .toUpperCase()}
+                    </span>
+                    {access?.plan === "premium" || access?.plan === "admin" ? (
+                      <span className="text-[10px] font-bold text-[#0F2744] bg-[#F1F5F9] px-1.5 py-0.5 rounded-full">
+                        PRO
+                      </span>
+                    ) : access && !access.isActive ? (
+                      <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-full">
+                        Renovar
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full">
+                        {access?.daysLeft ?? 15}d
+                      </span>
+                    )}
+                    <ChevronDown className="w-3 h-3 text-[#64748B]" />
+                  </button>
+
+                  {accountMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-64 bg-white border border-[#E2E8F0] rounded-2xl shadow-xl p-2 z-50">
+                      <div className="px-3 py-2.5 border-b border-[#F1F5F9] space-y-1.5">
+                        <div className="text-xs font-bold text-[#0F172A] truncate">
+                          {user.fullName || user.username}
+                        </div>
+                        <div className="text-[11px] text-[#64748B] truncate">
+                          {user.email}
+                        </div>
+                        <div className="pt-1">
+                          {access?.plan === "premium" || access?.plan === "admin" ? (
+                            <div className="text-[11px] font-medium text-emerald-700 bg-emerald-50/80 border border-emerald-200/60 rounded-lg px-2 py-1">
+                              Plano Semestral Ativo · {access.creditsLeftToday}/{access.dailyLimit} hoje
+                            </div>
+                          ) : access && !access.isActive ? (
+                            <div className="text-[11px] font-medium text-amber-800 bg-amber-50 border border-amber-200/70 rounded-lg px-2 py-1">
+                              Período grátis encerrado
+                            </div>
+                          ) : (
+                            <div className="text-[11px] font-medium text-[#334155] bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg px-2 py-1">
+                              Teste Grátis · <strong>{access?.daysLeft ?? 15} dias</strong> restantes ({access?.creditsLeftToday ?? 3}/{access?.dailyLimit ?? 3} dossiês hoje)
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="py-1.5 space-y-0.5">
+                        <Link
+                          href="/leilaocom-ia/premium"
+                          onClick={() => setAccountMenuOpen(false)}
+                          className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-[#0F172A] hover:bg-[#F8FAFC] transition-colors"
+                        >
+                          <span className="flex items-center gap-2">
+                            <BarChart3 className="w-3.5 h-3.5 text-[#0F2744]" />
+                            Screener &amp; Comparador
+                          </span>
+                          <ChevronRight className="w-3.5 h-3.5 text-[#94A3B8]" />
+                        </Link>
+                        <Link
+                          href="/leilaocom-ia/premium?tab=my_analyses"
+                          onClick={() => setAccountMenuOpen(false)}
+                          className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-[#0F172A] hover:bg-[#F8FAFC] transition-colors"
+                        >
+                          <span className="flex items-center gap-2">
+                            <FileText className="w-3.5 h-3.5 text-[#0F2744]" />
+                            Minhas Análises ({access?.analyzedLotIds?.length ?? 0})
+                          </span>
+                          <ChevronRight className="w-3.5 h-3.5 text-[#94A3B8]" />
+                        </Link>
+                        <Link
+                          href="/leilaocom-ia/premium/comparar"
+                          onClick={() => setAccountMenuOpen(false)}
+                          className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-[#0F172A] hover:bg-[#F8FAFC] transition-colors"
+                        >
+                          <span className="flex items-center gap-2">
+                            <Scale className="w-3.5 h-3.5 text-[#0F2744]" />
+                            Comparar Lado a Lado
+                          </span>
+                          <ChevronRight className="w-3.5 h-3.5 text-[#94A3B8]" />
+                        </Link>
+                      </div>
+
+                      {access?.plan !== "premium" && access?.plan !== "admin" && (
+                        <div className="px-1.5 pb-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAccountMenuOpen(false);
+                              setUpgradeWhatsapp(access?.whatsapp || "");
+                              setUpgradeModalOpen(true);
+                            }}
+                            className="w-full py-2 px-3 rounded-xl bg-[#0F2744] hover:bg-[#0A1B30] text-white text-left transition-colors cursor-pointer"
+                          >
+                            <div className="text-[11px] font-bold flex items-center justify-between">
+                              <span>Assinar Plano Semestral</span>
+                              <span>R$ 59,90</span>
+                            </div>
+                            <div className="text-[10px] text-slate-300 mt-0.5">
+                              6 meses de acesso (&lt; R$ 10/mês)
+                            </div>
+                          </button>
+                        </div>
+                      )}
+
+                      <div className="pt-1 border-t border-[#F1F5F9]">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            setAccountMenuOpen(false);
+                            await logout();
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-[#64748B] hover:text-rose-600 hover:bg-rose-50/50 transition-colors cursor-pointer"
+                        >
+                          <LogOut className="w-3.5 h-3.5" />
+                          <span>Sair da conta</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -1700,32 +1871,25 @@ export default function LeilaoComIaPage() {
           {/* MODO 1 (MOBILE): FEED VERTICAL CONTÍNUO COM FOTOS GRANDES (ESTILO AIRBNB / QUINTOANDAR) */}
           {mobileTab === "feed" && (
             <div className="lg:hidden p-3.5 space-y-4 pb-24">
-              {/* Topo do Feed com Contador, Favoritos e Botão Mapa */}
+              {/* Topo do Feed com Contador, Comparador e Mapa */}
               <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-[#E2E8F0]">
                 <div className="min-w-0">
                   <div className="text-xs font-bold text-[#0F172A] truncate">
-                    {filteredLots.length} Imóveis Disponíveis
+                    {filteredLots.length} Imóveis em SP
                   </div>
                   <div className="text-[10px] text-[#64748B] truncate">
-                    Toque no card para detalhes
+                    Toque no imóvel para ficha e documentos
                   </div>
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setFilterFavoritesOnly(!filterFavoritesOnly)}
-                    className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-colors flex items-center gap-1 whitespace-nowrap shrink-0 cursor-pointer ${filterFavoritesOnly
-                      ? "bg-rose-600 text-white border-rose-600 shadow-xs"
-                      : "bg-[#F8FAFC] text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1]"
-                      }`}
+                  <Link
+                    href="/leilaocom-ia/premium"
+                    className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#0F2744] hover:bg-[#0A1B30] text-white flex items-center gap-1 whitespace-nowrap shrink-0 transition-colors"
                   >
-                    <Heart
-                      className={`w-3 h-3 shrink-0 ${filterFavoritesOnly ? "fill-white text-white" : "text-rose-500"
-                        }`}
-                    />
-                    <span className="whitespace-nowrap">Favoritos ({Object.keys(favorites).length})</span>
-                  </button>
+                    <BarChart3 className="w-3 h-3 shrink-0" />
+                    <span>Comparador</span>
+                  </Link>
 
                   <button
                     type="button"
@@ -1735,7 +1899,7 @@ export default function LeilaoComIaPage() {
                         if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize();
                       }, 150);
                     }}
-                    className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#0F2744]/5 text-[#0F2744] border border-[#0F2744]/15 flex items-center gap-1 whitespace-nowrap shrink-0 cursor-pointer"
+                    className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#F8FAFC] text-[#0F2744] border border-[#CBD5E1] flex items-center gap-1 whitespace-nowrap shrink-0 cursor-pointer"
                   >
                     <MapPin className="w-3 h-3 text-[#0F3B78] shrink-0" />
                     <span className="whitespace-nowrap">Mapa</span>
@@ -1744,136 +1908,240 @@ export default function LeilaoComIaPage() {
               </div>
 
               {/* Lista Vertical de Cards no Feed */}
-              {filteredLots.map((lot) => {
+              {filteredLots.map((lot, idx) => {
+                const cardViability = computeLotViability(lot);
                 return (
-                  <div
-                    key={lot.id}
-                    onClick={() => openLotDetail(lot.id)}
-                    className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden shadow-xs hover:shadow-md transition-all cursor-pointer"
-                  >
-                    {/* Foto Principal Limpa com Desconto + Favoritar/Share */}
-                    <div className="relative h-48 sm:h-52 w-full bg-slate-100">
-                      {lot.imageUrl ? (
-                        <img
-                          src={lot.imageUrl}
-                          alt={lot.title}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                          onError={(e) => {
-                            (e.currentTarget as HTMLElement).style.display = "none";
-                          }}
-                        />
-                      ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 text-slate-400">
-                          <Landmark className="w-10 h-10 stroke-[1.5]" />
-                          <span className="text-[11px] font-medium mt-1">Foto oficial no edital</span>
-                        </div>
-                      )}
+                  <React.Fragment key={lot.id}>
+                    <div
+                      onClick={() => openLotDetail(lot.id)}
+                      className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden shadow-xs hover:shadow-md transition-all cursor-pointer"
+                    >
+                      {/* Foto Principal Limpa com Desconto + Favoritar/Share */}
+                      <div className="relative h-48 sm:h-52 w-full bg-slate-100">
+                        {lot.imageUrl ? (
+                          <img
+                            src={lot.imageUrl}
+                            alt={lot.title}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLElement).style.display = "none";
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 text-slate-400">
+                            <Landmark className="w-10 h-10 stroke-[1.5]" />
+                            <span className="text-[11px] font-medium mt-1">Foto oficial no edital</span>
+                          </div>
+                        )}
 
-                      <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1.5 pointer-events-none">
-                        <div className="flex items-center gap-1.5 pointer-events-auto">
-                          {lot.discountPct > 0 && (
-                            <span className="bg-emerald-600/95 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-sm whitespace-nowrap">
-                              -{lot.discountPct}% OFF
+                        <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1.5 pointer-events-none">
+                          <div className="flex items-center gap-1.5 pointer-events-auto">
+                            {lot.discountPct > 0 && (
+                              <span className="bg-emerald-600/95 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-sm whitespace-nowrap">
+                                -{lot.discountPct}% OFF
+                              </span>
+                            )}
+                            <span className="bg-slate-900/75 backdrop-blur-md text-white text-[10px] font-medium px-2.5 py-1 rounded-full shadow-sm">
+                              {lot.source}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 pointer-events-auto">
+                            <button
+                              type="button"
+                              onClick={(e) => handleShare(lot, e)}
+                              className="w-8 h-8 rounded-full bg-white/90 hover:bg-white backdrop-blur-md text-[#0F172A] flex items-center justify-center shadow-md active:scale-90 transition-all cursor-pointer"
+                              title="Compartilhar imóvel"
+                            >
+                              <Share2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => toggleFavorite(lot.id, e)}
+                              className="w-8 h-8 rounded-full bg-white/90 hover:bg-white backdrop-blur-md flex items-center justify-center shadow-md active:scale-90 transition-all cursor-pointer"
+                              title={favorites[lot.id] ? "Remover dos favoritos" : "Salvar nos favoritos"}
+                            >
+                              <Heart
+                                className={`w-4 h-4 transition-colors ${favorites[lot.id]
+                                  ? "fill-rose-500 text-rose-500"
+                                  : "text-[#0F172A] hover:text-rose-500"
+                                  }`}
+                              />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Dados do Imóvel Limpos */}
+                      <div className="p-4 space-y-2.5">
+                        <div>
+                          <div className="text-[11px] font-medium text-[#64748B]">
+                            {lot.modality} · Lote {lot.code}
+                          </div>
+                          <h3 className="text-sm font-bold text-[#0F172A] line-clamp-2 leading-snug mt-0.5">
+                            {lot.title}
+                          </h3>
+                          <div className="text-xs text-[#475569] truncate mt-1">
+                            {lot.address}
+                          </div>
+                        </div>
+
+                        {/* Data e Área */}
+                        <div className="flex items-center justify-between text-xs text-[#64748B] pt-0.5">
+                          <span className="truncate">
+                            Encerramento: {lot.auctionDate || "Ver no Edital"}
+                          </span>
+                          {lot.areaM2 && (
+                            <span className="font-semibold text-[#0F172A] shrink-0">
+                              {lot.areaM2} m²
                             </span>
                           )}
-                          <span className="bg-slate-900/75 backdrop-blur-md text-white text-[10px] font-medium px-2.5 py-1 rounded-full shadow-sm">
-                            {lot.source}
-                          </span>
                         </div>
 
-                        <div className="flex items-center gap-1.5 pointer-events-auto">
-                          <button
-                            type="button"
-                            onClick={(e) => handleShare(lot, e)}
-                            className="w-8 h-8 rounded-full bg-white/90 hover:bg-white backdrop-blur-md text-[#0F172A] flex items-center justify-center shadow-md active:scale-90 transition-all cursor-pointer"
-                            title="Compartilhar imóvel"
-                          >
-                            <Share2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => toggleFavorite(lot.id, e)}
-                            className="w-8 h-8 rounded-full bg-white/90 hover:bg-white backdrop-blur-md flex items-center justify-center shadow-md active:scale-90 transition-all cursor-pointer"
-                            title={favorites[lot.id] ? "Remover dos favoritos" : "Salvar nos favoritos"}
-                          >
-                            <Heart
-                              className={`w-4 h-4 transition-colors ${favorites[lot.id]
-                                ? "fill-rose-500 text-rose-500"
-                                : "text-[#0F172A] hover:text-rose-500"
-                                }`}
-                            />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Dados do Imóvel Limpos */}
-                    <div className="p-4 space-y-2.5">
-                      <div>
-                        <div className="text-[11px] font-medium text-[#64748B]">
-                          {lot.modality} · Lote {lot.code}
-                        </div>
-                        <h3 className="text-sm font-bold text-[#0F172A] line-clamp-2 leading-snug mt-0.5">
-                          {lot.title}
-                        </h3>
-                        <div className="text-xs text-[#475569] truncate mt-1">
-                          {lot.address}
-                        </div>
-                      </div>
-
-                      {/* Data e Área */}
-                      <div className="flex items-center justify-between text-xs text-[#64748B] pt-0.5">
-                        <span className="truncate">
-                          Encerramento: {lot.auctionDate || "Ver no Edital"}
-                        </span>
-                        {lot.areaM2 && (
-                          <span className="font-semibold text-[#0F172A] shrink-0">
-                            {lot.areaM2} m²
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Bloco de Preço e CTAs */}
-                      <div className="pt-2.5 border-t border-[#F1F5F9] flex items-end justify-between gap-2">
-                        <div>
-                          <div className="text-[11px] text-[#64748B]">Lance Mínimo</div>
-                          <div className="text-base font-bold text-[#0F172A]">
-                            {lot.minBid > 0 ? formatBRL(lot.minBid) : "Ver Edital"}
-                          </div>
-                          {lot.marketValue > lot.minBid && (
-                            <div className="text-[11px] text-[#94A3B8] line-through">
-                              Avaliação: {formatBRL(lot.marketValue)}
-                            </div>
+                        {/* Micro-gatilho minimalista: ROI Líquido & Lance Teto */}
+                        <div
+                          onClick={(e) => {
+                            if (!hasActiveUserTrial) openDossieModal(lot.id, e);
+                          }}
+                          className="px-2.5 py-1.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]/90 flex items-center justify-between gap-2 text-[11px]"
+                        >
+                          {hasActiveUserTrial ? (
+                            <>
+                              <span className="text-[#475569] truncate">
+                                ROI líq. est.:{" "}
+                                <strong className="text-emerald-700 font-bold">
+                                  +{cardViability.netRoiPct}%
+                                </strong>
+                              </span>
+                              <span className="text-[#475569] shrink-0">
+                                Teto:{" "}
+                                <strong className="text-[#0F2744] font-bold">
+                                  {formatBRL(cardViability.maxRecommendedBid)}
+                                </strong>
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="flex items-center gap-1.5 text-[#475569] truncate">
+                                <Lock className="w-3 h-3 text-[#0F2744] shrink-0" />
+                                <span className="truncate">ROI líquido e Lance Teto no Dossiê</span>
+                              </span>
+                              <span className="font-semibold text-emerald-700 shrink-0">
+                                15d grátis
+                              </span>
+                            </>
                           )}
                         </div>
 
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              hasUserInteractedRef.current = true;
-                              setSelectedId(lot.id);
-                              setMobileTab("map");
-                            }}
-                            className="p-2 rounded-xl border border-[#CBD5E1] text-[#0F2744] hover:bg-slate-50 transition-colors cursor-pointer"
-                            title="Localizar no mapa"
-                          >
-                            <MapPin className="w-4 h-4 text-[#0F3B78]" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => openDossieModal(lot.id, e)}
-                            className="px-3.5 py-2 rounded-xl bg-[#0F2744] hover:bg-[#0A1B30] text-white text-xs font-bold shadow-xs flex items-center gap-1 whitespace-nowrap shrink-0 transition-colors cursor-pointer"
-                          >
-                            <span>Ver Dossiê</span>
-                            <ChevronRight className="w-3.5 h-3.5" />
-                          </button>
+                        {/* Bloco de Preço e CTAs */}
+                        <div className="pt-2.5 border-t border-[#F1F5F9] flex items-end justify-between gap-2">
+                          <div>
+                            <div className="text-[11px] text-[#64748B]">Lance Mínimo</div>
+                            <div className="text-base font-bold text-[#0F172A]">
+                              {lot.minBid > 0 ? formatBRL(lot.minBid) : "Ver Edital"}
+                            </div>
+                            {lot.marketValue > lot.minBid && (
+                              <div className="text-[11px] text-[#94A3B8] line-through">
+                                Avaliação: {formatBRL(lot.marketValue)}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                hasUserInteractedRef.current = true;
+                                setSelectedId(lot.id);
+                                setMobileTab("map");
+                              }}
+                              className="p-2 rounded-xl border border-[#CBD5E1] text-[#0F2744] hover:bg-slate-50 transition-colors cursor-pointer"
+                              title="Localizar no mapa"
+                            >
+                              <MapPin className="w-4 h-4 text-[#0F3B78]" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => openDossieModal(lot.id, e)}
+                              className="px-3.5 py-2 rounded-xl bg-[#0F2744] hover:bg-[#0A1B30] text-white text-xs font-bold shadow-xs flex items-center gap-1 whitespace-nowrap shrink-0 transition-colors cursor-pointer"
+                            >
+                              <span>Ver Dossiê</span>
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
+
+                    {/* Card Nativo In-Feed (após o 3º imóvel) apresentando Screener, ROI e Dossiê sem poluir o topo */}
+                    {idx === 2 && access?.plan !== "premium" && access?.plan !== "admin" && (
+                      <div className="bg-white rounded-2xl border border-[#CBD5E1] p-4 shadow-xs space-y-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-[#0F2744] bg-[#F1F5F9] px-2.5 py-0.5 rounded-full">
+                            <BarChart3 className="w-3 h-3" />
+                            Screener &amp; Dossiê Completo
+                          </span>
+                          <span className="text-[11px] font-semibold text-emerald-700">
+                            {!user ? "15 dias grátis" : `${access?.daysLeft ?? 15}d restantes`}
+                          </span>
+                        </div>
+
+                        <div className="space-y-1">
+                          <h4 className="text-sm font-bold text-[#0F172A] leading-snug">
+                            Compare todos os lotes de SP por ROI líquido e Lance Teto
+                          </h4>
+                          <p className="text-xs text-[#475569] leading-relaxed">
+                            Filtre mais de {lots.length || 500} imóveis por margem real pós-custos, compare até 3 lotes lado a lado e abra dossiês com leitura integral da matrícula e do edital.
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2 pt-0.5">
+                          {!user ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => loginWithGoogle("/leilaocom-ia/premium")}
+                                className="flex-1 py-2.5 px-3 rounded-xl bg-[#0F2744] hover:bg-[#0A1B30] text-white text-xs font-bold text-center transition-colors cursor-pointer"
+                              >
+                                Testar 15 dias grátis
+                              </button>
+                              <Link
+                                href="/leilaocom-ia/premium"
+                                className="py-2.5 px-3 rounded-xl border border-[#CBD5E1] text-[#0F172A] hover:bg-[#F8FAFC] text-xs font-semibold transition-colors whitespace-nowrap"
+                              >
+                                Ver Painel
+                              </Link>
+                            </>
+                          ) : (
+                            <>
+                              <Link
+                                href="/leilaocom-ia/premium"
+                                className="flex-1 py-2.5 px-3 rounded-xl bg-[#0F2744] hover:bg-[#0A1B30] text-white text-xs font-bold text-center transition-colors"
+                              >
+                                Abrir Screener Comparativo
+                              </Link>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setUpgradeWhatsapp(access?.whatsapp || "");
+                                  setUpgradeModalOpen(true);
+                                }}
+                                className="py-2.5 px-3 rounded-xl border border-[#CBD5E1] text-[#0F172A] hover:bg-[#F8FAFC] text-xs font-semibold transition-colors whitespace-nowrap cursor-pointer"
+                              >
+                                Plano R$ 59,90
+                              </button>
+                            </>
+                          )}
+                        </div>
+
+                        <div className="text-[10px] text-[#64748B]">
+                          Sem cartão no teste · Após 15 dias, plano semestral único de R$ 59,90 (&lt; R$ 10/mês).
+                        </div>
+                      </div>
+                    )}
+                  </React.Fragment>
                 );
               })}
             </div>
@@ -2409,6 +2677,172 @@ export default function LeilaoComIaPage() {
         </div>
       )}
 
+      {/* ─── MODAL MINIMALISTA DE LOGIN / CADASTRO (BOTÃO ENTRAR NO HEADER) ─── */}
+      {authModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white border border-[#E2E8F0] rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-xl space-y-4 relative">
+            <button
+              type="button"
+              onClick={() => setAuthModalOpen(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-full text-[#64748B] hover:bg-[#F1F5F9] cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="space-y-1.5">
+              <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/70">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                Acesso finHouse · 15 dias grátis
+              </div>
+              <h3 className="text-lg font-bold text-[#0F172A]">
+                Entrar ou criar conta gratuita
+              </h3>
+              <p className="text-xs text-[#64748B] leading-relaxed">
+                Desbloqueie a inteligência completa para arrematar com margem segura em São Paulo:
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-2 text-xs text-[#334155]">
+              <div className="flex items-start gap-2">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Dashboard Comparativo (Screener):</strong> ordene todos os imóveis de SP por ROI líquido e compare até 3 lotes lado a lado
+                </span>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Dossiê Completo:</strong> leitura integral de PDFs (matrícula e edital), dívidas de IPTU/condomínio e ocupação
+                </span>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Lance Teto &amp; ROI Líquido:</strong> simulação real com ITBI, leiloeiro, cartório e reforma SP
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => loginWithGoogle("/leilaocom-ia")}
+              className="w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl bg-[#0F2744] hover:bg-[#0A1B30] text-white font-bold text-xs transition-colors cursor-pointer shadow-xs"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  fill="#EA4335"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                />
+                <path
+                  fill="#4285F4"
+                  d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.86-3c-.98.66-2.23 1.06-3.42 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                />
+              </svg>
+              <span>Continuar com Google</span>
+            </button>
+
+            <p className="text-[11px] text-center text-[#64748B] leading-relaxed">
+              Sem cartão de crédito no teste. Após os 15 dias, plano opcional de{" "}
+              <strong className="text-[#0F172A]">R$ 59,90 por 6 meses</strong> (&lt; R$ 10/mês), sem renovação automática.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ─── MODAL INSTITUCIONAL PLANO SEMESTRAL (R$ 59,90 / 6 MESES) ─── */}
+      {upgradeModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white border border-[#E2E8F0] rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-xl space-y-4 relative">
+            <button
+              type="button"
+              onClick={() => setUpgradeModalOpen(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-full text-[#64748B] hover:bg-[#F1F5F9] cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="space-y-1">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">
+                Acesso Completo finHouse
+              </p>
+              <h3 className="text-lg font-bold text-[#0F172A]">
+                Plano Semestral — R$ 59,90 / 6 meses
+              </h3>
+              <p className="text-xs text-[#64748B]">
+                Pagamento único equivalente a R$ 9,98/mês, sem renovação automática.
+              </p>
+            </div>
+
+            <div className="border-t border-b border-[#E2E8F0] py-3.5 space-y-2 text-xs text-[#334155]">
+              <div className="flex items-start gap-2">
+                <Check className="w-3.5 h-3.5 text-[#0F2744] shrink-0 mt-0.5" />
+                <span>
+                  Até 3 dossiês completos inéditos por dia + releitura ilimitada dos lotes já analisados
+                </span>
+              </div>
+              <div className="flex items-start gap-2">
+                <Check className="w-3.5 h-3.5 text-[#0F2744] shrink-0 mt-0.5" />
+                <span>
+                  Dashboard Comparativo SP (Screener), comparador lado a lado (até 3 lotes) e exportação CSV/PDF
+                </span>
+              </div>
+              <div className="flex items-start gap-2">
+                <Check className="w-3.5 h-3.5 text-[#0F2744] shrink-0 mt-0.5" />
+                <span>
+                  Calculadora Reversa de Lance Teto e simulador de reforma SP (CUB/SINAPI)
+                </span>
+              </div>
+            </div>
+
+            {upgradeSubmitted ? (
+              <div className="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200/80 text-xs text-emerald-950 leading-relaxed">
+                Recebemos sua solicitação do Plano Semestral. Enviaremos o link oficial de ativação no seu WhatsApp/e-mail cadastrado.
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                <input
+                  type="tel"
+                  placeholder="WhatsApp com DDD para ativação"
+                  value={upgradeWhatsapp}
+                  onChange={(e) => setUpgradeWhatsapp(formatPhoneInput(e.target.value))}
+                  className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-[#CBD5E1] focus:outline-none focus:border-[#0F2744]"
+                />
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (accessToken) {
+                      await fetch("/api/me/upgrade-interest", {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json",
+                          Authorization: `Bearer ${accessToken}`,
+                        },
+                        body: JSON.stringify({
+                          reason: "voluntary_cta",
+                          whatsapp: upgradeWhatsapp,
+                        }),
+                      }).catch(() => { });
+                    }
+                    setUpgradeSubmitted(true);
+                  }}
+                  className="w-full py-3 rounded-xl bg-[#0F2744] hover:bg-[#0A1B30] text-white font-bold text-xs transition-colors cursor-pointer"
+                >
+                  Garantir 6 meses por R$ 59,90
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ─── MODAIS DE CONVERSÃO & DOSSIÊ DE R$ 49,90 ─── */}
       {modalMode && selectedLot && viability && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
@@ -2439,34 +2873,28 @@ export default function LeilaoComIaPage() {
                 </p>
               </div>
 
-              {/* O que vem no Dossiê */}
+              {/* O que vem no Dossiê + Ecossistema Completo */}
               <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-2 text-xs text-[#334155]">
                 <div className="font-semibold text-[#0F172A]">
-                  O que você libera nos seus 15 dias grátis:
+                  Sua conta libera o ecossistema completo por 15 dias grátis:
                 </div>
                 <ul className="space-y-1.5 text-[11px]">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
                     <span>
-                      <strong>Até Quanto Vale Pagar (Lance Teto):</strong> limite máximo de lance considerando todos os custos + potencial de revenda
+                      <strong>Dossiê Completo (PDFs + Edital/Matrícula):</strong> análise em 8 pontos de dívidas (IPTU/Condomínio), ocupação e riscos jurídicos
                     </span>
                   </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
                     <span>
-                      <strong>Semáforo Jurídico em 8 Pontos:</strong> leitura de dívidas (IPTU/Condomínio), matrícula e alertas do edital
+                      <strong>Lance Teto &amp; Simulador de ROI Líquido:</strong> lucro real descontando ITBI SP, leiloeiro, cartório e reforma (CUB/SINAPI)
                     </span>
                   </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
                     <span>
-                      <strong>Lucro Líquido e Custos Reais:</strong> ITBI SP, leiloeiro, cartório, reforma e valor de mercado no bairro
-                    </span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span>
-                      <strong>Sem cartão no teste:</strong> até 3 dossiês inéditos/dia por 15 dias (depois {DOSSIE_PRICE})
+                      <strong>Dashboard Comparativo SP (Screener):</strong> ordene todos os lotes por retorno líquido e compare até 3 imóveis lado a lado
                     </span>
                   </li>
                 </ul>
@@ -2487,38 +2915,56 @@ export default function LeilaoComIaPage() {
                 >
                   Abrir Meu Dossiê Completo Agora
                 </button>
-              ) : (
+              ) : user && access && !access.isActive ? (
                 <button
                   type="button"
-                  onClick={() =>
-                    loginWithGoogle(
-                      `/leilaocom-ia/premium/analise/${encodeURIComponent(
-                        selectedLot.id
-                      )}`
-                    )
-                  }
-                  className="w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl bg-[#0F2744] hover:bg-[#0A1B30] text-white font-bold text-xs transition-colors cursor-pointer shadow-xs"
+                  onClick={() => {
+                    setModalMode(null);
+                    setUpgradeWhatsapp(access.whatsapp || "");
+                    setUpgradeModalOpen(true);
+                  }}
+                  className="w-full py-3 rounded-xl bg-[#0F2744] hover:bg-[#0A1B30] text-white font-bold text-xs transition-colors cursor-pointer shadow-xs"
                 >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                      fill="#EA4335"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                    />
-                    <path
-                      fill="#4285F4"
-                      d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.86-3c-.98.66-2.23 1.06-3.42 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                  </svg>
-                  <span>Continuar com Google — 15 dias grátis</span>
+                  Ativar Plano Semestral — {DOSSIE_PRICE}
                 </button>
+              ) : (
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      loginWithGoogle(
+                        `/leilaocom-ia/premium/analise/${encodeURIComponent(
+                          selectedLot.id
+                        )}`
+                      )
+                    }
+                    className="w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl bg-[#0F2744] hover:bg-[#0A1B30] text-white font-bold text-xs transition-colors cursor-pointer shadow-xs"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        fill="#EA4335"
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                      />
+                      <path
+                        fill="#4285F4"
+                        d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z"
+                      />
+                      <path
+                        fill="#FBBC05"
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
+                      />
+                      <path
+                        fill="#34A853"
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.86-3c-.98.66-2.23 1.06-3.42 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                      />
+                    </svg>
+                    <span>Continuar com Google — 15 dias grátis</span>
+                  </button>
+                  <p className="text-[11px] text-center text-[#64748B]">
+                    Sem cartão no teste (até 3 dossiês inéditos/dia). Depois apenas{" "}
+                    <strong className="text-[#0F172A]">R$ 59,90 por 6 meses</strong> (&lt; R$ 10/mês).
+                  </p>
+                </div>
               )}
             </div>
           )}
