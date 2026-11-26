@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const BASE_URL = "https://www.finhouse.com.br";
+const BASE_URL = "https://www.finhousebr.com.br";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
@@ -64,3 +64,4 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return staticRoutes;
 }
+

@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     title: "Leilão de Imóveis em SP com IA | finHouse",
     description:
       "Mapa interativo com 500+ oportunidades em leilão em SP, filtro de 2ª praça, análise jurídica de edital com IA e cálculo de Lance Teto.",
-    url: "https://www.finhouse.com.br/leilaocom-ia",
+    url: "https://www.finhousebr.com.br/leilaocom-ia",
     type: "website",
   },
 };
@@ -24,7 +24,7 @@ const leilaoJsonLd = {
       name: "finHouse Leilão com IA",
       applicationCategory: "FinanceApplication",
       operatingSystem: "Web",
-      url: "https://www.finhouse.com.br/leilaocom-ia",
+      url: "https://www.finhousebr.com.br/leilaocom-ia",
       offers: {
         "@type": "Offer",
         price: "59.90",
@@ -95,3 +95,4 @@ export default function LeilaoComIaLayout({
     </>
   );
 }
+

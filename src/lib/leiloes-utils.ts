@@ -130,3 +130,36 @@ export function isLotInSecondPraca(lot: {
   return false;
 }
 
+/**
+ * Adiciona parâmetros UTM da finHouse (finhousebr.com.br) em links HTML externos de leiloeiros,
+ * preservando intactas URLs de PDFs ou links assinados (CloudFront / S3).
+ */
+export function withFinhouseUtm(
+  rawUrl: string,
+  placement: string = "lote"
+): string {
+  if (!rawUrl) return "";
+  const trimmed = rawUrl.trim();
+  if (
+    /\.pdf(\?|#|$)/i.test(trimmed) ||
+    /cloudfront\.net|amazonaws\.com|X-Amz-Signature|Signature=/i.test(trimmed)
+  ) {
+    return trimmed;
+  }
+  try {
+    const parsed = new URL(trimmed);
+    if (!parsed.searchParams.has("utm_source")) {
+      parsed.searchParams.set("utm_source", "finhousebr.com.br");
+      parsed.searchParams.set("utm_medium", "referral");
+      parsed.searchParams.set("utm_campaign", "leilaocom_ia");
+      if (placement) {
+        parsed.searchParams.set("utm_content", placement);
+      }
+    }
+    return parsed.toString();
+  } catch {
+    return trimmed;
+  }
+}
+
+

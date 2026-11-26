@@ -11,7 +11,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.finhouse.com.br"),
+  metadataBase: new URL("https://www.finhousebr.com.br"),
   title: {
     default: "finHouse | Leilão de Imóveis em SP com IA, Imóveis e Financiamento",
     template: "%s | finHouse",
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     title: "finHouse | Leilão de Imóveis em SP com IA e Viabilidade",
     description:
       "Mapa interativo com 500+ imóveis em leilão em SP (Mega Leilões, Portal Zuk, Superbid e Sold), análise jurídica com IA e cálculo de Lance Teto.",
-    url: "https://www.finhouse.com.br",
+    url: "https://www.finhousebr.com.br",
     siteName: "finHouse",
     locale: "pt_BR",
     type: "website",
@@ -59,18 +59,18 @@ const organizationJsonLd = {
   "@graph": [
     {
       "@type": "Organization",
-      "@id": "https://www.finhouse.com.br/#organization",
+      "@id": "https://www.finhousebr.com.br/#organization",
       name: "finHouse",
-      url: "https://www.finhouse.com.br",
-      logo: "https://www.finhouse.com.br/logo.png",
+      url: "https://www.finhousebr.com.br",
+      logo: "https://www.finhousebr.com.br/logo.png",
     },
     {
       "@type": "WebSite",
-      "@id": "https://www.finhouse.com.br/#website",
-      url: "https://www.finhouse.com.br",
+      "@id": "https://www.finhousebr.com.br/#website",
+      url: "https://www.finhousebr.com.br",
       name: "finHouse — Leilão de Imóveis em SP com IA",
       inLanguage: "pt-BR",
-      publisher: { "@id": "https://www.finhouse.com.br/#organization" },
+      publisher: { "@id": "https://www.finhousebr.com.br/#organization" },
     },
   ],
 };

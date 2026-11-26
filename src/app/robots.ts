@@ -9,7 +9,8 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/api/", "/dashboard", "/login"],
       },
     ],
-    sitemap: "https://www.finhouse.com.br/sitemap.xml",
-    host: "https://www.finhouse.com.br",
+    sitemap: "https://www.finhousebr.com.br/sitemap.xml",
+    host: "https://www.finhousebr.com.br",
   };
 }
+

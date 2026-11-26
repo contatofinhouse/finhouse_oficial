@@ -15,7 +15,7 @@ import {
   X,
   Loader2,
 } from "lucide-react";
-import { ScrapedAuctionLot } from "@/lib/leiloes-utils";
+import { ScrapedAuctionLot, withFinhouseUtm } from "@/lib/leiloes-utils";
 import {
   buildDefaultLegalMatrix,
   evaluateLotPreliminary,
@@ -127,11 +127,10 @@ function CompararContent() {
 
   const handleShareCompare = () => {
     if (typeof window === "undefined") return;
-    const url = `${
-      window.location.origin
-    }/leilaocom-ia/premium/comparar?lotes=${selectedIds
-      .map(encodeURIComponent)
-      .join(",")}`;
+    const url = `${window.location.origin
+      }/leilaocom-ia/premium/comparar?lotes=${selectedIds
+        .map(encodeURIComponent)
+        .join(",")}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
@@ -155,8 +154,8 @@ function CompararContent() {
         !q
           ? true
           : `${l.code} ${l.title} ${l.neighborhood} ${l.city} ${l.source}`
-              .toLowerCase()
-              .includes(q)
+            .toLowerCase()
+            .includes(q)
       )
       .slice(0, 30);
   }, [allLots, selectedIds, pickerQuery]);
@@ -294,7 +293,7 @@ function CompararContent() {
                         <span>Ver Dossiê</span>
                       </Link>
                       <a
-                        href={lot.sourceUrl}
+                        href={withFinhouseUtm(lot.sourceUrl, "comparador")}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 text-xs font-medium text-[#475569] hover:text-[#0F172A] px-2 py-1 rounded-md border border-[#CBD5E1] bg-white"
@@ -322,9 +321,8 @@ function CompararContent() {
                   return (
                     <td
                       key={lot.id}
-                      className={`p-3.5 border-l border-[#E2E8F0] ${
-                        isBest ? "bg-[#F8FAFC]" : ""
-                      }`}
+                      className={`p-3.5 border-l border-[#E2E8F0] ${isBest ? "bg-[#F8FAFC]" : ""
+                        }`}
                     >
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-bold text-[#0F172A]">
@@ -425,16 +423,14 @@ function CompararContent() {
                   return (
                     <td
                       key={lot.id}
-                      className={`p-3.5 border-l border-[#E2E8F0] ${
-                        isBest ? "bg-[#F8FAFC]" : ""
-                      }`}
+                      className={`p-3.5 border-l border-[#E2E8F0] ${isBest ? "bg-[#F8FAFC]" : ""
+                        }`}
                     >
                       <div
-                        className={`text-sm font-bold ${
-                          sim.netProfit > 0
+                        className={`text-sm font-bold ${sim.netProfit > 0
                             ? "text-[#047857]"
                             : "text-[#B91C1C]"
-                        }`}
+                          }`}
                       >
                         {formatBRL(sim.netProfit)}
                       </div>

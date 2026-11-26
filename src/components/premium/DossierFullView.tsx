@@ -14,7 +14,11 @@ import {
   Plus,
   Minus,
 } from "lucide-react";
-import { ScrapedAuctionLot, isLotInSecondPraca } from "@/lib/leiloes-utils";
+import {
+  ScrapedAuctionLot,
+  isLotInSecondPraca,
+  withFinhouseUtm,
+} from "@/lib/leiloes-utils";
 import type { MarketValuationResult } from "@/app/api/leiloes/dossie/route";
 import {
   buildDefaultLegalMatrix,
@@ -338,7 +342,7 @@ export default function DossierFullView({
                   <span>Score de Viabilidade: {verdict.score}/100</span>
                 </div>
                 <a
-                  href={lot.sourceUrl}
+                  href={withFinhouseUtm(lot.sourceUrl, "dossie_completo")}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-xs font-medium text-[#475569] hover:text-[#0F172A] border border-[#CBD5E1] px-2.5 py-1 rounded-md transition-colors print:hidden"
@@ -1324,7 +1328,7 @@ export default function DossierFullView({
               {documentsRead.map((doc) => (
                 <a
                   key={doc.url}
-                  href={doc.url}
+                  href={withFinhouseUtm(doc.url, "dossie_documento")}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 text-xs font-medium text-[#0F172A] bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#CBD5E1] px-2.5 py-1.5 rounded-md transition-colors"

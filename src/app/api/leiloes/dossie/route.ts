@@ -326,7 +326,7 @@ Texto extraído da página/edital: """${legalText.slice(0, 4800)}"""`;
             headers: {
               "Content-Type": "application/json",
               Authorization: `Bearer ${options.openRouterKey}`,
-              "HTTP-Referer": "https://www.finhouse.com.br",
+              "HTTP-Referer": "https://www.finhousebr.com.br",
               "X-Title": "finHouse Leilao com IA",
             },
             body: JSON.stringify({

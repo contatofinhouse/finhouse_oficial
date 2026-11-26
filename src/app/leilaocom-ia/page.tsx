@@ -36,6 +36,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import type { ScrapedAuctionLot } from "@/app/api/leiloes/route";
+import { withFinhouseUtm } from "@/lib/leiloes-utils";
 
 const WA_NUMBER = "5511955842951";
 const DOSSIE_PRICE = "R$ 59,90 / 6 meses";
@@ -2244,7 +2245,7 @@ export default function LeilaoComIaPage() {
                         {selectedLot.source} · Lote {selectedLot.code} · {selectedLot.modality}
                       </span>
                       <a
-                        href={selectedLot.sourceUrl}
+                        href={withFinhouseUtm(selectedLot.sourceUrl, "ficha_imovel")}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 font-semibold text-[#0F3B78] hover:underline"

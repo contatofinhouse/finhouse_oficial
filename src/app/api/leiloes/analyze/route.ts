@@ -491,7 +491,7 @@ async function analyzeWithOpenRouter(apiKey: string, prompt: string) {
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
-      "HTTP-Referer": "https://www.finhouse.com.br",
+      "HTTP-Referer": "https://www.finhousebr.com.br",
       "X-Title": "finHouse Leilao com IA",
     },
     body: JSON.stringify({

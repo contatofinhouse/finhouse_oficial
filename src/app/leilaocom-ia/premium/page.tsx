@@ -19,7 +19,7 @@ import {
   ChevronDown,
   LogOut,
 } from "lucide-react";
-import { ScrapedAuctionLot } from "@/lib/leiloes-utils";
+import { ScrapedAuctionLot, withFinhouseUtm } from "@/lib/leiloes-utils";
 import {
   DealFinancialSimulation,
   evaluateLotPreliminary,
@@ -477,7 +477,7 @@ function PremiumDashboardContent() {
     const origin =
       typeof window !== "undefined"
         ? window.location.origin
-        : "https://www.finhouse.com.br";
+        : "https://www.finhousebr.com.br";
 
     const csvLines = [
       headers.join(";"),
@@ -507,7 +507,7 @@ function PremiumDashboardContent() {
             `${origin}/leilaocom-ia/premium/analise/${encodeURIComponent(
               lot.id
             )}`,
-            lot.sourceUrl,
+            withFinhouseUtm(lot.sourceUrl, "csv_screener"),
           ].join(";")
       ),
     ];
