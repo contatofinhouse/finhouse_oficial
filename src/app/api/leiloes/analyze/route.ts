@@ -567,19 +567,70 @@ const dailyLotAnalysisCache = new Map<
   { timestamp: number; payload: Record<string, any> }
 >();
 
+const ALLOWED_AUCTIONEER_HOSTS = [
+  "megaleiloes.com.br",
+  "portalzuk.com.br",
+  "superbid.net",
+  "sodresantoro.com.br",
+  "biasileiloes.com.br",
+  "frazaoleiloes.com.br",
+  "grupolance.com.br",
+  "caixa.gov.br",
+  "seuimovelbb.com.br",
+  "bb.com.br",
+];
+
+function isAllowedAuctioneerUrl(rawUrl: string): boolean {
+  try {
+    const parsed = new URL(rawUrl);
+    if (parsed.protocol !== "https:") return false;
+    const host = parsed.hostname.toLowerCase();
+    return ALLOWED_AUCTIONEER_HOSTS.some(
+      (allowed) => host === allowed || host.endsWith(`.${allowed}`)
+    );
+  } catch {
+    return false;
+  }
+}
+
+const analyzeIpRateMap = new Map<string, { windowStart: number; count: number }>();
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { sourceUrl, title, modality, minBid, marketValue } = body;
 
-    if (!sourceUrl) {
+    if (!sourceUrl || typeof sourceUrl !== "string") {
       return NextResponse.json(
         { error: "URL do leilão é obrigatória" },
         { status: 400 }
       );
     }
 
+    if (!isAllowedAuctioneerUrl(sourceUrl)) {
+      return NextResponse.json(
+        { error: "Domínio de leiloeiro não permitido" },
+        { status: 400 }
+      );
+    }
+
+    const clientIp =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      req.headers.get("cf-connecting-ip") ||
+      "anon";
     const now = Date.now();
+    const ipWindow = analyzeIpRateMap.get(clientIp);
+    if (!ipWindow || now - ipWindow.windowStart > 60_000) {
+      analyzeIpRateMap.set(clientIp, { windowStart: now, count: 1 });
+    } else {
+      ipWindow.count += 1;
+      if (ipWindow.count > 25) {
+        return NextResponse.json(
+          { error: "Muitas requisições seguidas. Aguarde um instante." },
+          { status: 429 }
+        );
+      }
+    }
     const cached = dailyLotAnalysisCache.get(sourceUrl);
     if (cached && now - cached.timestamp < DAILY_ANALYSIS_CACHE_TTL) {
       return NextResponse.json({

@@ -9,12 +9,18 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const uf = (searchParams.get("uf") || "sp").toLowerCase();
 
-    // Verificação de segurança opcional se CRON_SECRET estiver definido no Vercel
+    // Verificação de segurança: em produção aceita apenas o agendador oficial da Vercel ou Bearer CRON_SECRET
     const authHeader = req.headers.get("authorization");
     const isVercelCron = req.headers.get("x-vercel-cron") === "1";
     const cronSecret = process.env.CRON_SECRET;
 
-    if (cronSecret && !isVercelCron && authHeader !== `Bearer ${cronSecret}`) {
+    if (process.env.NODE_ENV === "production") {
+      const authorizedBySecret =
+        Boolean(cronSecret) && authHeader === `Bearer ${cronSecret}`;
+      if (!isVercelCron && !authorizedBySecret) {
+        return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+      }
+    } else if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 

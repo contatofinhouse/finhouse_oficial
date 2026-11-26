@@ -3,7 +3,7 @@ import SpRegionalSeoView, {
   resolveRegionalSeoData,
 } from "@/components/seo/SpRegionalSeoView";
 
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,

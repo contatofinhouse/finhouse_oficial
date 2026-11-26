@@ -1,13 +1,18 @@
 import type { MetadataRoute } from "next";
+import { headers } from "next/headers";
 import { loadDailySnapshot } from "@/lib/leiloes-service";
 import { slugifyTerm } from "@/lib/leiloes-utils";
 import { SP_PRIORITY_CITIES } from "@/components/seo/SpRegionalSeoView";
 
-const BASE_URL = "https://www.finhousebr.com.br";
-
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const hdrs = await headers();
+  const rawHost = (hdrs.get("x-forwarded-host") || hdrs.get("host") || "").toLowerCase();
+  const BASE_URL =
+    rawHost === "finhousebr.com.br"
+      ? "https://finhousebr.com.br"
+      : "https://www.finhousebr.com.br";
   const now = new Date();
 
   const staticRoutes: MetadataRoute.Sitemap = [

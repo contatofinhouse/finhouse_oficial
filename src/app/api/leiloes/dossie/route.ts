@@ -670,19 +670,27 @@ export async function POST(req: Request) {
     }
 
     const serverUser = await getServerUser(req);
+    if (!serverUser) {
+      return NextResponse.json(
+        {
+          error: "Faça login gratuito com Google para abrir o dossiê completo.",
+          code: "AUTH_REQUIRED",
+        },
+        { status: 401 }
+      );
+    }
+
     const existing = globalDossierCache.get(resolvedLot.id);
     if (existing) {
-      if (serverUser) {
-        const check = await reserveOrLinkLotReport(serverUser, resolvedLot.id, true);
-        if (!check.ok) {
-          return NextResponse.json(
-            {
-              error: "Seu período de 15 dias de teste expirou.",
-              code: "TRIAL_EXPIRED",
-            },
-            { status: 403 }
-          );
-        }
+      const check = await reserveOrLinkLotReport(serverUser, resolvedLot.id, true);
+      if (!check.ok) {
+        return NextResponse.json(
+          {
+            error: "Seu período de 15 dias de teste expirou.",
+            code: "TRIAL_EXPIRED",
+          },
+          { status: 403 }
+        );
       }
       return NextResponse.json({
         ...existing,
@@ -691,27 +699,25 @@ export async function POST(req: Request) {
       });
     }
 
-    if (serverUser) {
-      const check = await reserveOrLinkLotReport(serverUser, resolvedLot.id, false);
-      if (!check.ok) {
-        if (check.code === "expired") {
-          return NextResponse.json(
-            {
-              error: "Seu período de 15 dias de teste expirou.",
-              code: "TRIAL_EXPIRED",
-            },
-            { status: 403 }
-          );
-        }
+    const check = await reserveOrLinkLotReport(serverUser, resolvedLot.id, false);
+    if (!check.ok) {
+      if (check.code === "expired") {
         return NextResponse.json(
           {
-            error:
-              "Detectamos um volume incomum de requisições automáticas em curto intervalo. Aguarde alguns instantes ou consulte os dossiês já abertos.",
-            code: "FAIR_USE_LIMIT_REACHED",
+            error: "Seu período de 15 dias de teste expirou.",
+            code: "TRIAL_EXPIRED",
           },
-          { status: 429 }
+          { status: 403 }
         );
       }
+      return NextResponse.json(
+        {
+          error:
+            "Detectamos um volume incomum de requisições automáticas em curto intervalo. Aguarde alguns instantes ou consulte os dossiês já abertos.",
+          code: "FAIR_USE_LIMIT_REACHED",
+        },
+        { status: 429 }
+      );
     }
 
     const prelim = evaluateLotPreliminary(resolvedLot, true);
