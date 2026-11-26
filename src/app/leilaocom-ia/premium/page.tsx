@@ -144,7 +144,6 @@ function PremiumDashboardContent() {
   }, [access]);
 
   useEffect(() => {
-    setQuota(getTrialQuotaStatus());
     setFavIds(getSavedFavoriteIds());
 
     if (typeof window !== "undefined") {
@@ -739,8 +738,8 @@ function PremiumDashboardContent() {
           <button
             onClick={() => setActiveTab("screener")}
             className={`px-2.5 py-1 rounded-md text-[11px] font-semibold whitespace-nowrap shrink-0 cursor-pointer ${activeTab === "screener"
-                ? "bg-[#0F2744] text-white"
-                : "bg-[#F1F5F9] text-[#475569]"
+              ? "bg-[#0F2744] text-white"
+              : "bg-[#F1F5F9] text-[#475569]"
               }`}
           >
             Screener ({enrichedRows.length})
@@ -748,8 +747,8 @@ function PremiumDashboardContent() {
           <button
             onClick={() => setActiveTab("my_analyses")}
             className={`px-2.5 py-1 rounded-md text-[11px] font-semibold whitespace-nowrap shrink-0 cursor-pointer ${activeTab === "my_analyses"
-                ? "bg-[#0F2744] text-white"
-                : "bg-[#F1F5F9] text-[#475569]"
+              ? "bg-[#0F2744] text-white"
+              : "bg-[#F1F5F9] text-[#475569]"
               }`}
           >
             Dossiês ({analyzedCount})

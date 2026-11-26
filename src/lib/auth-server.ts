@@ -12,6 +12,7 @@ export interface ServerUser {
   email: string;
   fullName: string;
   isAdmin: boolean;
+  createdAt: string | null;
 }
 
 export interface UserAccessState {
@@ -71,6 +72,7 @@ export async function getServerUser(req: Request): Promise<ServerUser | null> {
     email,
     fullName,
     isAdmin: ADMIN_EMAILS.includes(email),
+    createdAt: data.user.created_at || null,
   };
 }
 
@@ -93,18 +95,27 @@ export async function getUserAccessState(
 ): Promise<UserAccessState> {
   const admin = getSupabaseAdmin();
   const now = Date.now();
+  const parsedCreatedMs =
+    user.createdAt && !Number.isNaN(Date.parse(user.createdAt))
+      ? Date.parse(user.createdAt)
+      : now;
+  const fallbackStartMs = Math.min(now, parsedCreatedMs);
+  const fallbackStartIso = new Date(fallbackStartMs).toISOString();
+  const fallbackExpiresMs = fallbackStartMs + TRIAL_DAYS * 24 * 60 * 60 * 1000;
+  const fallbackExpiresIso = new Date(fallbackExpiresMs).toISOString();
 
-  // Fallback seguro se SUPABASE_SERVICE_ROLE_KEY não estiver configurada ainda
+  // Fallback real baseado na data imutável de criação da conta no Supabase Auth
   if (!admin) {
-    const expiresAt = new Date(
-      now + TRIAL_DAYS * 24 * 60 * 60 * 1000
-    ).toISOString();
+    const msLeft = fallbackExpiresMs - now;
+    const daysLeft = user.isAdmin
+      ? 999
+      : Math.max(0, Math.ceil(msLeft / (24 * 60 * 60 * 1000)));
     return {
       plan: user.isAdmin ? "admin" : "trial",
-      startedAt: new Date(now).toISOString(),
-      expiresAt,
-      daysLeft: user.isAdmin ? 999 : TRIAL_DAYS,
-      isActive: true,
+      startedAt: fallbackStartIso,
+      expiresAt: fallbackExpiresIso,
+      daysLeft,
+      isActive: user.isAdmin || msLeft > 0,
       dailyLimit: user.isAdmin ? 999 : DEFAULT_DAILY_LIMIT,
       usedToday: 0,
       creditsLeftToday: user.isAdmin ? 999 : DEFAULT_DAILY_LIMIT,
@@ -122,9 +133,6 @@ export async function getUserAccessState(
     .maybeSingle();
 
   if (!acc) {
-    const expiresIso = new Date(
-      now + TRIAL_DAYS * 24 * 60 * 60 * 1000
-    ).toISOString();
     const { data: inserted } = await admin
       .from("user_access")
       .upsert(
@@ -133,7 +141,8 @@ export async function getUserAccessState(
           email: user.email,
           full_name: user.fullName,
           plan: user.isAdmin ? "admin" : "trial",
-          expires_at: expiresIso,
+          started_at: fallbackStartIso,
+          expires_at: fallbackExpiresIso,
           daily_limit: DEFAULT_DAILY_LIMIT,
           onboarding_completed: user.isAdmin,
         },
@@ -148,9 +157,7 @@ export async function getUserAccessState(
     ? "admin"
     : (acc?.plan as "trial" | "premium" | "admin") || "trial";
 
-  const expiresAt =
-    acc?.expires_at ||
-    new Date(now + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const expiresAt = acc?.expires_at || fallbackExpiresIso;
   const msLeft = new Date(expiresAt).getTime() - now;
   const daysLeft =
     plan === "admin" ? 999 : Math.max(0, Math.ceil(msLeft / (24 * 60 * 60 * 1000)));
@@ -180,7 +187,7 @@ export async function getUserAccessState(
 
   return {
     plan,
-    startedAt: acc?.started_at || new Date(now).toISOString(),
+    startedAt: acc?.started_at || fallbackStartIso,
     expiresAt,
     daysLeft,
     isActive,
@@ -242,3 +249,4 @@ export async function reserveOrLinkLotReport(
   if (status === "limit") return { ok: false, code: "limit" };
   return { ok: true };
 }
+
