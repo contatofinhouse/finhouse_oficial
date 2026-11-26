@@ -308,8 +308,8 @@ export default function LeilaoComIaPage() {
   const [analyzedCache, setAnalyzedCache] = useState<Record<string, boolean>>({});
   const [updatedAtLabel, setUpdatedAtLabel] = useState<string>("Hoje");
 
-  // Controle de Visualização Mobile ("map" = mapa, "feed" = feed vertical contínuo, "detail" = ficha detalhada)
-  const [mobileTab, setMobileTab] = useState<"map" | "feed" | "detail">("map");
+  // Controle de Visualização Mobile ("feed" = feed vertical contínuo padrão no mobile, "map" = mapa, "detail" = ficha detalhada)
+  const [mobileTab, setMobileTab] = useState<"map" | "feed" | "detail">("feed");
   const [sortOrder, setSortOrder] = useState<"discount" | "price_asc">("discount");
 
   // Favoritos & Compartilhamento
@@ -1417,8 +1417,19 @@ export default function LeilaoComIaPage() {
         </div>
       </header>
 
-      {/* ─── SELETOR DE ABA MOBILE (MAPA VS FEED DE IMÓVEIS) ─── */}
+      {/* ─── SELETOR DE ABA MOBILE (FEED DE IMÓVEIS VS MAPA) ─── */}
       <div className="lg:hidden flex items-center bg-white border-b border-[#E2E8F0] p-1.5 gap-1.5 z-20">
+        <button
+          type="button"
+          onClick={() => setMobileTab("feed")}
+          className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${mobileTab === "feed" || mobileTab === "detail"
+              ? "bg-[#0F2744] text-white shadow-xs"
+              : "bg-[#F8FAFC] text-[#64748B] hover:text-[#0F172A]"
+            }`}
+        >
+          <FileText className="w-3.5 h-3.5" />
+          Ver Imóveis ({filteredLots.length})
+        </button>
         <button
           type="button"
           onClick={() => {
@@ -1434,17 +1445,6 @@ export default function LeilaoComIaPage() {
         >
           <MapPin className="w-3.5 h-3.5" />
           Ver no Mapa
-        </button>
-        <button
-          type="button"
-          onClick={() => setMobileTab("feed")}
-          className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${mobileTab === "feed" || mobileTab === "detail"
-              ? "bg-[#0F2744] text-white shadow-xs"
-              : "bg-[#F8FAFC] text-[#64748B] hover:text-[#0F172A]"
-            }`}
-        >
-          <FileText className="w-3.5 h-3.5" />
-          Ver Imóveis ({filteredLots.length})
         </button>
       </div>
 
@@ -1835,7 +1835,7 @@ export default function LeilaoComIaPage() {
           )}
 
           {/* MODO 2: FICHA LIMPA DO IMÓVEL (DESKTOP SEMPRE OU MOBILE QUANDO NO MODO "DETAIL") */}
-          <div className={`${mobileTab === "feed" ? "hidden" : "flex"} flex-col flex-1`}>
+          <div className={`${mobileTab === "feed" ? "hidden lg:flex" : "flex"} flex-col flex-1`}>
             {/* Barra de Retorno ao Feed no Mobile */}
             <div className="lg:hidden p-3 bg-white border-b border-[#E2E8F0] flex items-center justify-between gap-2">
               <button
